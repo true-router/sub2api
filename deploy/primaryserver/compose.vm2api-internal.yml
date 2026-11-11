@@ -1,0 +1,4 @@
+services:
+  app:
+    extra_hosts:
+      - "vm2api.truerouter.cc:host-gateway"
