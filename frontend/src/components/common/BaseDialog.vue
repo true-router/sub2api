@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <Transition name="modal">
+    <Transition name="modal" @after-leave="emit('after-leave')">
       <div
         v-if="show"
         class="modal-overlay"
@@ -87,6 +87,7 @@ interface Props {
 
 interface Emits {
   (e: 'close'): void
+  (e: 'after-leave'): void
 }
 
 const props = withDefaults(defineProps<Props>(), {

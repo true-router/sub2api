@@ -88,18 +88,27 @@ async function restore() {
   catch (e) { error.value = (e as { message?: string }).message || '恢复失败，请重试。' }
   finally { busy.value = false }
 }
-async function closeModal() {
-  if (canConfirm.value && action.value?.phase === 'purchase') await finishPurchase()
+function closeModal() {
+  if (busy.value || !modalOpen.value) return
   modalOpen.value = false
 }
+async function onModalClosed() {
+  if (canConfirm.value && action.value?.phase === 'purchase') {
+    if (!await finishPurchase()) modalOpen.value = true
+  }
+}
 async function finishPurchase() {
-  if (busy.value || action.value?.phase === 'consume') return
+  if (busy.value || action.value?.phase === 'consume') return false
   busy.value = true; error.value = ''
   try {
     if (operation.value?.kind === 'purchase') await opcpayAPI.close(operation.value.business_id)
     clearAction(); operation.value = undefined; link.value = ''; qrImage.value = ''; message.value = ''
     await refresh()
-  } catch (e) { error.value = (e as { message?: string }).message || '无法结束购买入口。' }
+    return true
+  } catch (e) {
+    error.value = (e as { message?: string }).message || '无法结束购买入口。'
+    return false
+  }
   finally { busy.value = false }
 }
 onMounted(async () => {
@@ -177,7 +186,7 @@ onMounted(async () => {
       </template>
     </template>
   </section>
-  <BaseDialog :show="modalOpen" title="支付宝购买" :description="selectedCard ? `${selectedCard.display_name} · ${selectedCard.currency} ${selectedCard.price}` : undefined" width="narrow" @close="closeModal">
+  <BaseDialog :show="modalOpen" title="支付宝购买" :description="selectedCard ? `${selectedCard.display_name} · ${selectedCard.currency} ${selectedCard.price}` : undefined" width="narrow" @close="closeModal" @after-leave="onModalClosed">
     <div class="flex flex-col items-center gap-4 text-center" data-testid="opcpay-modal">
       <template v-if="canConfirm">
         <template v-if="isMobile">
@@ -198,7 +207,7 @@ onMounted(async () => {
       <p v-if="operation" class="break-all text-caption-1-medium text-text-tertiary">业务编号：{{ operation.business_id }}</p>
     </div>
     <template #footer>
-      <BoardButton v-if="canConfirm" :loading="busy" @click="run('consume')">我已购买，确认充值</BoardButton>
+      <BoardButton v-if="canConfirm" :loading="busy" :disabled="!modalOpen" @click="run('consume')">我已购买，确认充值</BoardButton>
       <BoardButton v-else variant="secondary" @click="closeModal">关闭</BoardButton>
     </template>
   </BaseDialog>
