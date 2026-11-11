@@ -2,68 +2,51 @@
   <div :class="props.embedded ? 'space-y-4' : 'card'">
     <div
       v-if="!props.embedded"
-      class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
+      class="border-b border-border-button-default px-6 py-4"
     >
-      <h2 class="text-lg font-medium text-gray-900 dark:text-white">
+      <h2 class="text-lg font-medium text-text-primary">
         {{ t('profile.changePassword') }}
       </h2>
     </div>
     <div :class="props.embedded ? '' : 'px-6 py-6'">
       <form @submit.prevent="handleChangePassword" class="space-y-4">
         <div v-if="props.embedded">
-          <p class="text-sm font-semibold text-gray-900 dark:text-white">
+          <p class="text-sm font-semibold text-text-primary">
             {{ t('profile.changePassword') }}
           </p>
         </div>
-        <div>
-          <label for="old_password" class="input-label">
-            {{ t('profile.currentPassword') }}
-          </label>
-          <input
-            id="old_password"
-            v-model="form.old_password"
-            type="password"
-            required
-            autocomplete="current-password"
-            class="input"
-          />
-        </div>
+        <BoardInput
+          id="old_password"
+          v-model="form.old_password"
+          :label="t('profile.currentPassword')"
+          type="password"
+          autocomplete="current-password"
+          required
+        />
 
-        <div>
-          <label for="new_password" class="input-label">
-            {{ t('profile.newPassword') }}
-          </label>
-          <input
-            id="new_password"
-            v-model="form.new_password"
-            type="password"
-            required
-            autocomplete="new-password"
-            class="input"
-          />
-          <p class="input-hint">
-            {{ t('profile.passwordHint') }}
-          </p>
-        </div>
+        <BoardInput
+          id="new_password"
+          v-model="form.new_password"
+          :label="t('profile.newPassword')"
+          :hint="t('profile.passwordHint')"
+          type="password"
+          autocomplete="new-password"
+          required
+        />
 
-        <div>
-          <label for="confirm_password" class="input-label">
-            {{ t('profile.confirmNewPassword') }}
-          </label>
-          <input
-            id="confirm_password"
-            v-model="form.confirm_password"
-            type="password"
-            required
-            autocomplete="new-password"
-            class="input"
-          />
-        </div>
+        <BoardInput
+          id="confirm_password"
+          v-model="form.confirm_password"
+          :label="t('profile.confirmNewPassword')"
+          type="password"
+          autocomplete="new-password"
+          required
+        />
 
         <div class="flex justify-end pt-4">
-          <button type="submit" :disabled="loading" class="btn btn-primary">
+          <BoardButton type="submit" :disabled="loading" variant="primary" size="medium">
             {{ loading ? t('profile.changingPassword') : t('profile.changePasswordButton') }}
-          </button>
+          </BoardButton>
         </div>
       </form>
     </div>
@@ -71,6 +54,8 @@
 </template>
 
 <script setup lang="ts">
+import BoardInput from '@/components/boardui/Input.vue'
+import BoardButton from '@/components/boardui/Button.vue'
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'

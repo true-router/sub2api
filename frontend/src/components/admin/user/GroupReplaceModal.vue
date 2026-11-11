@@ -2,20 +2,20 @@
   <BaseDialog :show="show" :title="t('admin.users.replaceGroupTitle')" width="narrow" @close="$emit('close')">
     <div v-if="oldGroup" class="space-y-4">
       <!-- 提示信息 -->
-      <p class="text-sm text-gray-600 dark:text-gray-400">
+      <p class="text-body-regular text-text-secondary ">
         {{ t('admin.users.replaceGroupHint', { old: oldGroup.name }) }}
       </p>
 
       <!-- 当前分组 -->
-      <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-dark-600 dark:bg-dark-800">
+      <div class="rounded-lg border border-border-button-default bg-background-secondary-default p-3 ">
         <div class="flex items-center gap-2">
-          <Icon name="shield" size="sm" class="text-purple-500" />
-          <span class="font-medium text-gray-900 dark:text-white">{{ oldGroup.name }}</span>
-          <Icon name="arrowRight" size="sm" class="ml-auto text-gray-400" />
-          <span v-if="selectedGroupId" class="font-medium text-primary-600 dark:text-primary-400">
+          <Icon name="shield" size="sm" class="text-text-feature" />
+          <span class="font-medium text-text-primary ">{{ oldGroup.name }}</span>
+          <Icon name="arrowRight" size="sm" class="ml-auto text-text-tertiary" />
+          <span v-if="selectedGroupId" class="font-medium text-text-accent ">
             {{ availableGroups.find(g => g.id === selectedGroupId)?.name }}
           </span>
-          <span v-else class="text-sm text-gray-400">?</span>
+          <span v-else class="text-body-regular text-text-tertiary">?</span>
         </div>
       </div>
 
@@ -26,8 +26,8 @@
           :key="group.id"
           class="flex cursor-pointer items-center gap-3 rounded-lg border-2 p-3 transition-all"
           :class="selectedGroupId === group.id
-            ? 'border-primary-400 bg-primary-50/50 dark:border-primary-500 dark:bg-primary-900/20'
-            : 'border-gray-200 hover:border-gray-300 dark:border-dark-600 dark:hover:border-dark-500'"
+            ? 'border-border-focus-ring bg-background-accent-subtle/50 '
+            : 'border-border-button-default hover:border-border-button-hover '"
         >
           <input
             type="radio"
@@ -38,44 +38,45 @@
           <div
             class="flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all"
             :class="selectedGroupId === group.id
-              ? 'border-primary-500 bg-primary-500'
-              : 'border-gray-300 dark:border-dark-500'"
+              ? 'border-border-focus-ring bg-background-accent-default'
+              : 'border-border-button-hover '"
           >
-            <div v-if="selectedGroupId === group.id" class="h-2 w-2 rounded-full bg-white"></div>
+            <div v-if="selectedGroupId === group.id" class="h-2 w-2 rounded-full bg-background-primary-default"></div>
           </div>
           <div class="flex-1">
-            <span class="font-medium text-gray-900 dark:text-white">{{ group.name }}</span>
-            <span class="ml-2 text-xs text-gray-400">{{ group.platform }}</span>
+            <span class="font-medium text-text-primary ">{{ group.name }}</span>
+            <span class="ml-2 text-caption-1-regular text-text-tertiary">{{ group.platform }}</span>
           </div>
         </label>
       </div>
 
       <!-- 无可选分组 -->
-      <div v-else class="py-6 text-center text-sm text-gray-400">
+      <div v-else class="py-6 text-center text-body-regular text-text-tertiary">
         {{ t('admin.users.noOtherGroups') }}
       </div>
     </div>
 
     <template #footer>
       <div class="flex justify-end gap-3">
-        <button @click="$emit('close')" class="btn btn-secondary px-5">{{ t('common.cancel') }}</button>
-        <button
+        <BoardButton type="submit" @click="$emit('close')" class="px-5" variant="secondary" size="medium">{{ t('common.cancel') }}</BoardButton>
+        <BoardButton type="submit"
           @click="handleReplace"
           :disabled="!selectedGroupId || submitting"
-          class="btn btn-primary px-6"
+          class="px-6" variant="primary" size="medium"
         >
           <svg v-if="submitting" class="-ml-1 mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
           {{ submitting ? t('common.saving') : t('admin.users.replaceGroupConfirm') }}
-        </button>
+        </BoardButton>
       </div>
     </template>
   </BaseDialog>
 </template>
 
 <script setup lang="ts">
+import BoardButton from '@/components/boardui/Button.vue'
 import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'

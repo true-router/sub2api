@@ -9,6 +9,28 @@ import admin from './admin'
 import misc from './misc'
 
 export default {
+  boardui: {
+    language: 'Language',
+    quickSearch: 'Quick search',
+    theme: 'Theme',
+    pagination: 'Pagination',
+    clearSearch: 'Clear search',
+    commandTitle: 'Search or run a command',
+    commandPlaceholder: 'Search pages and actions…',
+    commandNavigate: 'Navigate',
+    commandSelect: 'Open',
+    commandNavigation: 'Navigation',
+    breadcrumb: 'Breadcrumb',
+    searchNavigation: 'Search navigation',
+    overview: 'Overview',
+    resources: 'Resources',
+    business: 'Business',
+    system: 'System',
+    workspace: 'WORKSPACE OVERVIEW',
+    dashboardHeading: 'Your gateway at a glance',
+    updatedData: 'Statistics updated',
+    staleData: 'Statistics pending update',
+  },
   adminAccessKeys,
   mcp,
   ...landing,

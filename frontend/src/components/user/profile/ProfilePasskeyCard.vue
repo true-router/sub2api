@@ -1,27 +1,27 @@
 <template>
   <div class="card">
-    <div class="flex items-start justify-between border-b border-gray-100 px-6 py-4 dark:border-dark-700">
+    <div class="flex items-start justify-between border-b border-border-button-default px-6 py-4">
       <div>
-        <h2 class="text-lg font-medium text-gray-900 dark:text-white">
+        <h2 class="text-lg font-medium text-text-primary">
           {{ t('profile.passkey.title') }}
         </h2>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <p class="mt-1 text-sm text-text-secondary">
           {{ t('profile.passkey.description') }}
         </p>
       </div>
-      <button
+      <BoardButton
         v-if="enabled && supported && !showAddForm"
         type="button"
-        class="btn btn-primary"
+        variant="primary" size="medium"
         :disabled="busy"
         @click="showAddForm = true"
       >
         {{ t('profile.passkey.add') }}
-      </button>
+      </BoardButton>
     </div>
 
     <div class="px-6 py-6">
-      <div v-if="!enabled" class="mb-5 text-sm text-gray-500 dark:text-gray-400">
+      <div v-if="!enabled" class="mb-5 text-sm text-text-secondary">
         {{ t('profile.passkey.featureDisabled') }}
       </div>
       <div v-if="enabled && !supported" class="mb-5 text-sm text-amber-600 dark:text-amber-400">
@@ -30,7 +30,7 @@
       <div>
         <form
           v-if="enabled && supported && showAddForm"
-          class="mb-5 flex flex-col gap-3 rounded-lg border border-gray-200 p-4 dark:border-dark-700"
+          class="mb-5 flex flex-col gap-3 rounded-lg border border-border-button-default p-4"
           @submit.prevent="addPasskey"
         >
           <div class="grid gap-3 sm:grid-cols-2">
@@ -60,12 +60,12 @@
             </div>
           </div>
           <div class="flex justify-end gap-2">
-            <button type="button" class="btn btn-secondary" :disabled="busy" @click="cancelAdd">
+            <BoardButton type="button" variant="secondary" size="medium" :disabled="busy" @click="cancelAdd">
               {{ t('common.cancel') }}
-            </button>
-            <button type="submit" class="btn btn-primary" :disabled="busy || newPassword.length === 0">
+            </BoardButton>
+            <BoardButton type="submit" variant="primary" size="medium" :disabled="busy || newPassword.length === 0">
               {{ busy ? t('common.processing') : t('profile.passkey.continue') }}
-            </button>
+            </BoardButton>
           </div>
         </form>
 
@@ -75,12 +75,12 @@
 
         <div
           v-else-if="credentials.length === 0"
-          class="rounded-lg border border-dashed border-gray-200 px-4 py-8 text-center text-sm text-gray-500 dark:border-dark-700 dark:text-gray-400"
+          class="rounded-lg border border-dashed border-border-button-default px-4 py-8 text-center text-sm text-text-secondary"
         >
           {{ t('profile.passkey.empty') }}
         </div>
 
-        <div v-else class="divide-y divide-gray-100 dark:divide-dark-700">
+        <div v-else class="divide-y divide-border-button-default">
           <div
             v-for="credential in credentials"
             :key="credential.id"
@@ -89,7 +89,7 @@
             <div class="min-w-0">
               <div class="flex items-center gap-2">
                 <Icon name="key" size="md" class="shrink-0 text-primary-500" />
-                <p class="truncate font-medium text-gray-900 dark:text-white">
+                <p class="truncate font-medium text-text-primary">
                   {{ credential.name }}
                 </p>
                 <span
@@ -99,7 +99,7 @@
                   {{ t('profile.passkey.synced') }}
                 </span>
               </div>
-              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <p class="mt-1 text-xs text-text-secondary">
                 {{ t('profile.passkey.createdAt', { date: formatDate(credential.created_at) }) }}
                 <template v-if="credential.last_used_at">
                   · {{ t('profile.passkey.lastUsed', { date: formatDate(credential.last_used_at) }) }}
@@ -107,22 +107,22 @@
               </p>
             </div>
             <div class="flex shrink-0 gap-2">
-              <button
+              <BoardButton
                 type="button"
-                class="btn btn-secondary btn-sm"
+                variant="secondary" size="small"
                 :disabled="busy"
                 @click="renamePasskey(credential)"
               >
                 {{ t('common.edit') }}
-              </button>
-              <button
+              </BoardButton>
+              <BoardButton
                 type="button"
-                class="btn btn-ghost btn-sm text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-950/30"
+                class="text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-950/30" variant="ghost" size="small"
                 :disabled="busy"
                 @click="deletePasskey(credential)"
               >
                 {{ t('common.delete') }}
-              </button>
+              </BoardButton>
             </div>
           </div>
         </div>
@@ -132,14 +132,14 @@
     <!-- 删除确认：吊销凭据需验证当前密码，防止被窃会话静默移除 Passkey -->
     <div v-if="deleteTarget" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-full items-center justify-center p-4">
-        <div class="fixed inset-0 bg-black/50 transition-opacity" @click="closeDeleteDialog"></div>
+        <div class="fixed inset-0 bg-background-overlay/50 transition-opacity" @click="closeDeleteDialog"></div>
         <div
-          class="relative w-full max-w-md transform rounded-xl bg-white p-6 shadow-xl transition-all dark:bg-dark-800"
+          class="relative w-full max-w-md transform rounded-xl bg-background-primary-default p-6 shadow-xl transition-all"
         >
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <h3 class="text-lg font-semibold text-text-primary">
             {{ t('profile.passkey.deleteTitle') }}
           </h3>
-          <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          <p class="mt-2 text-sm text-text-secondary">
             {{ t('profile.passkey.deleteConfirm', { name: deleteTarget.name }) }}
           </p>
           <form class="mt-4 space-y-4" @submit.prevent="confirmDelete">
@@ -158,16 +158,16 @@
               />
             </div>
             <div class="flex justify-end gap-3">
-              <button type="button" class="btn btn-secondary" :disabled="busy" @click="closeDeleteDialog">
+              <BoardButton type="button" variant="secondary" size="medium" :disabled="busy" @click="closeDeleteDialog">
                 {{ t('common.cancel') }}
-              </button>
-              <button
+              </BoardButton>
+              <BoardButton
                 type="submit"
-                class="btn btn-danger"
+                variant="danger" size="medium"
                 :disabled="busy || deletePassword.length === 0"
               >
                 {{ busy ? t('common.processing') : t('common.delete') }}
-              </button>
+              </BoardButton>
             </div>
           </form>
         </div>
@@ -177,6 +177,7 @@
 </template>
 
 <script setup lang="ts">
+import BoardButton from '@/components/boardui/Button.vue'
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { passkeyAPI, type PasskeyCredentialSummary } from '@/api'

@@ -1,29 +1,29 @@
 <template>
   <div v-if="!isDesktopViewport" class="space-y-3">
     <template v-if="loading">
-      <div v-for="i in 5" :key="i" class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-700 dark:bg-dark-900">
+      <div v-for="i in 5" :key="i" class="rounded-lg border border-border-button-default bg-background-primary-default p-4 ">
         <div class="space-y-3">
           <div v-for="column in dataColumns" :key="column.key" class="flex justify-between">
-            <div class="h-4 w-20 animate-pulse rounded bg-gray-200 dark:bg-dark-700"></div>
-            <div class="h-4 w-32 animate-pulse rounded bg-gray-200 dark:bg-dark-700"></div>
+            <div class="h-4 w-20 animate-pulse rounded bg-background-tertiary-default "></div>
+            <div class="h-4 w-32 animate-pulse rounded bg-background-tertiary-default "></div>
           </div>
-          <div v-if="hasActionsColumn" class="border-t border-gray-200 pt-3 dark:border-dark-700">
-            <div class="h-8 w-full animate-pulse rounded bg-gray-200 dark:bg-dark-700"></div>
+          <div v-if="hasActionsColumn" class="border-t border-border-button-default pt-3 ">
+            <div class="h-8 w-full animate-pulse rounded bg-background-tertiary-default "></div>
           </div>
         </div>
       </div>
     </template>
 
     <template v-else-if="!data || data.length === 0">
-      <div class="rounded-lg border border-gray-200 bg-white p-12 text-center dark:border-dark-700 dark:bg-dark-900">
+      <div class="rounded-lg border border-border-button-default bg-background-primary-default p-12 text-center ">
         <slot name="empty">
           <div class="flex flex-col items-center">
             <Icon
               name="inbox"
               size="xl"
-              class="mb-4 h-12 w-12 text-gray-400 dark:text-dark-500"
+              class="mb-4 h-12 w-12 text-text-tertiary "
             />
-            <p class="text-lg font-medium text-gray-900 dark:text-gray-100">
+            <p class="text-title-3-medium text-text-primary ">
               {{ t('empty.noData') }}
             </p>
           </div>
@@ -33,11 +33,10 @@
 
     <template v-else>
       <div v-if="selectable" class="flex items-center justify-end gap-2 px-1">
-        <label class="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300">
-          <input
-            type="checkbox"
-            class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-800"
-            :checked="allVisibleSelected"
+        <label class="flex items-center gap-2 text-body-medium text-text-secondary ">
+          <BoardCheckbox
+            class="h-4 w-4 rounded border-border-button-hover text-text-accent focus:ring-border-focus-ring "
+            :model-value="allVisibleSelected"
             :indeterminate="someVisibleSelected"
             data-test="select-all-mobile"
             @change="toggleAllVisible(($event.target as HTMLInputElement).checked)"
@@ -48,19 +47,18 @@
       <div
         v-for="(row, index) in sortedData"
         :key="resolveRowKey(row, index)"
-        class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-700 dark:bg-dark-900"
+        class="rounded-lg border border-border-button-default bg-background-primary-default p-4 "
         :class="{
           'cursor-pointer': clickableRows,
-          'border-primary-300 bg-primary-50/40 dark:border-primary-700 dark:bg-primary-900/10': selectable && isRowSelected(row, index)
+          'border-border-focus-ring bg-background-accent-subtle/40 ': selectable && isRowSelected(row, index)
         }"
         @click="clickableRows && emit('rowClick', row)"
       >
         <div class="space-y-3">
           <div v-if="selectable" class="flex justify-end">
-            <input
-              type="checkbox"
-              class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-800"
-              :checked="isRowSelected(row, index)"
+            <BoardCheckbox
+              class="h-4 w-4 rounded border-border-button-hover text-text-accent focus:ring-border-focus-ring "
+              :model-value="isRowSelected(row, index)"
               :aria-label="getRowSelectionLabel(row, index)"
               data-test="select-row"
               @click.stop
@@ -73,16 +71,16 @@
             :data-field="column.key"
             class="flex min-w-0 items-start justify-between gap-4"
           >
-            <span class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-dark-400">
+            <span class="text-caption-1-medium uppercase tracking-wider text-text-secondary ">
               {{ column.label }}
             </span>
-            <div class="min-w-0 max-w-full text-right text-sm text-gray-900 dark:text-gray-100">
+            <div class="min-w-0 max-w-full text-right text-body-regular text-text-primary ">
               <slot :name="`cell-${column.key}`" :row="row" :value="row[column.key]" :expanded="actionsExpanded">
                 {{ column.formatter ? column.formatter(row[column.key], row) : row[column.key] }}
               </slot>
             </div>
           </div>
-          <div v-if="hasActionsColumn" class="border-t border-gray-200 pt-3 dark:border-dark-700">
+          <div v-if="hasActionsColumn" class="border-t border-border-button-default pt-3 ">
             <slot name="cell-actions" :row="row" :value="row['actions']" :expanded="actionsExpanded"></slot>
           </div>
         </div>
@@ -99,18 +97,17 @@
       'is-scrollable': isScrollable
     }"
   >
-    <table class="w-full min-w-max divide-y divide-gray-200 dark:divide-dark-700">
-      <thead class="table-header bg-gray-50 dark:bg-dark-800">
+    <BoardTable :size="size" :aria-busy="loading" class="min-w-max">
+      <thead class="table-header">
         <tr>
           <th
             v-if="selectable"
             scope="col"
-            class="sticky-header-cell w-11 min-w-11 px-3 py-3 text-center"
+            class="sticky-header-cell w-11 min-w-11 text-center"
           >
-            <input
-              type="checkbox"
-              class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-800"
-              :checked="allVisibleSelected"
+            <BoardCheckbox
+              class="h-4 w-4 rounded border-border-button-hover text-text-accent focus:ring-border-focus-ring "
+              :model-value="allVisibleSelected"
               :indeterminate="someVisibleSelected"
               :aria-label="t('common.selectAll')"
               data-test="select-all"
@@ -123,16 +120,16 @@
             scope="col"
             :aria-sort="column.sortable ? getColumnAriaSort(column.key) : undefined"
             :class="[
-              'sticky-header-cell py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-dark-400',
-              getAdaptivePaddingClass(),
-              { 'cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-700': column.sortable },
+              'sticky-header-cell',
+              { 'cursor-pointer': column.sortable },
               getStickyColumnClass(column, index),
               column.class
             ]"
-            @click="column.sortable && handleSort(column.key)"
+            @click="column.sortable && onSortHeaderClick($event, column.key)"
           >
             <div :class="['flex items-center space-x-1', getHeaderContentAlignmentClass(column)]">
               <slot
+                v-if="!column.sortable || $slots[`header-${column.key}`]"
                 :name="`header-${column.key}`"
                 :column="column"
                 :sort-key="sortKey"
@@ -140,42 +137,35 @@
               >
                 <span>{{ column.label }}</span>
               </slot>
-              <span
+              <button
                 v-if="column.sortable"
-                class="inline-flex h-5 w-4 flex-col items-center justify-center"
-                aria-hidden="true"
+                type="button"
+                :data-sort-key="column.key"
+                :aria-label="column.label"
+                class="inline-flex items-center gap-1 rounded text-inherit outline-none hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring"
               >
-                <svg
-                  class="h-2.5 w-2.5"
-                  :class="getSortIndicatorClass(column.key, 'asc')"
-                  fill="currentColor"
-                  viewBox="0 0 10 10"
-                >
-                  <path d="M5 2L1.5 6.5h7L5 2z" />
-                </svg>
-                <svg
-                  class="-mt-0.5 h-2.5 w-2.5"
-                  :class="getSortIndicatorClass(column.key, 'desc')"
-                  fill="currentColor"
-                  viewBox="0 0 10 10"
-                >
-                  <path d="M5 8L1.5 3.5h7L5 8z" />
-                </svg>
-              </span>
+                <span v-if="!$slots[`header-${column.key}`]">{{ column.label }}</span>
+                <span class="inline-flex h-4 w-3 flex-col items-center justify-center" aria-hidden="true">
+                  <svg class="h-2 w-2" :class="getSortIndicatorClass(column.key, 'asc')" fill="currentColor" viewBox="0 0 10 10">
+                    <path d="M5 2L1.5 6.5h7L5 2z" />
+                  </svg>
+                  <svg class="h-2 w-2" :class="getSortIndicatorClass(column.key, 'desc')" fill="currentColor" viewBox="0 0 10 10">
+                    <path d="M5 8L1.5 3.5h7L5 8z" />
+                  </svg>
+                </span>
+              </button>
             </div>
           </th>
         </tr>
       </thead>
-      <tbody class="table-body divide-y divide-gray-200 bg-white dark:divide-dark-700 dark:bg-dark-900">
+      <tbody class="table-body bg-background-primary-default">
         <!-- Loading skeleton -->
-        <tr v-if="loading" v-for="i in 5" :key="i">
-          <td v-if="selectable" class="w-11 min-w-11 px-3 py-4">
-            <div class="mx-auto h-4 w-4 animate-pulse rounded bg-gray-200 dark:bg-dark-700"></div>
+        <tr v-if="loading" v-for="i in 5" :key="i" aria-hidden="true" class="h-12">
+          <td v-if="selectable" class="w-11 min-w-11">
+            <BoardSkeleton width="1rem" class="mx-auto" />
           </td>
-          <td v-for="column in columns" :key="column.key" :class="['whitespace-nowrap py-4', getAdaptivePaddingClass()]">
-            <div class="animate-pulse">
-              <div class="h-4 w-3/4 rounded bg-gray-200 dark:bg-dark-700"></div>
-            </div>
+          <td v-for="column in columns" :key="column.key">
+            <BoardSkeleton width="75%" />
           </td>
         </tr>
 
@@ -183,16 +173,16 @@
         <tr v-else-if="!data || data.length === 0">
           <td
             :colspan="tableColumnCount"
-            :class="['py-12 text-center text-gray-500 dark:text-dark-400', getAdaptivePaddingClass()]"
+            class="py-12 text-center text-text-secondary"
           >
             <slot name="empty">
               <div class="flex flex-col items-center">
                 <Icon
                   name="inbox"
                   size="xl"
-                  class="mb-4 h-12 w-12 text-gray-400 dark:text-dark-500"
+                  class="mb-4 h-12 w-12 text-text-tertiary "
                 />
-                <p class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                <p class="text-title-3-medium text-text-primary ">
                   {{ t('empty.noData') }}
                 </p>
               </div>
@@ -213,18 +203,17 @@
             :data-row-id="resolveRowKey(item.row, item.index)"
             :data-index="item.index"
             :ref="item.measure ? measureElement : undefined"
-            class="hover:bg-gray-50 dark:hover:bg-dark-800"
-            :class="{
-              'cursor-pointer': clickableRows,
-              'bg-primary-50/40 dark:bg-primary-900/10': selectable && isRowSelected(item.row, item.index)
-            }"
+            :data-selected="selectable && isRowSelected(item.row, item.index) ? '' : undefined"
+            :class="clickableRows && 'cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-border-focus-ring'"
+            :tabindex="clickableRows ? 0 : undefined"
+            @keydown.enter.self.prevent="clickableRows && emit('rowClick', item.row)"
+            @keydown.space.self.prevent="clickableRows && emit('rowClick', item.row)"
             @click="clickableRows && emit('rowClick', item.row)"
           >
-            <td v-if="selectable" class="w-11 min-w-11 px-3 py-4 text-center">
-              <input
-                type="checkbox"
-                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-800"
-                :checked="isRowSelected(item.row, item.index)"
+            <td v-if="selectable" class="w-11 min-w-11 text-center">
+              <BoardCheckbox
+                class="h-4 w-4 rounded border-border-button-hover text-text-accent focus:ring-border-focus-ring "
+                :model-value="isRowSelected(item.row, item.index)"
                 :aria-label="getRowSelectionLabel(item.row, item.index)"
                 data-test="select-row"
                 @click.stop
@@ -235,8 +224,7 @@
               v-for="(column, colIndex) in columns"
               :key="column.key"
               :class="[
-                'whitespace-nowrap py-4 text-sm text-gray-900 dark:text-gray-100',
-                getAdaptivePaddingClass(),
+                'whitespace-nowrap',
                 getStickyColumnClass(column, colIndex),
                 column.class
               ]"
@@ -258,11 +246,14 @@
           </tr>
         </template>
       </tbody>
-    </table>
+    </BoardTable>
   </div>
 </template>
 
 <script setup lang="ts">
+import BoardTable from '@/components/boardui/Table.vue'
+import BoardSkeleton from '@/components/boardui/Skeleton.vue'
+import BoardCheckbox from '@/components/boardui/Checkbox.vue'
 import { computed, ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useVirtualizer, observeElementRect as observeElementRectDefault } from '@tanstack/vue-virtual'
 import { useI18n } from 'vue-i18n'
@@ -293,8 +284,8 @@ const actionsColumnNeedsExpanding = ref(false)
 // 仅在 observeElementRect 回调里写 scrollRect;一旦该回调读到 0 高度(加载瞬间 flex 未结算,或
 // 滚动中动态行高校正触发的 reflow),scrollRect 被钉死为 0 → calculateRange 返回 null → 整表空白。
 // 对策(见下方 virtualizer 选项):
-//   1) 覆写 observeElementRect,直接丢弃 height<=0 的读数,scrollRect 永不被钉成 0;
-//   2) initialRect 给一屏兜底高度,首个有效读数到来前也有行可渲染,绝不空白。
+// 1) 覆写 observeElementRect,直接丢弃 height<=0 的读数,scrollRect 永不被钉成 0;
+// 2) initialRect 给一屏兜底高度,首个有效读数到来前也有行可渲染,绝不空白。
 // 兜底高度:表格区域大致 = 视口高度 - 顶栏/外边距/筛选/分页 ≈ 320px
 const estimatedViewportHeight = () => {
   if (typeof window === 'undefined') return 600
@@ -431,7 +422,8 @@ onUnmounted(() => {
 
 interface Props {
   columns: Column[]
-  data: any[]
+  data?: any[]
+  size?: 'sm' | 'md'
   loading?: boolean
   stickyFirstColumn?: boolean
   stickyActionsColumn?: boolean
@@ -455,7 +447,7 @@ interface Props {
   serverSideSort?: boolean
   /** Emit 'rowClick' on row/card click and show pointer cursor (interactive cells should @click.stop) */
   clickableRows?: boolean
-  /** Estimated row height in px for the virtualizer (default 56) */
+  /** Estimated row height in px for the virtualizer (defaults to the table size) */
   estimateRowHeight?: number
   /** Number of rows to render beyond the visible area (default 5) */
   overscan?: number
@@ -474,6 +466,8 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  data: () => [],
+  size: 'sm',
   loading: false,
   stickyFirstColumn: true,
   stickyActionsColumn: true,
@@ -557,8 +551,8 @@ const applySortState = (state: PersistedSortState | null) => {
 
 const getSortIndicatorClass = (key: string, order: 'asc' | 'desc') => {
   return sortKey.value === key && sortOrder.value === order
-    ? 'text-primary-600 dark:text-primary-400'
-    : 'text-gray-300 transition-colors dark:text-dark-500'
+    ? 'text-text-accent '
+    : 'text-text-disabled transition-colors '
 }
 
 const getColumnAriaSort = (key: string) => {
@@ -653,7 +647,7 @@ watch(
 // 数据/列变化时重新检查滚动状态
 // 注意：不能监听 actionsExpanded，因为 checkActionsColumnWidth 会临时修改它，会导致无限循环
 watch(
-  [() => props.data.length, columnsSignature],
+  [() => props.data?.length, columnsSignature],
   async () => {
     await nextTick()
     checkScrollable()
@@ -667,6 +661,12 @@ watch(actionsExpanded, async () => {
   await nextTick()
   checkScrollable()
 })
+
+function onSortHeaderClick(event: MouseEvent, key: string) {
+  const control = (event.target as Element | null)?.closest('button, a, input, select, [role="button"]')
+  if (control && !control.hasAttribute('data-sort-key')) return
+  handleSort(key)
+}
 
 const handleSort = (key: string) => {
   let newOrder: 'asc' | 'desc' = 'asc'
@@ -766,7 +766,7 @@ const rowVirtualizer = useVirtualizer(computed(() => ({
     const row = sortedData.value?.[index]
     return row != null ? resolveRowKey(row, index) : index
   },
-  estimateSize: () => props.estimateRowHeight ?? 56,
+  estimateSize: () => props.estimateRowHeight ?? (props.size === 'sm' ? 48 : 64),
   overscan: props.overscan ?? 5,
   // 兜底高度:首个有效高度读数到来前,先按一屏渲染,避免空白帧
   initialRect: { width: 0, height: estimatedViewportHeight() },
@@ -880,22 +880,6 @@ const getStickyColumnClass = (column: Column, index: number) => {
   return classes.join(' ')
 }
 
-// 根据列数自适应调整内边距
-const getAdaptivePaddingClass = () => {
-  const columnCount = props.columns.length
-
-  // 列数越多，内边距越小
-  if (columnCount >= 10) {
-    return 'px-2' // 8px
-  } else if (columnCount >= 7) {
-    return 'px-3' // 12px
-  } else if (columnCount >= 5) {
-    return 'px-4' // 16px
-  } else {
-    return 'px-6' // 24px (原始值)
-  }
-}
-
 // Init + keep persisted sort state consistent with current columns
 const didInitSort = ref(false)
 
@@ -967,11 +951,11 @@ defineExpose({
   position: sticky;
   top: 0;
   z-index: 200;
-  background-color: rgb(249 250 251);
+  background-color: rgb(var(--boardui-background-secondary-default));
 }
 
 .dark .table-wrapper .table-header {
-  background-color: rgb(31 41 55);
+  background-color: rgb(var(--boardui-background-secondary-default));
 }
 
 /* 表体保持在表头下方 */
@@ -985,11 +969,11 @@ defineExpose({
   position: sticky;
   top: 0;
   z-index: 210; /* 必须高于所有表体内容 */
-  background-color: rgb(249 250 251);
+  background-color: rgb(var(--boardui-background-secondary-default));
 }
 
 .dark .sticky-header-cell {
-  background-color: rgb(31 41 55);
+  background-color: rgb(var(--boardui-background-secondary-default));
 }
 
 /* Sticky 列基础样式 */
@@ -1025,20 +1009,24 @@ defineExpose({
 
 /* 表体 sticky 列背景 */
 tbody .sticky-col {
-  background-color: white;
+  background-color: rgb(var(--boardui-background-primary-default));
 }
 
 .dark tbody .sticky-col {
-  background-color: rgb(17 24 39);
+  background-color: rgb(var(--boardui-background-primary-default));
 }
 
 /* hover 状态保持 */
 tbody tr:hover .sticky-col {
-  background-color: rgb(249 250 251);
+  background-color: rgb(var(--boardui-background-secondary-default));
 }
 
 .dark tbody tr:hover .sticky-col {
-  background-color: rgb(31 41 55);
+  background-color: rgb(var(--boardui-background-secondary-default));
+}
+
+tbody tr[data-selected] .sticky-col {
+  background-color: rgb(var(--boardui-background-secondary-default));
 }
 
 /* 阴影只在可滚动时显示 */

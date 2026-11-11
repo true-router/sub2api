@@ -19,6 +19,9 @@ declare module 'vue-router' {
      */
     requiresAdmin?: boolean
 
+    /** Use the BoardUI workspace for a signed-in account page. */
+    workspace?: 'account'
+
     /**
      * Page title for this route
      */

@@ -19,24 +19,24 @@
             v-if="filters.user_id"
             type="button"
             @click="clearUser"
-            class="absolute right-2 top-9 text-gray-400"
+            class="absolute right-2 top-9 text-text-tertiary"
             aria-label="Clear user filter"
           >
             ✕
           </button>
           <div
             v-if="showUserDropdown && (userResults.length > 0 || userKeyword)"
-            class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border bg-white shadow-lg dark:bg-dark-800"
+            class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border bg-background-primary-default shadow-lg "
           >
             <button
               v-for="u in userResults"
               :key="u.id"
               type="button"
               @click="selectUser(u)"
-              class="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-dark-700"
+              class="w-full px-4 py-2 text-left hover:bg-background-secondary-default "
             >
-              <span>{{ u.email }}<span v-if="u.deleted" class="ml-1 text-xs text-gray-400">（{{ t('admin.usage.userDeletedBadge') }}）</span></span>
-              <span class="ml-2 text-xs text-gray-400">#{{ u.id }}</span>
+              <span>{{ u.email }}<span v-if="u.deleted" class="ml-1 text-caption-1-regular text-text-tertiary">（{{ t('admin.usage.userDeletedBadge') }}）</span></span>
+              <span class="ml-2 text-caption-1-regular text-text-tertiary">#{{ u.id }}</span>
             </button>
           </div>
         </div>
@@ -56,24 +56,24 @@
             v-if="filters.api_key_id"
             type="button"
             @click="onClearApiKey"
-            class="absolute right-2 top-9 text-gray-400"
+            class="absolute right-2 top-9 text-text-tertiary"
             aria-label="Clear API key filter"
           >
             ✕
           </button>
           <div
             v-if="showApiKeyDropdown && apiKeyResults.length > 0"
-            class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border bg-white shadow-lg dark:bg-dark-800"
+            class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border bg-background-primary-default shadow-lg "
           >
             <button
               v-for="k in apiKeyResults"
               :key="k.id"
               type="button"
               @click="selectApiKey(k)"
-              class="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-dark-700"
+              class="w-full px-4 py-2 text-left hover:bg-background-secondary-default "
             >
               <span class="truncate">{{ k.name || `#${k.id}` }}</span>
-              <span class="ml-2 text-xs text-gray-400">#{{ k.id }}</span>
+              <span class="ml-2 text-caption-1-regular text-text-tertiary">#{{ k.id }}</span>
             </button>
           </div>
         </div>
@@ -99,24 +99,24 @@
             v-if="filters.account_id"
             type="button"
             @click="clearAccount"
-            class="absolute right-2 top-9 text-gray-400"
+            class="absolute right-2 top-9 text-text-tertiary"
             aria-label="Clear account filter"
           >
             ✕
           </button>
           <div
             v-if="showAccountDropdown && (accountResults.length > 0 || accountKeyword)"
-            class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border bg-white shadow-lg dark:bg-dark-800"
+            class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border bg-background-primary-default shadow-lg "
           >
             <button
               v-for="a in accountResults"
               :key="a.id"
               type="button"
               @click="selectAccount(a)"
-              class="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-dark-700"
+              class="w-full px-4 py-2 text-left hover:bg-background-secondary-default "
             >
               <span class="truncate">{{ a.name }}</span>
-              <span class="ml-2 text-xs text-gray-400">#{{ a.id }}</span>
+              <span class="ml-2 text-caption-1-regular text-text-tertiary">#{{ a.id }}</span>
             </button>
           </div>
         </div>
@@ -178,20 +178,20 @@
 
       <!-- Right: actions -->
       <div v-if="showActions" class="flex w-full flex-wrap items-center justify-end gap-3 sm:w-auto">
-        <button type="button" @click="$emit('refresh')" class="btn btn-secondary">
+        <BoardButton type="button" @click="$emit('refresh')" variant="secondary" size="medium">
           {{ t('common.refresh') }}
-        </button>
-        <button type="button" @click="$emit('reset')" class="btn btn-secondary">
+        </BoardButton>
+        <BoardButton type="button" @click="$emit('reset')" variant="secondary" size="medium">
           {{ t('common.reset') }}
-        </button>
+        </BoardButton>
         <slot name="after-reset" />
         <template v-if="mode === 'usage'">
-          <button type="button" @click="$emit('cleanup')" class="btn btn-danger">
+          <BoardButton type="button" @click="$emit('cleanup')" variant="danger" size="medium">
             {{ t('admin.usage.cleanup.button') }}
-          </button>
-          <button type="button" @click="$emit('export')" :disabled="exporting" class="btn btn-primary">
+          </BoardButton>
+          <BoardButton type="button" @click="$emit('export')" :disabled="exporting" variant="primary" size="medium">
             {{ t('usage.exportExcel') }}
-          </button>
+          </BoardButton>
         </template>
       </div>
     </div>
@@ -199,6 +199,7 @@
 </template>
 
 <script setup lang="ts">
+import BoardButton from '@/components/boardui/Button.vue'
 import { ref, onMounted, onUnmounted, toRef, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminAPI } from '@/api/admin'

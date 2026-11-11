@@ -1,9 +1,10 @@
 <template>
-  <header class="glass sticky top-0 z-30 border-b border-gray-200/50 dark:border-dark-700/50">
+  <header v-if="placement === 'top'" class="app-header glass sticky top-0 z-30 border-b border-gray-200/50 dark:border-dark-700/50">
     <div class="flex h-16 items-center justify-between gap-2 px-2 sm:px-4 md:px-6">
       <!-- Left: Mobile Menu Toggle + Page Title -->
       <div class="flex shrink-0 items-center gap-2 sm:gap-4">
         <button
+          data-testid="mobile-menu-toggle"
           @click="toggleMobileSidebar"
           class="btn-ghost btn-icon lg:hidden"
           :aria-label="t('common.toggleMenu')"
@@ -11,11 +12,12 @@
           <Icon name="menu" size="md" />
         </button>
 
-        <div class="hidden lg:block">
-          <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
+        <div class="min-w-0">
+          <BoardBreadcrumb v-if="route.meta.requiresAdmin" class="mb-1 hidden sm:block" :label="t('boardui.breadcrumb')" :items="[{ label: t('boardui.workspace'), to: '/admin/dashboard' }, { label: pageTitle }]" />
+          <h1 class="truncate text-lg font-semibold text-gray-900 dark:text-white">
             {{ pageTitle }}
           </h1>
-          <p v-if="pageDescription" class="text-xs text-gray-500 dark:text-dark-400">
+          <p v-if="pageDescription" class="hidden text-xs text-gray-500 dark:text-dark-400 sm:block">
             {{ pageDescription }}
           </p>
         </div>
@@ -23,6 +25,11 @@
 
       <!-- Right: Announcements + Docs + Language + Subscriptions + Balance + User Dropdown -->
       <div class="flex min-w-0 items-center gap-1 sm:gap-3">
+        <BoardButton v-if="route.meta.requiresAdmin" data-testid="command-trigger" variant="secondary" size="small" class="hidden gap-6 text-text-secondary sm:inline-flex" :aria-label="t('boardui.commandTitle')" @click="openCommandPalette">
+          <Icon name="search" size="sm" />
+          <span>{{ t('boardui.searchNavigation') }}</span>
+          <kbd class="rounded border border-border-button-default px-1 text-caption-2-medium">⌘K</kbd>
+        </BoardButton>
         <!-- Announcement Bell -->
         <AnnouncementBell v-if="user" />
 
@@ -110,7 +117,7 @@
             class="flex items-center gap-2 rounded-xl p-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-dark-800"
             :aria-label="t('common.userMenu')"
           >
-            <div class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-sm font-medium text-white shadow-sm">
+            <div class="header-avatar flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-sm font-medium text-white shadow-sm">
               <img
                 v-if="avatarUrl"
                 :src="avatarUrl"
@@ -249,9 +256,35 @@
       </div>
     </div>
   </header>
+
+  <section v-else-if="user" ref="dropdownRef" class="sidebar-global-controls relative" data-boardui="sidebar-account">
+    <button data-testid="sidebar-account-menu" type="button" :class="collapsed ? 'justify-center p-1.5' : 'p-3 lg:p-2.5'" :aria-label="t('common.userMenu')" :aria-expanded="dropdownOpen" class="flex w-full items-center gap-3 rounded-2xl bg-background-secondary-hover text-start outline-none transition-colors duration-150 hover:bg-background-tertiary-default focus-visible:ring-2 focus-visible:ring-border-focus-ring" @click="toggleDropdown" @keydown.esc="closeDropdown">
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-background-quaternary-default text-headline-medium text-text-secondary"><img v-if="avatarUrl" :src="avatarUrl" :alt="displayName" class="h-full w-full object-cover" /><span v-else>{{ userInitials }}</span></span>
+      <span v-if="!collapsed" class="flex min-w-0 flex-1 flex-col gap-0.5"><span class="truncate text-body-medium text-text-primary">{{ displayName }}</span><span class="truncate text-caption-1-regular text-text-secondary">{{ user.email }}</span><span data-testid="sidebar-available-balance" class="mt-1 flex items-center justify-between gap-2 text-caption-1-medium"><span class="text-text-secondary">{{ balanceAvailableText }}</span><span class="tabular-nums text-text-primary">{{ formatHeaderMoney(availableBalance) }}</span></span></span>
+      <Icon v-if="!collapsed" name="chevronDown" size="sm" class="shrink-0 text-foreground-icon-secondary" />
+    </button>
+    <Transition name="dropdown">
+      <div v-if="dropdownOpen" data-testid="sidebar-account-popover" class="absolute bottom-full left-0 z-50 mb-2 w-64 rounded-2xl border border-border-button-default bg-background-primary-default p-2 shadow-lg" @keydown.esc="closeDropdown">
+        <div class="flex flex-col gap-1 border-b border-separator-border px-3 py-3"><span class="text-body-medium text-text-primary">{{ displayName }}</span><span class="break-all text-caption-1-regular text-text-secondary">{{ user.email }}</span></div>
+        <div class="flex items-center justify-between gap-3 px-3 py-3 text-body-2-regular text-text-secondary"><span>{{ balanceAvailableText }}</span><span class="tabular-nums text-text-primary">{{ formatHeaderMoney(availableBalance) }}</span></div>
+        <div v-if="frozenBalance > 0" class="px-3 pb-2 text-caption-1-regular text-text-warning">{{ balanceFrozenLabel }}</div>
+        <p v-if="contactInfo" class="border-t border-separator-border px-3 py-2 text-caption-1-regular text-text-secondary">{{ t('common.contactSupport') }}: {{ contactInfo }}</p>
+        <SubscriptionProgressMini v-if="subscriptionFeatureEnabled" />
+        <RouterLink to="/profile" class="dropdown-item" @click="closeDropdown"><Icon name="user" size="sm" />{{ t('nav.profile') }}</RouterLink>
+        <RouterLink to="/keys" class="dropdown-item" @click="closeDropdown"><Icon name="key" size="sm" />{{ t('nav.apiKeys') }}</RouterLink>
+        <RouterLink v-if="modelPlazaEnabled" to="/model-plaza?embedded=1" class="dropdown-item" @click="closeDropdown"><Icon name="grid" size="sm" />{{ t('nav.modelPlaza') }}</RouterLink>
+        <a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer" class="dropdown-item"><Icon name="book" size="sm" />{{ t('nav.docs') }}</a>
+        <div class="my-1 flex items-center justify-between border-t border-separator-border px-3 pt-2 text-body-2-regular text-text-secondary"><span>{{ t('boardui.language') }}</span><LocaleSwitcher /></div>
+        <BoardButton v-if="showOnboardingButton" variant="ghost" class="w-full justify-start" @click="handleReplayGuide"><Icon name="infoCircle" size="sm" />{{ t('onboarding.restartTour') }}</BoardButton>
+        <BoardButton variant="ghost" class="mt-1 w-full justify-start text-text-error-primary" @click="handleLogout"><Icon name="arrowLeft" size="sm" />{{ t('nav.logout') }}</BoardButton>
+      </div>
+    </Transition>
+  </section>
 </template>
 
 <script setup lang="ts">
+import BoardButton from '@/components/boardui/Button.vue'
+import BoardBreadcrumb from '@/components/boardui/Breadcrumb.vue'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -266,9 +299,12 @@ import { FeatureFlags, isFeatureFlagEnabled } from '@/utils/featureFlags'
 import { resolveRouteMetaKeys } from '@/router/title'
 import { resolveSiteBillingMode } from '@/utils/siteBillingMode'
 
+withDefaults(defineProps<{ placement?: 'top' | 'sidebar'; collapsed?: boolean }>(), { placement: 'top' })
+
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
+function openCommandPalette() { window.dispatchEvent(new Event('boardui-open-command')) }
 const appStore = useAppStore()
 const authStore = useAuthStore()
 const adminSettingsStore = useAdminSettingsStore()

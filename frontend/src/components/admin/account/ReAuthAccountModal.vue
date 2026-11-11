@@ -8,30 +8,30 @@
     <div v-if="account" class="space-y-4">
       <!-- Account Info -->
       <div
-        class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-dark-600 dark:bg-dark-700"
+        class="rounded-lg border border-border-button-default bg-background-secondary-default p-4 "
       >
         <div class="flex items-center gap-3">
           <div
             :class="[
               'flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br',
               isOpenAILike
-                ? 'from-green-500 to-green-600'
+                ? 'from-background-success-default to-background-success-default'
                 : isGemini
-                  ? 'from-blue-500 to-blue-600'
+                  ? 'from-background-info-default to-background-info-default'
                   : isAntigravity
-                    ? 'from-purple-500 to-purple-600'
+                    ? 'from-background-feature-default to-background-feature-default'
                     : isGrok
-                      ? 'from-zinc-700 to-zinc-900'
-                      : 'from-orange-500 to-orange-600'
+                      ? 'from-background-overlay to-background-overlay'
+                      : 'from-background-warning-default to-background-warning-default'
             ]"
           >
-            <Icon name="sparkles" size="md" class="text-white" />
+            <Icon name="sparkles" size="md" class="text-text-white" />
           </div>
           <div>
-            <span class="block font-semibold text-gray-900 dark:text-white">{{
+            <span class="block font-semibold text-text-primary ">{{
               account.name
             }}</span>
-            <span class="text-sm text-gray-500 dark:text-gray-400">
+            <span class="text-body-regular text-text-secondary ">
               {{
                 isOpenAI
                   ? t('admin.accounts.openaiAccount')
@@ -57,9 +57,9 @@
               v-model="addMethod"
               type="radio"
               value="oauth"
-              class="mr-2 text-primary-600 focus:ring-primary-500"
+              class="mr-2 text-text-accent focus:ring-border-focus-ring"
             />
-            <span class="text-sm text-gray-700 dark:text-gray-300">{{
+            <span class="text-body-regular text-text-primary ">{{
               t('admin.accounts.types.oauth')
             }}</span>
           </label>
@@ -68,9 +68,9 @@
               v-model="addMethod"
               type="radio"
               value="setup-token"
-              class="mr-2 text-primary-600 focus:ring-primary-500"
+              class="mr-2 text-text-accent focus:ring-border-focus-ring"
             />
-            <span class="text-sm text-gray-700 dark:text-gray-300">{{
+            <span class="text-body-regular text-text-primary ">{{
               t('admin.accounts.setupTokenLongLived')
             }}</span>
           </label>
@@ -78,8 +78,8 @@
       </fieldset>
 
       <!-- Gemini OAuth Type Display (read-only) -->
-      <div v-if="isGemini" class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-dark-600 dark:bg-dark-700">
-        <div class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+      <div v-if="isGemini" class="rounded-lg border border-border-button-default bg-background-secondary-default p-4 ">
+        <div class="mb-2 text-body-medium text-text-primary ">
           {{ t('admin.accounts.oauth.gemini.oauthTypeLabel') }}
         </div>
         <div class="flex items-center gap-3">
@@ -87,10 +87,10 @@
             :class="[
               'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
               geminiOAuthType === 'google_one'
-                ? 'bg-purple-500 text-white'
+                ? 'bg-background-feature-default text-text-white'
                 : geminiOAuthType === 'code_assist'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-amber-500 text-white'
+                  ? 'bg-background-info-default text-text-white'
+                  : 'bg-background-warning-default text-text-white'
             ]"
           >
             <Icon v-if="geminiOAuthType === 'google_one'" name="user" size="sm" />
@@ -98,7 +98,7 @@
             <Icon v-else name="sparkles" size="sm" />
           </div>
           <div>
-            <span class="block text-sm font-medium text-gray-900 dark:text-white">
+            <span class="block text-body-medium text-text-primary ">
               {{
                 geminiOAuthType === 'google_one'
                   ? 'Google One'
@@ -107,7 +107,7 @@
                     : t('admin.accounts.gemini.oauthType.customTitle')
               }}
             </span>
-            <span class="text-xs text-gray-500 dark:text-gray-400">
+            <span class="text-caption-1-regular text-text-secondary ">
               {{
                 geminiOAuthType === 'google_one'
                   ? t('admin.accounts.gemini.oauthType.googleOneDesc')
@@ -148,14 +148,14 @@
 
     <template #footer>
       <div v-if="account" class="flex justify-between gap-3">
-        <button type="button" class="btn btn-secondary" @click="handleClose">
+        <BoardButton type="button" variant="secondary" size="medium" @click="handleClose">
           {{ t('common.cancel') }}
-        </button>
-        <button
+        </BoardButton>
+        <BoardButton
           v-if="isManualInputMethod"
           type="button"
           :disabled="!canExchangeCode"
-          class="btn btn-primary"
+          variant="primary" size="medium"
           @click="handleExchangeCode"
         >
           <svg
@@ -183,13 +183,14 @@
               ? t('admin.accounts.oauth.verifying')
               : t('admin.accounts.oauth.completeAuth')
           }}
-        </button>
+        </BoardButton>
       </div>
     </template>
   </BaseDialog>
 </template>
 
 <script setup lang="ts">
+import BoardButton from '@/components/boardui/Button.vue'
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'

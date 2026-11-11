@@ -5,62 +5,29 @@
     width="normal"
     @close="$emit('close')"
   >
-    <form id="create-user-form" @submit.prevent="submit" class="space-y-5">
-      <div>
-        <label class="input-label">{{ t('admin.users.email') }}</label>
-        <input v-model="form.email" type="email" required class="input" :placeholder="t('admin.users.enterEmail')" />
+    <form id="create-user-form" @submit.prevent="submit" class="space-y-5 lg:space-y-4">
+      <BoardInput v-model="form.email" type="email" required autofocus :label="t('admin.users.email')" :placeholder="t('admin.users.enterEmail')" autocomplete="off" />
+      <div class="flex items-end gap-2">
+        <BoardInput v-model="form.password" type="password" required revealable :label="t('admin.users.password')" :placeholder="t('admin.users.enterPassword')" autocomplete="new-password" />
+        <BoardButton type="button" @click="generateRandomPassword" class="px-3" variant="secondary" size="medium" :aria-label="t('admin.users.password')"><Icon name="refresh" size="md" /></BoardButton>
       </div>
-      <div>
-        <label class="input-label">{{ t('admin.users.password') }}</label>
-        <div class="flex gap-2">
-          <div class="relative flex-1">
-            <input v-model="form.password" type="text" required class="input pr-10" :placeholder="t('admin.users.enterPassword')" />
-          </div>
-          <button type="button" @click="generateRandomPassword" class="btn btn-secondary px-3">
-            <Icon name="refresh" size="md" />
-          </button>
-        </div>
-      </div>
-      <div>
-        <label class="input-label">{{ t('admin.users.username') }}</label>
-        <input v-model="form.username" type="text" class="input" :placeholder="t('admin.users.enterUsername')" />
-      </div>
+      <BoardInput v-model="form.username" :label="t('admin.users.username')" :placeholder="t('admin.users.enterUsername')" />
       <div>
         <label class="input-label">{{ t('admin.users.form.roleLabel') }}</label>
-        <select v-model="form.role" class="input">
-          <option value="user">{{ t('admin.users.roles.user') }}</option>
-          <option value="admin">{{ t('admin.users.roles.admin') }}</option>
-        </select>
+        <Select :model-value="form.role" :aria-label="t('admin.users.form.roleLabel')" :options="[{ value: 'user', label: t('admin.users.roles.user') }, { value: 'admin', label: t('admin.users.roles.admin') }]" @update:model-value="form.role = $event as 'user' | 'admin'" />
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label class="input-label">{{ t('admin.users.columns.balance') }}</label>
-          <input v-model="form.balance" type="number" step="any" class="input" />
-        </div>
-        <div>
-          <label class="input-label">{{ t('admin.users.columns.concurrency') }}</label>
-          <input v-model.number="form.concurrency" type="number" class="input" />
-        </div>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <BoardNumberField :model-value="form.balance" @update:model-value="form.balance = String($event)" :label="t('admin.users.columns.balance')" step="any" />
+        <BoardNumberField :model-value="form.concurrency" @update:model-value="form.concurrency = Number($event)" :label="t('admin.users.columns.concurrency')" :min="1" :step="1" />
       </div>
-      <div>
-        <label class="input-label">{{ t('admin.users.form.rpmLimit') }}</label>
-        <input
-          v-model.number="form.rpm_limit"
-          type="number"
-          min="0"
-          step="1"
-          class="input"
-          :placeholder="t('admin.users.form.rpmLimitPlaceholder')"
-        />
-        <p class="input-hint">{{ t('admin.users.form.rpmLimitHint') }}</p>
-      </div>
+      <BoardNumberField :model-value="form.rpm_limit" @update:model-value="form.rpm_limit = Number($event)" :label="t('admin.users.form.rpmLimit')" :min="0" :step="1" :hint="t('admin.users.form.rpmLimitHint')" />
     </form>
     <template #footer>
       <div class="flex justify-end gap-3">
-        <button @click="$emit('close')" type="button" class="btn btn-secondary">{{ t('common.cancel') }}</button>
-        <button type="submit" form="create-user-form" :disabled="loading" class="btn btn-primary">
+        <BoardButton @click="$emit('close')" type="button" variant="secondary" size="medium">{{ t('common.cancel') }}</BoardButton>
+        <BoardButton type="submit" form="create-user-form" :disabled="loading" variant="primary" size="medium">
           {{ loading ? t('admin.users.creating') : t('common.create') }}
-        </button>
+        </BoardButton>
       </div>
     </template>
   </BaseDialog>
@@ -70,6 +37,10 @@
 </template>
 
 <script setup lang="ts">
+import BoardButton from '@/components/boardui/Button.vue'
+import BoardInput from '@/components/boardui/Input.vue'
+import Select from '@/components/common/Select.vue'
+import BoardNumberField from '@/components/boardui/NumberField.vue'
 import { reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'; import { adminAPI } from '@/api/admin'
 import { useAppStore } from '@/stores/app'

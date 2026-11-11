@@ -10,7 +10,7 @@
     @close="noop"
   >
     <div class="space-y-5">
-      <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+      <div class="rounded-lg border border-text-warning bg-background-warning-subtle p-4 text-body-regular text-text-warning ">
         <div class="flex gap-3">
           <Icon name="exclamationTriangle" size="md" class="mt-0.5 flex-shrink-0" />
           <div class="space-y-2">
@@ -21,16 +21,16 @@
       </div>
 
       <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_240px]">
-        <section class="min-h-[320px] max-h-[46vh] overflow-y-auto rounded-lg border border-gray-200 bg-white p-5 dark:border-dark-700 dark:bg-dark-900">
+        <section class="min-h-[320px] max-h-[46vh] overflow-y-auto rounded-lg border border-border-button-default bg-background-primary-default p-5 ">
           <div class="legal-document-content" v-html="renderedDocument"></div>
         </section>
 
-        <aside class="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm dark:border-dark-700 dark:bg-dark-900/60">
+        <aside class="space-y-3 rounded-lg border border-border-button-default bg-background-secondary-default p-4 text-body-regular ">
           <div>
-            <p class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-dark-400">
+            <p class="text-caption-1-medium uppercase tracking-wide text-text-secondary ">
               {{ t('adminCompliance.version') }}
             </p>
-            <p class="mt-1 break-all font-mono text-gray-900 dark:text-white">
+            <p class="mt-1 break-all font-mono text-text-primary ">
               {{ complianceStore.status?.version || 'v2026.06.10' }}
             </p>
           </div>
@@ -38,22 +38,22 @@
             :href="documentUrl"
             target="_blank"
             rel="noopener noreferrer"
-            class="inline-flex items-center gap-2 text-primary-600 underline underline-offset-4 hover:text-primary-700 dark:text-primary-300 dark:hover:text-primary-200"
+            class="inline-flex items-center gap-2 text-text-accent underline underline-offset-4 hover:text-text-accent "
           >
             <Icon name="externalLink" size="sm" />
             {{ t('adminCompliance.openDocument') }}
           </a>
-          <p class="leading-6 text-gray-600 dark:text-dark-300">
+          <p class="leading-6 text-text-secondary ">
             {{ t('adminCompliance.documentSource') }}
           </p>
         </aside>
       </div>
 
       <div class="space-y-3">
-        <label for="admin-compliance-phrase" class="block text-sm font-semibold text-gray-900 dark:text-white">
+        <label for="admin-compliance-phrase" class="block text-body-semibold text-text-primary ">
           {{ t('adminCompliance.inputLabel') }}
         </label>
-        <div class="rounded-lg bg-gray-100 px-3 py-2 font-mono text-sm text-gray-900 dark:bg-dark-800 dark:text-dark-100">
+        <div class="rounded-lg bg-background-secondary-default px-3 py-2 font-mono text-body-regular text-text-primary ">
           {{ expectedPhrase }}
         </div>
         <Input
@@ -67,36 +67,37 @@
         />
       </div>
 
-      <p class="text-xs leading-5 text-gray-500 dark:text-dark-400">
+      <p class="text-caption-1-regular leading-5 text-text-secondary ">
         {{ t('adminCompliance.legalNote') }}
       </p>
     </div>
 
     <template #footer>
       <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
-        <button
+        <BoardButton
           type="button"
-          class="btn btn-secondary"
+          variant="secondary" size="medium"
           :disabled="complianceStore.submitting"
           @click="logout"
         >
           {{ t('adminCompliance.logout') }}
-        </button>
-        <button
+        </BoardButton>
+        <BoardButton
           type="button"
-          class="btn btn-primary"
+          variant="primary" size="medium"
           :disabled="!canSubmit || complianceStore.submitting"
           @click="submit"
         >
           <span v-if="complianceStore.submitting">{{ t('common.submitting') }}</span>
           <span v-else>{{ t('adminCompliance.accept') }}</span>
-        </button>
+        </BoardButton>
       </div>
     </template>
   </BaseDialog>
 </template>
 
 <script setup lang="ts">
+import BoardButton from '@/components/boardui/Button.vue'
 import { computed, ref, watch } from 'vue'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
@@ -191,20 +192,20 @@ async function logout(): Promise<void> {
 }
 
 .legal-document-content :deep(h1) {
-  @apply mb-4 text-2xl font-bold text-gray-950 dark:text-white;
+  @apply mb-4 text-title-1-bold text-text-primary ;
 }
 
 .legal-document-content :deep(h2) {
-  @apply mb-3 mt-6 text-xl font-semibold text-gray-900 dark:text-white;
+  @apply mb-3 mt-6 text-title-2-semibold text-text-primary ;
 }
 
 .legal-document-content :deep(p) {
-  @apply mb-4 text-sm text-gray-700 dark:text-dark-200;
+  @apply mb-4 text-body-regular text-text-primary ;
 }
 
 .legal-document-content :deep(ul),
 .legal-document-content :deep(ol) {
-  @apply mb-4 pl-6 text-sm text-gray-700 dark:text-dark-200;
+  @apply mb-4 pl-6 text-body-regular text-text-primary ;
 }
 
 .legal-document-content :deep(ul) {
@@ -220,6 +221,6 @@ async function logout(): Promise<void> {
 }
 
 .legal-document-content :deep(strong) {
-  @apply font-semibold text-gray-950 dark:text-white;
+  @apply font-semibold text-text-primary ;
 }
 </style>

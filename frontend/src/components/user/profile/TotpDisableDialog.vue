@@ -1,9 +1,9 @@
 <template>
   <div class="fixed inset-0 z-50 overflow-y-auto" @click.self="$emit('close')">
     <div class="flex min-h-full items-center justify-center p-4">
-      <div class="fixed inset-0 bg-black/50 transition-opacity" @click="$emit('close')"></div>
+      <div class="fixed inset-0 bg-background-overlay/50 transition-opacity" @click="$emit('close')"></div>
 
-      <div class="relative w-full max-w-md transform rounded-xl bg-white p-6 shadow-xl transition-all dark:bg-dark-800">
+      <div class="relative w-full max-w-md transform rounded-xl bg-background-primary-default p-6 shadow-xl transition-all">
         <!-- Header -->
         <div class="mb-6">
           <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
@@ -11,10 +11,10 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
             </svg>
           </div>
-          <h3 class="mt-4 text-center text-xl font-semibold text-gray-900 dark:text-white">
+          <h3 class="mt-4 text-center text-xl font-semibold text-text-primary">
             {{ t('profile.totp.disableTitle') }}
           </h3>
-          <p class="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">
+          <p class="mt-2 text-center text-sm text-text-secondary">
             {{ t('profile.totp.disableWarning') }}
           </p>
         </div>
@@ -37,14 +37,14 @@
                 class="input flex-1"
                 :placeholder="t('profile.totp.enterEmailCode')"
               />
-              <button
+              <BoardButton
                 type="button"
-                class="btn btn-secondary whitespace-nowrap"
+                class="whitespace-nowrap" variant="secondary" size="medium"
                 :disabled="sendingCode || codeCooldown > 0"
                 @click="handleSendCode"
               >
                 {{ codeCooldown > 0 ? `${codeCooldown}s` : (sendingCode ? t('common.sending') : t('profile.totp.sendCode')) }}
-              </button>
+              </BoardButton>
             </div>
           </div>
 
@@ -65,16 +65,16 @@
 
           <!-- Actions -->
           <div class="flex justify-end gap-3 pt-4">
-            <button type="button" class="btn btn-secondary" @click="$emit('close')">
+            <BoardButton type="button" variant="secondary" size="medium" @click="$emit('close')">
               {{ t('common.cancel') }}
-            </button>
-            <button
+            </BoardButton>
+            <BoardButton
               type="submit"
-              class="btn btn-danger"
+              variant="danger" size="medium"
               :disabled="loading || !canSubmit"
             >
               {{ loading ? t('common.processing') : t('profile.totp.confirmDisable') }}
-            </button>
+            </BoardButton>
           </div>
         </form>
       </div>
@@ -83,6 +83,7 @@
 </template>
 
 <script setup lang="ts">
+import BoardButton from '@/components/boardui/Button.vue'
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'

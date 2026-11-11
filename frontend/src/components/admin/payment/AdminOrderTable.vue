@@ -30,36 +30,36 @@
           @change="emitFiltersChanged"
         />
         <div class="flex flex-1 flex-wrap items-center justify-end gap-2">
-          <button
+          <BoardButton type="submit"
             @click="emit('refresh')"
             :disabled="loading"
-            class="btn btn-secondary"
+            variant="secondary" size="medium"
             :title="t('common.refresh')"
           >
             <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
-          </button>
+          </BoardButton>
         </div>
       </div>
     </div>
 
     <DataTable :columns="columns" :data="orders" :loading="loading">
       <template #cell-id="{ value }">
-        <span class="font-mono text-sm">#{{ value }}</span>
+        <span class="font-mono text-body-regular">#{{ value }}</span>
       </template>
 
       <template #cell-user_id="{ value }">
-        <span class="text-sm text-gray-600 dark:text-gray-400">#{{ value }}</span>
+        <span class="text-body-regular text-text-secondary ">#{{ value }}</span>
       </template>
 
       <template #cell-pay_amount="{ value, row }">
-        <div class="text-sm">
-          <span class="font-medium text-gray-900 dark:text-white">{{ paymentAmountSymbol(row) }}{{ value.toFixed(2) }}</span>
-          <span v-if="row.fee_rate > 0" class="ml-1 text-xs text-gray-400" :title="t('payment.orders.fee') + ': ' + row.fee_rate + '%'">
+        <div class="text-body-regular">
+          <span class="font-medium text-text-primary ">{{ paymentAmountSymbol(row) }}{{ value.toFixed(2) }}</span>
+          <span v-if="row.fee_rate > 0" class="ml-1 text-caption-1-regular text-text-tertiary" :title="t('payment.orders.fee') + ': ' + row.fee_rate + '%'">
             ({{ row.fee_rate }}%)
           </span>
-          <div v-if="row.amount !== row.pay_amount || (row.bonus_amount ?? 0) > 0" class="text-xs text-gray-500">
+          <div v-if="row.amount !== row.pay_amount || (row.bonus_amount ?? 0) > 0" class="text-caption-1-regular text-text-secondary">
             {{ t('payment.orders.creditedAmount') }}: {{ creditedAmountSymbol }}{{ row.amount.toFixed(2) }}
-            <span v-if="(row.bonus_amount ?? 0) > 0" class="ml-1 text-amber-600 dark:text-amber-400">
+            <span v-if="(row.bonus_amount ?? 0) > 0" class="ml-1 text-text-warning ">
               ({{ t('payment.orders.bonusIncluded', { amount: creditedAmountSymbol + (row.bonus_amount ?? 0).toFixed(2) }) }})
             </span>
           </div>
@@ -67,7 +67,7 @@
       </template>
 
       <template #cell-payment_type="{ value }">
-        <span class="text-sm text-gray-700 dark:text-gray-300">
+        <span class="text-body-regular text-text-primary ">
           {{ t('payment.methods.' + value, value) }}
         </span>
       </template>
@@ -79,47 +79,47 @@
       </template>
 
       <template #cell-order_type="{ value }">
-        <span class="text-sm text-gray-700 dark:text-gray-300">
+        <span class="text-body-regular text-text-primary ">
           {{ t('payment.admin.' + value + 'Order', value) }}
         </span>
       </template>
 
       <template #cell-created_at="{ value }">
-        <span class="text-xs text-gray-500 dark:text-gray-400">{{ formatDateTime(value) }}</span>
+        <span class="text-caption-1-regular text-text-secondary ">{{ formatDateTime(value) }}</span>
       </template>
 
       <template #cell-actions="{ row }">
         <div class="flex items-center gap-2">
           <button
             @click="emit('detail', row)"
-            class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 dark:hover:bg-gray-800/50 dark:hover:text-gray-300"
+            class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-text-secondary transition-colors hover:bg-background-secondary-default hover:text-text-primary "
           >
             <Icon name="eye" size="sm" />
-            <span class="text-xs">{{ t('common.view') }}</span>
+            <span class="text-caption-1-regular">{{ t('common.view') }}</span>
           </button>
           <button
             v-if="row.status === 'PENDING'"
             @click="emit('cancel', row)"
-            class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-yellow-50 hover:text-yellow-600 dark:hover:bg-yellow-900/20 dark:hover:text-yellow-400"
+            class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-text-secondary transition-colors hover:bg-background-warning-subtle hover:text-text-warning "
           >
             <Icon name="x" size="sm" />
-            <span class="text-xs">{{ t('payment.orders.cancel') }}</span>
+            <span class="text-caption-1-regular">{{ t('payment.orders.cancel') }}</span>
           </button>
           <button
             v-if="row.status === 'FAILED'"
             @click="emit('retry', row)"
-            class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+            class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-text-secondary transition-colors hover:bg-background-info-subtle hover:text-text-info "
           >
             <Icon name="refresh" size="sm" />
-            <span class="text-xs">{{ t('payment.admin.retry') }}</span>
+            <span class="text-caption-1-regular">{{ t('payment.admin.retry') }}</span>
           </button>
           <button
             v-if="canRefundRow(row)"
             @click="emit('refund', row)"
-            class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+            class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-text-secondary transition-colors hover:bg-background-error-subtle hover:text-text-error-primary "
           >
             <Icon name="dollar" size="sm" />
-            <span class="text-xs">{{ t('payment.admin.refund') }}</span>
+            <span class="text-caption-1-regular">{{ t('payment.admin.refund') }}</span>
           </button>
         </div>
       </template>
@@ -137,6 +137,7 @@
 </template>
 
 <script setup lang="ts">
+import BoardButton from '@/components/boardui/Button.vue'
 import { ref, reactive, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { PaymentOrder } from '@/types/payment'

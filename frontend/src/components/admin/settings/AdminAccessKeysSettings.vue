@@ -1,85 +1,85 @@
 <template>
   <section class="card space-y-4 p-6" :aria-label="t('adminAccessKeys.title')">
-    <h2 class="text-lg font-semibold">{{ t('adminAccessKeys.title') }}</h2>
-    <p class="text-sm text-gray-500">{{ t('adminAccessKeys.authorizationHint') }}</p>
-    <p class="rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">{{ t('adminAccessKeys.sharedAccountWarning') }}</p>
-    <p v-if="error" role="alert" class="text-sm text-red-600">{{ error }}</p>
-    <p v-if="notice" role="status" class="text-sm text-green-600">{{ notice }}</p>
-    <div v-if="secret" class="space-y-2 rounded-lg border border-amber-300 p-4">
+    <h2 class="text-title-3-semibold">{{ t('adminAccessKeys.title') }}</h2>
+    <p class="text-body-regular text-text-secondary">{{ t('adminAccessKeys.authorizationHint') }}</p>
+    <p class="rounded-lg bg-background-warning-subtle p-3 text-body-regular text-text-warning ">{{ t('adminAccessKeys.sharedAccountWarning') }}</p>
+    <p v-if="error" role="alert" class="text-body-regular text-text-error-primary">{{ error }}</p>
+    <p v-if="notice" role="status" class="text-body-regular text-text-success">{{ notice }}</p>
+    <div v-if="secret" class="space-y-2 rounded-lg border border-text-warning p-4">
       <p>{{ t('adminAccessKeys.secretWarning') }}</p>
       <code class="block select-all break-all">{{ secret }}</code>
-      <button type="button" class="btn btn-secondary btn-sm" @click="copySecret">{{ t('adminAccessKeys.copySecret') }}</button>
-      <button type="button" data-test="dismiss-secret" class="btn btn-secondary btn-sm" @click="secret = ''">{{ t('adminAccessKeys.dismissSecret') }}</button>
+      <BoardButton type="button" variant="secondary" size="small" @click="copySecret">{{ t('adminAccessKeys.copySecret') }}</BoardButton>
+      <BoardButton type="button" data-test="dismiss-secret" variant="secondary" size="small" @click="secret = ''">{{ t('adminAccessKeys.dismissSecret') }}</BoardButton>
     </div>
     <div class="flex gap-2">
-      <button type="button" data-test="create" class="btn btn-primary" :disabled="busy || loading || !loaded" @click="edit()">{{ t('adminAccessKeys.create') }}</button>
-      <button type="button" class="btn btn-secondary" :disabled="busy || loading" @click="load">{{ t('adminAccessKeys.refresh') }}</button>
+      <BoardButton type="button" data-test="create" variant="primary" size="medium" :disabled="busy || loading || !loaded" @click="edit()">{{ t('adminAccessKeys.create') }}</BoardButton>
+      <BoardButton type="button" variant="secondary" size="medium" :disabled="busy || loading" @click="load">{{ t('adminAccessKeys.refresh') }}</BoardButton>
     </div>
     <p v-if="loading">{{ t('adminAccessKeys.loading') }}</p>
-    <div v-for="item in items" :key="item.id" class="space-y-2 rounded-lg border border-gray-200 p-4 dark:border-dark-700">
+    <div v-for="item in items" :key="item.id" class="space-y-2 rounded-lg border border-border-button-default p-4 ">
       <p class="font-medium">{{ item.name }} <code>{{ item.key_prefix }}…</code> · {{ status(item) }}</p>
-      <p class="text-sm text-gray-500">{{ item.description || t('adminAccessKeys.noDescription') }} · {{ t('adminAccessKeys.expires', { value: item.expires_at || t('adminAccessKeys.never') }) }}</p>
-      <p class="text-sm text-gray-500">{{ t('adminAccessKeys.lastUsed', { value: item.last_used_at || t('adminAccessKeys.neverUsed') }) }} {{ item.last_used_ip }}</p>
-      <div class="space-y-1 text-sm text-gray-500" :aria-label="t('adminAccessKeys.summaryLabel')">
-        <p v-if="item.policy.full_access" class="font-semibold text-red-600">{{ t('adminAccessKeys.fullAccessLabel') }}</p>
+      <p class="text-body-regular text-text-secondary">{{ item.description || t('adminAccessKeys.noDescription') }} · {{ t('adminAccessKeys.expires', { value: item.expires_at || t('adminAccessKeys.never') }) }}</p>
+      <p class="text-body-regular text-text-secondary">{{ t('adminAccessKeys.lastUsed', { value: item.last_used_at || t('adminAccessKeys.neverUsed') }) }} {{ item.last_used_ip }}</p>
+      <div class="space-y-1 text-body-regular text-text-secondary" :aria-label="t('adminAccessKeys.summaryLabel')">
+        <p v-if="item.policy.full_access" class="font-semibold text-text-error-primary">{{ t('adminAccessKeys.fullAccessLabel') }}</p>
         <p>{{ t('adminAccessKeys.summary', { globals: item.policy.global_permissions.length, rules: item.policy.rules.length }) }}</p>
         <p v-for="(rule, index) in item.policy.rules" :key="index">{{ t('adminAccessKeys.ruleLine', { index: index + 1, summary: ruleSummary(rule) }) }}</p>
       </div>
       <div v-if="!item.revoked_at" class="flex flex-wrap gap-2">
-        <button type="button" class="btn btn-secondary btn-sm" :disabled="busy" @click="edit(item)">{{ t('adminAccessKeys.editPermissions') }}</button>
-        <button type="button" class="btn btn-secondary btn-sm" :disabled="busy" @click="toggle(item)">{{ item.enabled ? t('adminAccessKeys.disable') : t('adminAccessKeys.enable') }}</button>
-        <button type="button" class="btn btn-secondary btn-sm" :disabled="busy" @click="rotateKey(item)">{{ t('adminAccessKeys.rotate') }}</button>
-        <button type="button" class="btn btn-secondary btn-sm text-red-600" :disabled="busy" @click="revokeKey(item)">{{ t('adminAccessKeys.revoke') }}</button>
+        <BoardButton type="button" variant="secondary" size="small" :disabled="busy" @click="edit(item)">{{ t('adminAccessKeys.editPermissions') }}</BoardButton>
+        <BoardButton type="button" variant="secondary" size="small" :disabled="busy" @click="toggle(item)">{{ item.enabled ? t('adminAccessKeys.disable') : t('adminAccessKeys.enable') }}</BoardButton>
+        <BoardButton type="button" variant="secondary" size="small" :disabled="busy" @click="rotateKey(item)">{{ t('adminAccessKeys.rotate') }}</BoardButton>
+        <BoardButton type="button" class="text-text-error-primary" variant="secondary" size="small" :disabled="busy" @click="revokeKey(item)">{{ t('adminAccessKeys.revoke') }}</BoardButton>
       </div>
       <div v-else>
-        <button type="button" class="btn btn-secondary btn-sm text-red-600" :disabled="busy" @click="deleteRecord(item)">{{ t('adminAccessKeys.deleteRecord') }}</button>
+        <BoardButton type="button" class="text-text-error-primary" variant="secondary" size="small" :disabled="busy" @click="deleteRecord(item)">{{ t('adminAccessKeys.deleteRecord') }}</BoardButton>
       </div>
     </div>
-    <div v-if="draft" class="space-y-4 rounded-lg border border-gray-200 p-4 dark:border-dark-700">
+    <div v-if="draft" class="space-y-4 rounded-lg border border-border-button-default p-4 ">
       <h3 class="font-semibold">{{ editingID ? t('adminAccessKeys.editTitle') : t('adminAccessKeys.createTitle') }}</h3>
       <label class="block">{{ t('adminAccessKeys.name') }}<input v-model="draft.name" data-test="name" class="input mt-1" maxlength="100" /></label>
       <label class="block">{{ t('adminAccessKeys.description') }}<textarea v-model="draft.description" class="input mt-1" maxlength="1000" /></label>
       <label class="block">{{ t('adminAccessKeys.expiration') }}<input v-model="expiration" type="datetime-local" class="input mt-1" /></label>
       <label class="block">{{ t('adminAccessKeys.allowedIps') }}<textarea v-model="ips" class="input mt-1" placeholder="192.0.2.1&#10;2001:db8::/32" /></label>
       <label class="flex gap-2"><input v-model="draft.enabled" type="checkbox" />{{ t('adminAccessKeys.enabled') }}</label>
-      <div class="space-y-2 rounded-lg border border-red-300 p-3">
+      <div class="space-y-2 rounded-lg border border-border-error-default p-3">
         <label class="flex gap-2"><input data-test="full-access" type="checkbox" :checked="draft.policy.full_access || fullAccessPrompt" :disabled="busy" @change="changeFullAccess" />{{ t('adminAccessKeys.fullAccessLabel') }}</label>
-        <p class="text-sm text-red-700 dark:text-red-300">{{ t('adminAccessKeys.fullAccessWarning') }}</p>
-        <p v-if="draft.policy.full_access" class="text-sm">{{ t('adminAccessKeys.rulesSuspended') }}</p>
+        <p class="text-body-regular text-text-error-primary ">{{ t('adminAccessKeys.fullAccessWarning') }}</p>
+        <p v-if="draft.policy.full_access" class="text-body-regular">{{ t('adminAccessKeys.rulesSuspended') }}</p>
       </div>
       <fieldset :disabled="busy || !!draft.policy.full_access" class="space-y-4">
-      <fieldset v-for="(rule, index) in draft.policy.rules" :key="index" class="space-y-3 rounded-lg border border-gray-200 p-3 dark:border-dark-700">
+      <fieldset v-for="(rule, index) in draft.policy.rules" :key="index" class="space-y-3 rounded-lg border border-border-button-default p-3 ">
         <legend>{{ t('adminAccessKeys.ruleLegend', { index: index + 1 }) }}</legend>
         <label class="flex gap-2"><input v-model="rule.all_groups" type="checkbox" />{{ t('adminAccessKeys.allGroups') }}</label>
         <label class="block">{{ t('adminAccessKeys.groups') }}<select v-model="rule.group_ids" :data-test="`groups-${index}`" multiple class="input mt-1" :disabled="rule.all_groups"><option v-for="group in groups" :key="group.id" :value="group.id">{{ group.name }}</option></select></label>
         <label class="flex gap-2"><input v-model="rule.include_ungrouped" type="checkbox" />{{ t('adminAccessKeys.includeUngrouped') }}</label>
         <div>{{ t('adminAccessKeys.accountTypes') }}<div class="flex flex-wrap gap-4"><label v-for="type in accountTypes" :key="type" class="flex gap-2"><input v-model="rule.account_types" type="checkbox" :value="type" />{{ type }}</label></div></div>
         <label class="block">{{ t('adminAccessKeys.platforms') }}<select v-model="rule.platforms" multiple class="input mt-1"><option v-for="platform in CONCRETE_PLATFORM_OPTIONS" :key="platform.value" :value="platform.value">{{ platform.label }}</option></select></label>
-        <div>{{ t('adminAccessKeys.accountOperations') }}<div class="grid gap-2 sm:grid-cols-2"><label v-for="permission in accountPermissions" :key="permission.id" class="flex gap-2"><input v-model="rule.permissions" type="checkbox" :value="permission.id" />{{ permissionLabel(permission) }} <span class="text-xs text-gray-500">{{ permission.id }}</span></label></div></div>
-        <div v-if="groupPermissions.length" class="space-y-2 rounded border border-amber-300 p-3">
+        <div>{{ t('adminAccessKeys.accountOperations') }}<div class="grid gap-2 sm:grid-cols-2"><label v-for="permission in accountPermissions" :key="permission.id" class="flex gap-2"><input v-model="rule.permissions" type="checkbox" :value="permission.id" />{{ permissionLabel(permission) }} <span class="text-caption-1-regular text-text-secondary">{{ permission.id }}</span></label></div></div>
+        <div v-if="groupPermissions.length" class="space-y-2 rounded border border-text-warning p-3">
           <p>{{ t('adminAccessKeys.groupOperations') }}</p>
-          <p class="text-sm text-amber-700 dark:text-amber-300">{{ t('adminAccessKeys.modelAllowlistHint') }}</p>
-          <div class="grid gap-2 sm:grid-cols-2"><label v-for="permission in groupPermissions" :key="permission.id" class="flex gap-2"><input v-model="rule.permissions" type="checkbox" :value="permission.id" />{{ permissionLabel(permission) }} <span class="text-xs text-gray-500">{{ permission.id }}</span></label></div>
+          <p class="text-body-regular text-text-warning ">{{ t('adminAccessKeys.modelAllowlistHint') }}</p>
+          <div class="grid gap-2 sm:grid-cols-2"><label v-for="permission in groupPermissions" :key="permission.id" class="flex gap-2"><input v-model="rule.permissions" type="checkbox" :value="permission.id" />{{ permissionLabel(permission) }} <span class="text-caption-1-regular text-text-secondary">{{ permission.id }}</span></label></div>
         </div>
-        <button type="button" class="btn btn-secondary btn-sm" @click="draft.policy.rules.splice(index, 1)">{{ t('adminAccessKeys.removeRule') }}</button>
+        <BoardButton type="button" variant="secondary" size="small" @click="draft.policy.rules.splice(index, 1)">{{ t('adminAccessKeys.removeRule') }}</BoardButton>
       </fieldset>
-      <button type="button" data-test="add-rule" class="btn btn-secondary btn-sm" @click="draft.policy.rules.push(emptyRule())">{{ t('adminAccessKeys.addRule') }}</button>
-      <fieldset class="space-y-3 rounded-lg border border-amber-300 p-3">
+      <BoardButton type="button" data-test="add-rule" variant="secondary" size="small" @click="draft.policy.rules.push(emptyRule())">{{ t('adminAccessKeys.addRule') }}</BoardButton>
+      <fieldset class="space-y-3 rounded-lg border border-text-warning p-3">
         <legend>{{ t('adminAccessKeys.globalPermissions') }}</legend>
-        <fieldset v-for="category in globalCategories" :key="category.name" class="space-y-2 rounded border border-gray-200 p-3 dark:border-dark-700">
-          <legend class="text-sm font-medium">{{ category.name }}</legend>
-          <label v-for="permission in category.permissions" :key="permission.id" class="flex gap-2"><input v-model="draft.policy.global_permissions" type="checkbox" :value="permission.id" />{{ permissionLabel(permission) }} <span class="text-xs text-gray-500">{{ permission.id }}</span></label>
+        <fieldset v-for="category in globalCategories" :key="category.name" class="space-y-2 rounded border border-border-button-default p-3 ">
+          <legend class="text-body-medium">{{ category.name }}</legend>
+          <label v-for="permission in category.permissions" :key="permission.id" class="flex gap-2"><input v-model="draft.policy.global_permissions" type="checkbox" :value="permission.id" />{{ permissionLabel(permission) }} <span class="text-caption-1-regular text-text-secondary">{{ permission.id }}</span></label>
         </fieldset>
       </fieldset>
       </fieldset>
-      <div class="flex gap-2"><button type="button" data-test="save" class="btn btn-primary" :disabled="busy || fullAccessPrompt" @click="save">{{ busy ? t('adminAccessKeys.processing') : t('adminAccessKeys.save') }}</button><button type="button" class="btn btn-secondary" :disabled="busy" @click="draft = null">{{ t('adminAccessKeys.cancel') }}</button></div>
+      <div class="flex gap-2"><BoardButton type="button" data-test="save" variant="primary" size="medium" :disabled="busy || fullAccessPrompt" @click="save">{{ busy ? t('adminAccessKeys.processing') : t('adminAccessKeys.save') }}</BoardButton><BoardButton type="button" variant="secondary" size="medium" :disabled="busy" @click="draft = null">{{ t('adminAccessKeys.cancel') }}</BoardButton></div>
     </div>
     <BaseDialog :show="fullAccessPrompt" :title="t('adminAccessKeys.fullAccessConfirmTitle')" width="normal" @close="cancelFullAccess">
-      <p class="text-red-700 dark:text-red-300">{{ t('adminAccessKeys.fullAccessWarning') }}</p>
+      <p class="text-text-error-primary ">{{ t('adminAccessKeys.fullAccessWarning') }}</p>
       <label class="mt-4 block">{{ t('adminAccessKeys.fullAccessPhraseHint', { phrase: t('adminAccessKeys.fullAccessPhrase') }) }}<input v-model="fullAccessPhrase" data-test="full-access-phrase" class="input mt-1" autocomplete="off" /></label>
       <template #footer>
-        <button type="button" data-test="full-access-cancel" class="btn btn-secondary" @click="cancelFullAccess">{{ t('adminAccessKeys.cancel') }}</button>
-        <button type="button" data-test="full-access-confirm" class="btn btn-danger" :disabled="fullAccessPhrase !== t('adminAccessKeys.fullAccessPhrase')" @click="confirmFullAccess">{{ t('adminAccessKeys.fullAccessConfirmTitle') }}</button>
+        <BoardButton type="button" data-test="full-access-cancel" variant="secondary" size="medium" @click="cancelFullAccess">{{ t('adminAccessKeys.cancel') }}</BoardButton>
+        <BoardButton type="button" data-test="full-access-confirm" variant="danger" size="medium" :disabled="fullAccessPhrase !== t('adminAccessKeys.fullAccessPhrase')" @click="confirmFullAccess">{{ t('adminAccessKeys.fullAccessConfirmTitle') }}</BoardButton>
       </template>
     </BaseDialog>
     <TotpStepUpDialog :controller="stepUp" />
@@ -87,6 +87,7 @@
 </template>
 
 <script setup lang="ts">
+import BoardButton from '@/components/boardui/Button.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as api from '@/api/admin/adminAccessKeys'

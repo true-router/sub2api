@@ -1,14 +1,14 @@
 <template>
   <button
     type="button"
-    class="rounded-lg bg-primary-50 px-3 py-1 text-xs text-primary-700 transition-colors hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50"
+    class="rounded-lg bg-background-accent-subtle px-3 py-1 text-caption-1-regular text-text-accent transition-colors hover:bg-background-accent-subtle "
     @click="toggleImportPanel"
   >
     {{ t('admin.accounts.headerOverride.importJson') }}
   </button>
   <button
     type="button"
-    class="rounded-lg bg-primary-50 px-3 py-1 text-xs text-primary-700 transition-colors hover:bg-primary-100 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50"
+    class="rounded-lg bg-background-accent-subtle px-3 py-1 text-caption-1-regular text-text-accent transition-colors hover:bg-background-accent-subtle disabled:cursor-not-allowed disabled:opacity-50 "
     :disabled="!hasNamedRows"
     @click="copyAsJson"
   >
@@ -20,26 +20,26 @@
       ref="importTextareaRef"
       v-model="importText"
       rows="5"
-      class="input font-mono text-xs"
+      class="input font-mono text-caption-1-regular"
       :placeholder="IMPORT_JSON_PLACEHOLDER"
     ></textarea>
     <div class="flex gap-2">
       <button
         type="button"
-        class="rounded-lg bg-primary-600 px-3 py-1 text-xs text-white transition-colors hover:bg-primary-700"
+        class="rounded-lg bg-background-accent-hover px-3 py-1 text-caption-1-regular text-text-white transition-colors hover:bg-background-accent-hover"
         @click="applyImport"
       >
         {{ t('admin.accounts.headerOverride.importJsonApply') }}
       </button>
       <button
         type="button"
-        class="rounded-lg bg-gray-100 px-3 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-200 dark:bg-dark-600 dark:text-gray-400 dark:hover:bg-dark-500"
+        class="rounded-lg bg-background-secondary-default px-3 py-1 text-caption-1-regular text-text-secondary transition-colors hover:bg-background-tertiary-default "
         @click="closeImportPanel"
       >
         {{ t('admin.accounts.headerOverride.importJsonCancel') }}
       </button>
     </div>
-    <p class="text-xs text-gray-500 dark:text-gray-400">
+    <p class="text-caption-1-regular text-text-secondary ">
       {{ t('admin.accounts.headerOverride.importJsonHint') }}
     </p>
   </div>

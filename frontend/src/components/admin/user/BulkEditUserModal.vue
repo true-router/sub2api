@@ -6,11 +6,11 @@
     @close="emit('close')"
   >
     <form id="bulk-edit-user-limits-form" class="space-y-5" @submit.prevent="handleSubmit">
-      <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+      <p class="text-body-medium text-text-primary ">
         {{ t('admin.users.bulkLimits.selectedCount', { count: selectedIds.length }) }}
       </p>
 
-      <div class="divide-y divide-gray-200 border-y border-gray-200 dark:divide-dark-700 dark:border-dark-700">
+      <div class="divide-y divide-border-button-default border-y border-border-button-default ">
         <div class="space-y-3 py-4">
           <div class="flex items-center justify-between gap-4">
             <label for="bulk-concurrency" class="input-label mb-0">
@@ -62,34 +62,35 @@
         </div>
       </div>
 
-      <p v-if="hasInvalidValue" class="text-sm text-red-600 dark:text-red-400">
+      <p v-if="hasInvalidValue" class="text-body-regular text-text-error-primary ">
         {{ t('admin.users.bulkLimits.nonNegativeInteger') }}
       </p>
-      <p v-if="selectionTooLarge" class="text-sm text-red-600 dark:text-red-400">
+      <p v-if="selectionTooLarge" class="text-body-regular text-text-error-primary ">
         {{ t('admin.users.bulkLimits.selectionLimit', { max: MAX_BATCH_USER_IDS }) }}
       </p>
     </form>
 
     <template #footer>
       <div class="flex justify-end gap-3">
-        <button type="button" class="btn btn-secondary" @click="emit('close')">
+        <BoardButton type="button" variant="secondary" size="medium" @click="emit('close')">
           {{ t('common.cancel') }}
-        </button>
-        <button
+        </BoardButton>
+        <BoardButton
           type="submit"
           form="bulk-edit-user-limits-form"
-          class="btn btn-primary"
+          variant="primary" size="medium"
           :disabled="!canSubmit"
           data-test="submit"
         >
           {{ submitting ? t('admin.users.bulkLimits.applying') : t('admin.users.bulkLimits.apply') }}
-        </button>
+        </BoardButton>
       </div>
     </template>
   </BaseDialog>
 </template>
 
 <script setup lang="ts">
+import BoardButton from '@/components/boardui/Button.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminAPI } from '@/api/admin'

@@ -1,51 +1,51 @@
 <template>
   <div class="card">
     <div
-      class="flex flex-col gap-3 border-b border-gray-100 px-6 py-4 dark:border-dark-700 lg:flex-row lg:items-start lg:justify-between"
+      class="flex flex-col gap-3 border-b border-border-button-default px-6 py-4 lg:flex-row lg:items-start lg:justify-between"
     >
       <div>
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+        <h2 class="text-title-3-semibold text-text-primary ">
           {{ t("admin.settings.emailTemplates.title") }}
         </h2>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <p class="mt-1 text-body-regular text-text-secondary ">
           {{ t("admin.settings.emailTemplates.description") }}
         </p>
       </div>
       <div class="flex flex-wrap gap-2">
-        <button
+        <BoardButton
           type="button"
-          class="btn btn-secondary btn-sm"
+          variant="secondary" size="small"
           :disabled="loadingTemplate || previewing || !canPreview"
           @click="refreshPreview"
         >
           {{ previewing ? t("admin.settings.emailTemplates.previewing") : t("admin.settings.emailTemplates.preview") }}
-        </button>
-        <button
+        </BoardButton>
+        <BoardButton
           type="button"
-          class="btn btn-secondary btn-sm"
+          variant="secondary" size="small"
           :disabled="loadingTemplate || restoring || !selectedEvent || !selectedLocale"
           @click="restoreOfficial"
         >
           {{ restoring ? t("admin.settings.emailTemplates.restoring") : t("admin.settings.emailTemplates.restoreOfficial") }}
-        </button>
-        <button
+        </BoardButton>
+        <BoardButton
           type="button"
-          class="btn btn-primary btn-sm"
+          variant="primary" size="small"
           :disabled="loadingTemplate || saving || !canSave"
           @click="saveTemplate"
         >
           {{ saving ? t("admin.settings.emailTemplates.saving") : t("admin.settings.emailTemplates.save") }}
-        </button>
+        </BoardButton>
       </div>
     </div>
 
     <div class="space-y-6 p-6">
       <div
         v-if="loadingList"
-        class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400"
+        class="flex items-center gap-2 text-body-regular text-text-secondary "
       >
         <span
-          class="h-4 w-4 animate-spin rounded-full border-b-2 border-primary-600"
+          class="h-4 w-4 animate-spin rounded-full border-b-2 border-border-focus-ring"
         ></span>
         {{ t("common.loading") }}
       </div>
@@ -94,34 +94,34 @@
 
         <div
           v-if="selectedEventMeta"
-          class="rounded-lg border border-primary-100 bg-primary-50/70 p-4 dark:border-primary-900/50 dark:bg-primary-950/20"
+          class="rounded-lg border border-border-focus-ring bg-background-accent-subtle/70 p-4 "
         >
           <div class="flex flex-wrap items-center gap-2">
-            <div class="text-sm font-semibold text-gray-900 dark:text-white">
+            <div class="text-body-semibold text-text-primary ">
               {{ selectedEventMeta.label }}
             </div>
             <span
-              class="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-gray-600 shadow-sm ring-1 ring-gray-200 dark:bg-dark-800 dark:text-gray-300 dark:ring-dark-600"
+              class="rounded-full bg-background-primary-default px-2.5 py-1 text-caption-1-medium text-text-secondary shadow-sm ring-1 ring-border-button-default "
             >
               {{ selectedEventMeta.categoryLabel }}
             </span>
             <span
-              class="rounded-full px-2.5 py-1 text-xs font-medium"
+              class="rounded-full px-2.5 py-1 text-caption-1-medium"
               :class="
                 selectedEventMeta.optional
-                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
-                  : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300'
+                  ? 'bg-background-warning-subtle text-text-warning '
+                  : 'bg-background-success-subtle text-text-success '
               "
             >
               {{ selectedEventMeta.optional ? localText("可退订通知", "Optional") : localText("事务邮件", "Transactional") }}
             </span>
           </div>
-          <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">
+          <p class="mt-2 text-body-regular leading-6 text-text-secondary ">
             {{ selectedEventMeta.timing }}
           </p>
           <p
             v-if="selectedEventDescription"
-            class="mt-1 text-xs text-gray-500 dark:text-gray-400"
+            class="mt-1 text-caption-1-regular text-text-secondary "
           >
             {{ selectedEventDescription }}
           </p>
@@ -129,7 +129,7 @@
 
         <div
           v-if="!eventOptions.length || !localeOptions.length"
-          class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300"
+          class="rounded-lg border border-text-warning bg-background-warning-subtle p-4 text-body-regular text-text-warning "
         >
           {{ t("admin.settings.emailTemplates.empty") }}
         </div>
@@ -158,19 +158,19 @@
                 id="email-template-html"
                 v-model="html"
                 rows="18"
-                class="input min-h-[28rem] resize-y font-mono text-sm leading-6"
+                class="input min-h-[28rem] resize-y font-mono text-body-regular leading-6"
                 :disabled="loadingTemplate"
                 :placeholder="t('admin.settings.emailTemplates.htmlPlaceholder')"
               ></textarea>
             </div>
 
             <div
-              class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-dark-700 dark:bg-dark-800/60"
+              class="rounded-lg border border-border-button-default bg-background-secondary-default p-4 "
             >
-              <div class="text-sm font-medium text-gray-900 dark:text-white">
+              <div class="text-body-medium text-text-primary ">
                 {{ t("admin.settings.emailTemplates.placeholders") }}
               </div>
-              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <p class="mt-1 text-caption-1-regular text-text-secondary ">
                 {{ t("admin.settings.emailTemplates.placeholdersHelp") }}
               </p>
               <div class="mt-3 flex flex-wrap gap-2">
@@ -178,7 +178,7 @@
                   v-for="placeholder in placeholderList"
                   :key="placeholder"
                   type="button"
-                  class="rounded-full border border-gray-200 bg-white px-3 py-1 font-mono text-xs text-gray-700 transition-colors hover:border-primary-300 hover:text-primary-600 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-200 dark:hover:border-primary-500 dark:hover:text-primary-300"
+                  class="rounded-full border border-border-button-default bg-background-primary-default px-3 py-1 font-mono text-caption-1-regular text-text-primary transition-colors hover:border-border-focus-ring hover:text-text-accent "
                   @click="copyPlaceholder(placeholder)"
                 >
                   {{ placeholder }}
@@ -189,29 +189,29 @@
 
           <div class="space-y-4">
             <div
-              class="rounded-lg border border-gray-200 bg-white dark:border-dark-700 dark:bg-dark-800"
+              class="rounded-lg border border-border-button-default bg-background-primary-default "
             >
               <div
-                class="flex items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-dark-700"
+                class="flex items-center justify-between border-b border-border-button-default px-4 py-3 "
               >
                 <div>
-                  <div class="text-sm font-medium text-gray-900 dark:text-white">
+                  <div class="text-body-medium text-text-primary ">
                     {{ t("admin.settings.emailTemplates.livePreview") }}
                   </div>
-                  <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                  <div class="mt-0.5 text-caption-1-regular text-text-secondary ">
                     {{ previewSubject || t("admin.settings.emailTemplates.noPreview") }}
                   </div>
                 </div>
                 <span
                   v-if="isCustomTemplate"
-                  class="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+                  class="rounded-full bg-background-accent-subtle px-2.5 py-1 text-caption-1-medium text-text-accent "
                 >
                   {{ t("admin.settings.emailTemplates.customized") }}
                 </span>
               </div>
-              <div class="bg-gray-100 p-3 dark:bg-dark-900">
+              <div class="bg-background-secondary-default p-3 ">
                 <iframe
-                  class="h-[36rem] w-full rounded-md border border-gray-200 bg-white dark:border-dark-700"
+                  class="h-[36rem] w-full rounded-md border border-border-button-default bg-background-primary-default "
                   sandbox=""
                   :srcdoc="previewHtml"
                   :title="t('admin.settings.emailTemplates.livePreview')"
@@ -219,7 +219,7 @@
               </div>
             </div>
 
-            <p class="text-xs text-gray-500 dark:text-gray-400">
+            <p class="text-caption-1-regular text-text-secondary ">
               {{ t("admin.settings.emailTemplates.previewSecurityHint") }}
             </p>
           </div>
@@ -230,6 +230,7 @@
 </template>
 
 <script setup lang="ts">
+import BoardButton from '@/components/boardui/Button.vue'
 import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { adminAPI } from "@/api";

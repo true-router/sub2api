@@ -1,69 +1,69 @@
 <template>
   <div class="flex items-start gap-2 rounded border p-2"
-       :class="isEmpty ? 'border-red-400 bg-red-50 dark:border-red-500 dark:bg-red-950/20' : 'border-gray-200 bg-white dark:border-dark-500 dark:bg-dark-700'">
+       :class="isEmpty ? 'border-border-error-default bg-background-error-subtle ' : 'border-border-button-default bg-background-primary-default '">
     <!-- Token mode: context range + prices ($/MTok) -->
     <template v-if="mode === 'token'">
       <div class="pricing-interval-grid grid min-w-0 flex-1 gap-2">
         <div>
-          <label class="text-xs text-gray-400">{{ t('admin.channels.form.minTokens') }}</label>
+          <label class="text-caption-1-regular text-text-tertiary">{{ t('admin.channels.form.minTokens') }}</label>
           <input :value="interval.min_tokens" @input="emitField('min_tokens', toInt(($event.target as HTMLInputElement).value))"
-            type="number" min="0" class="input mt-0.5 text-xs" />
+            type="number" min="0" class="input mt-0.5 text-caption-1-regular" />
         </div>
         <div>
-          <label class="text-xs text-gray-400">{{ t('admin.channels.form.maxTokens') }} <span class="text-gray-300">{{ t('admin.channels.form.inclusive') }}</span></label>
+          <label class="text-caption-1-regular text-text-tertiary">{{ t('admin.channels.form.maxTokens') }} <span class="text-text-disabled">{{ t('admin.channels.form.inclusive') }}</span></label>
           <input :value="interval.max_tokens ?? ''" @input="emitField('max_tokens', toIntOrNull(($event.target as HTMLInputElement).value))"
-            type="number" min="0" class="input mt-0.5 text-xs" :placeholder="'∞'" />
+            type="number" min="0" class="input mt-0.5 text-caption-1-regular" :placeholder="'∞'" />
         </div>
         <div>
-          <label class="text-xs text-gray-400">{{ t('admin.channels.form.inputPrice') }} <span v-if="isEmpty" class="text-red-500">*</span> <span class="text-gray-300">$/M</span></label>
+          <label class="text-caption-1-regular text-text-tertiary">{{ t('admin.channels.form.inputPrice') }} <span v-if="isEmpty" class="text-text-error-primary">*</span> <span class="text-text-disabled">$/M</span></label>
           <input :value="interval.input_price" @input="emitField('input_price', ($event.target as HTMLInputElement).value)"
-            type="number" step="any" min="0" class="input mt-0.5 text-xs" />
+            type="number" step="any" min="0" class="input mt-0.5 text-caption-1-regular" />
         </div>
         <div>
-          <label class="text-xs text-gray-400">{{ t('admin.channels.form.outputPrice') }} <span v-if="isEmpty" class="text-red-500">*</span> <span class="text-gray-300">$/M</span></label>
+          <label class="text-caption-1-regular text-text-tertiary">{{ t('admin.channels.form.outputPrice') }} <span v-if="isEmpty" class="text-text-error-primary">*</span> <span class="text-text-disabled">$/M</span></label>
           <input :value="interval.output_price" @input="emitField('output_price', ($event.target as HTMLInputElement).value)"
-            type="number" step="any" min="0" class="input mt-0.5 text-xs" />
+            type="number" step="any" min="0" class="input mt-0.5 text-caption-1-regular" />
         </div>
         <div>
-          <label class="text-xs text-gray-400">{{ t(props.platform === 'openai' ? 'admin.channels.form.cacheWrite30mPrice' : 'admin.channels.form.cacheWrite5mPriceShort') }} <span class="text-gray-300">$/M</span></label>
+          <label class="text-caption-1-regular text-text-tertiary">{{ t(props.platform === 'openai' ? 'admin.channels.form.cacheWrite30mPrice' : 'admin.channels.form.cacheWrite5mPriceShort') }} <span class="text-text-disabled">$/M</span></label>
           <input :value="interval.cache_write_price" @input="emitField('cache_write_price', ($event.target as HTMLInputElement).value)"
-            type="number" step="any" min="0" class="input mt-0.5 text-xs" />
+            type="number" step="any" min="0" class="input mt-0.5 text-caption-1-regular" />
         </div>
         <div v-if="props.platform !== 'openai'">
-          <label class="text-xs text-gray-400">{{ t('admin.channels.form.cacheWrite1hPriceShort') }} <span class="text-gray-300">$/M</span></label>
+          <label class="text-caption-1-regular text-text-tertiary">{{ t('admin.channels.form.cacheWrite1hPriceShort') }} <span class="text-text-disabled">$/M</span></label>
           <input :value="interval.cache_write_1h_price" @input="emitField('cache_write_1h_price', ($event.target as HTMLInputElement).value)"
-            type="number" step="any" min="0" class="input mt-0.5 text-xs" />
+            type="number" step="any" min="0" class="input mt-0.5 text-caption-1-regular" />
         </div>
         <div v-if="props.platform === 'openai'">
-          <label class="text-xs text-gray-400">{{ t('admin.channels.form.cacheWrite12hPriceShort') }} <span class="text-gray-300">$/M</span></label>
+          <label class="text-caption-1-regular text-text-tertiary">{{ t('admin.channels.form.cacheWrite12hPriceShort') }} <span class="text-text-disabled">$/M</span></label>
           <input :value="interval.cache_write_12h_price" @input="emitField('cache_write_12h_price', ($event.target as HTMLInputElement).value)"
-            type="number" step="any" min="0" class="input mt-0.5 text-xs" />
+            type="number" step="any" min="0" class="input mt-0.5 text-caption-1-regular" />
         </div>
         <div>
-          <label class="text-xs text-gray-400">{{ t('admin.channels.form.cacheReadPriceShort') }} <span class="text-gray-300">$/M</span></label>
+          <label class="text-caption-1-regular text-text-tertiary">{{ t('admin.channels.form.cacheReadPriceShort') }} <span class="text-text-disabled">$/M</span></label>
           <input :value="interval.cache_read_price" @input="emitField('cache_read_price', ($event.target as HTMLInputElement).value)"
-            type="number" step="any" min="0" class="input mt-0.5 text-xs" />
+            type="number" step="any" min="0" class="input mt-0.5 text-caption-1-regular" />
         </div>
         <template v-if="enableMultipliers">
           <div>
-            <label class="text-xs text-gray-400">{{ t('admin.channels.form.inputMultiplier') }}</label>
+            <label class="text-caption-1-regular text-text-tertiary">{{ t('admin.channels.form.inputMultiplier') }}</label>
             <input :value="interval.input_multiplier" @input="emitField('input_multiplier', ($event.target as HTMLInputElement).value)"
-              type="number" step="any" min="0.000001" class="input mt-0.5 text-xs" />
+              type="number" step="any" min="0.000001" class="input mt-0.5 text-caption-1-regular" />
           </div>
           <div>
-            <label class="text-xs text-gray-400">{{ t('admin.channels.form.outputMultiplier') }}</label>
+            <label class="text-caption-1-regular text-text-tertiary">{{ t('admin.channels.form.outputMultiplier') }}</label>
             <input :value="interval.output_multiplier" @input="emitField('output_multiplier', ($event.target as HTMLInputElement).value)"
-              type="number" step="any" min="0.000001" class="input mt-0.5 text-xs" />
+              type="number" step="any" min="0.000001" class="input mt-0.5 text-caption-1-regular" />
           </div>
           <div>
-            <label class="text-xs text-gray-400">{{ t('admin.channels.form.cacheWriteMultiplier') }}</label>
+            <label class="text-caption-1-regular text-text-tertiary">{{ t('admin.channels.form.cacheWriteMultiplier') }}</label>
             <input :value="interval.cache_write_multiplier" @input="emitField('cache_write_multiplier', ($event.target as HTMLInputElement).value)"
-              type="number" step="any" min="0.000001" class="input mt-0.5 text-xs" />
+              type="number" step="any" min="0.000001" class="input mt-0.5 text-caption-1-regular" />
           </div>
           <div>
-            <label class="text-xs text-gray-400">{{ t('admin.channels.form.cacheReadMultiplier') }}</label>
+            <label class="text-caption-1-regular text-text-tertiary">{{ t('admin.channels.form.cacheReadMultiplier') }}</label>
             <input :value="interval.cache_read_multiplier" @input="emitField('cache_read_multiplier', ($event.target as HTMLInputElement).value)"
-              type="number" step="any" min="0.000001" class="input mt-0.5 text-xs" />
+              type="number" step="any" min="0.000001" class="input mt-0.5 text-caption-1-regular" />
           </div>
         </template>
       </div>
@@ -72,30 +72,30 @@
     <!-- Per-request / Image mode: tier label + context range + price -->
     <template v-else>
       <div class="w-24">
-        <label class="text-xs text-gray-400">
+        <label class="text-caption-1-regular text-text-tertiary">
           {{ mode === 'image' ? t('admin.channels.form.resolution') : t('admin.channels.form.tierLabel') }}
         </label>
         <input :value="interval.tier_label" @input="emitField('tier_label', ($event.target as HTMLInputElement).value)"
-          type="text" class="input mt-0.5 text-xs" :placeholder="mode === 'image' ? '1K / 2K / 4K' : ''" />
+          type="text" class="input mt-0.5 text-caption-1-regular" :placeholder="mode === 'image' ? '1K / 2K / 4K' : ''" />
       </div>
       <div class="w-20">
-        <label class="text-xs text-gray-400">{{ t('admin.channels.form.minTokens') }}</label>
+        <label class="text-caption-1-regular text-text-tertiary">{{ t('admin.channels.form.minTokens') }}</label>
         <input :value="interval.min_tokens" @input="emitField('min_tokens', toInt(($event.target as HTMLInputElement).value))"
-          type="number" min="0" class="input mt-0.5 text-xs" />
+          type="number" min="0" class="input mt-0.5 text-caption-1-regular" />
       </div>
       <div class="w-20">
-        <label class="text-xs text-gray-400">{{ t('admin.channels.form.maxTokens') }} <span class="text-gray-300">{{ t('admin.channels.form.inclusive') }}</span></label>
+        <label class="text-caption-1-regular text-text-tertiary">{{ t('admin.channels.form.maxTokens') }} <span class="text-text-disabled">{{ t('admin.channels.form.inclusive') }}</span></label>
         <input :value="interval.max_tokens ?? ''" @input="emitField('max_tokens', toIntOrNull(($event.target as HTMLInputElement).value))"
-          type="number" min="0" class="input mt-0.5 text-xs" :placeholder="'∞'" />
+          type="number" min="0" class="input mt-0.5 text-caption-1-regular" :placeholder="'∞'" />
       </div>
       <div class="flex-1">
-        <label class="text-xs text-gray-400">{{ t('admin.channels.form.perRequestPrice') }} <span v-if="isEmpty" class="text-red-500">*</span> <span class="text-gray-300">$</span></label>
+        <label class="text-caption-1-regular text-text-tertiary">{{ t('admin.channels.form.perRequestPrice') }} <span v-if="isEmpty" class="text-text-error-primary">*</span> <span class="text-text-disabled">$</span></label>
         <input :value="interval.per_request_price" @input="emitField('per_request_price', ($event.target as HTMLInputElement).value)"
-          type="number" step="any" min="0" class="input mt-0.5 text-xs" />
+          type="number" step="any" min="0" class="input mt-0.5 text-caption-1-regular" />
       </div>
     </template>
 
-    <button type="button" @click="emit('remove')" class="mt-4 rounded p-0.5 text-gray-400 hover:text-red-500">
+    <button type="button" @click="emit('remove')" class="mt-4 rounded p-0.5 text-text-tertiary hover:text-text-error-primary">
       <Icon name="x" size="sm" />
     </button>
   </div>

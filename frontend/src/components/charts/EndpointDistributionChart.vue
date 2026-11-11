@@ -76,7 +76,7 @@
         <Doughnut :data="chartData" :options="doughnutOptions" />
       </div>
       <div class="max-h-48 w-full min-w-0 flex-1 overflow-auto">
-        <table class="w-full text-xs">
+        <BoardTable size="sm" class="w-full text-xs">
           <thead>
             <tr class="text-gray-500 dark:text-gray-400">
               <th class="pb-2 text-left">{{ t('usage.endpoint') }}</th>
@@ -123,7 +123,7 @@
               </tr>
             </template>
           </tbody>
-        </table>
+        </BoardTable>
       </div>
     </div>
     <div v-else class="flex h-48 items-center justify-center text-sm text-gray-500 dark:text-gray-400">
@@ -133,6 +133,7 @@
 </template>
 
 <script setup lang="ts">
+import BoardTable from '@/components/boardui/Table.vue'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'

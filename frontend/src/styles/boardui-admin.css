@@ -1,0 +1,434 @@
+/* Admin-only component skin. The document selector includes teleported dialogs. */
+:root[data-admin-ui='boardui'] {
+  background: rgb(var(--boardui-background-full));
+  color: rgb(var(--boardui-text-primary));
+}
+
+:root[data-admin-ui='boardui'] body,
+:root[data-admin-ui='boardui'] .boardui-admin-layout {
+  background: rgb(var(--boardui-background-full));
+  color: rgb(var(--boardui-text-primary));
+}
+
+:root[data-admin-ui='boardui'] .sidebar-logo {
+  @apply rounded-xl border border-border-button-default bg-background-secondary-default;
+  box-shadow: none;
+}
+
+:root[data-admin-ui='boardui'] .sidebar-brand-title {
+  @apply text-headline-semibold text-text-primary;
+}
+
+:root[data-admin-ui='boardui'] .sidebar-nav {
+  @apply px-3 pb-3 pt-4;
+}
+
+:root[data-admin-ui='boardui'] .sidebar-section-title {
+  @apply mb-2 px-3 text-caption-2-medium text-text-tertiary;
+  letter-spacing: 0.04em;
+}
+
+:root[data-admin-ui='boardui'] .sidebar-link {
+  @apply min-h-9 gap-2 rounded-[10px] p-2 text-body-medium text-text-secondary;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+:root[data-admin-ui='boardui'] .sidebar-link:hover {
+  @apply bg-background-secondary-hover text-text-primary;
+}
+
+:root[data-admin-ui='boardui'] .sidebar-link-active,
+:root[data-admin-ui='boardui'] .sidebar-link-active:hover {
+  @apply bg-transparent text-text-white;
+  background-image: linear-gradient(to bottom, var(--boardui-sidebar-selected-start), var(--boardui-sidebar-selected-end));
+  box-shadow: var(--boardui-sidebar-selected-shadow);
+}
+
+:root[data-admin-ui='boardui'] .sidebar-search .input {
+  @apply rounded-xl border-border-button-default bg-background-secondary-default py-2 text-body-2-regular;
+}
+
+:root[data-admin-ui='boardui'] .card,
+:root[data-admin-ui='boardui'] .glass-card,
+:root[data-admin-ui='boardui'] .card-glass,
+:root[data-admin-ui='boardui'] .table-scroll-container {
+  @apply rounded-3xl border border-transparent bg-background-secondary-default;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+:root[data-admin-ui='boardui'] .card-hover:hover {
+  @apply border-border-button-hover;
+  transform: none;
+  box-shadow: 0 4px 12px rgb(var(--boardui-background-overlay) / 0.04);
+}
+
+:root[data-admin-ui='boardui'] .card-header,
+:root[data-admin-ui='boardui'] .card-footer {
+  @apply border-separator-border px-6 py-4 lg:px-5 lg:py-3;
+}
+
+:root[data-admin-ui='boardui'] .page-title {
+  @apply text-title-1-medium text-text-primary;
+}
+
+:root[data-admin-ui='boardui'] .page-description {
+  @apply text-body-regular text-text-secondary;
+}
+
+:root[data-admin-ui='boardui'] .btn {
+  @apply min-h-10 gap-2 rounded-xl px-4 py-2 text-body-medium;
+  transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+:root[data-admin-ui='boardui'] .btn:active {
+  transform: none;
+}
+
+:root[data-admin-ui='boardui'] .btn-primary {
+  @apply border border-background-accent-default bg-background-accent-default text-text-white;
+  background-image: linear-gradient(to bottom, rgb(var(--boardui-background-accent-default)), rgb(var(--boardui-background-accent-hover)));
+  box-shadow: inset 0 1px 0 rgb(var(--boardui-text-white) / 0.2), 0 1px 2px rgb(var(--boardui-background-overlay) / 0.1);
+}
+
+:root[data-admin-ui='boardui'] .btn-primary:hover {
+  @apply brightness-105;
+}
+
+:root[data-admin-ui='boardui'] .btn-primary:active {
+  @apply brightness-95;
+}
+
+:root[data-admin-ui='boardui'] .btn-secondary {
+  @apply border border-border-button-default bg-background-primary-default text-text-primary;
+  background-image: none;
+  box-shadow: 0 1px 2px rgb(var(--boardui-background-overlay) / 0.04);
+}
+
+:root[data-admin-ui='boardui'] .btn-secondary:hover {
+  @apply border-border-button-hover bg-background-primary-hover;
+}
+
+:root[data-admin-ui='boardui'] .btn-secondary:active {
+  @apply bg-background-primary-active;
+}
+
+:root[data-admin-ui='boardui'] .btn-ghost {
+  @apply text-text-secondary;
+  background-image: none;
+}
+
+:root[data-admin-ui='boardui'] .btn-ghost:hover {
+  @apply bg-background-secondary-default text-text-primary;
+}
+
+:root[data-admin-ui='boardui'] .btn-sm {
+  @apply min-h-8 rounded-lg px-3 py-1 text-body-2-medium;
+}
+
+:root[data-admin-ui='boardui'] .btn-icon {
+  @apply rounded-xl p-2;
+}
+
+:root[data-admin-ui='boardui'] .input {
+  @apply min-h-10 rounded-xl border-border-button-default bg-background-primary-default py-2 text-body-regular text-text-primary;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+:root[data-admin-ui='boardui'] .input::placeholder {
+  @apply text-text-placeholder;
+}
+
+:root[data-admin-ui='boardui'] .input:focus {
+  @apply border-border-focus-ring outline-none ring-2 ring-border-focus-ring/20;
+}
+
+:root[data-admin-ui='boardui'] .input:disabled {
+  @apply bg-background-secondary-default text-text-disabled;
+}
+
+:root[data-admin-ui='boardui'] .input-error,
+:root[data-admin-ui='boardui'] .input-error:focus {
+  @apply border-border-error-default ring-border-error-default/20;
+}
+
+:root[data-admin-ui='boardui'] .input-label {
+  @apply text-body-2-medium text-text-primary;
+}
+
+:root[data-admin-ui='boardui'] .input-hint {
+  @apply text-caption-1-regular text-text-secondary;
+}
+
+:root[data-admin-ui='boardui'] .input-error-text {
+  @apply text-caption-1-regular text-text-error-primary;
+}
+
+:root[data-admin-ui='boardui'] .table-page-layout {
+  @apply gap-4 lg:gap-3;
+  height: calc(100dvh - 80px - 3rem);
+}
+
+:root[data-admin-ui='boardui'] .table-page-layout > .layout-section-fixed:has(input, select) {
+  @apply rounded-2xl border border-border-button-default bg-background-primary-default p-4 lg:p-3;
+}
+
+:root[data-admin-ui='boardui'] .table-page-layout > .layout-section-fixed:last-child:has(nav) {
+  @apply rounded-2xl border border-border-button-default bg-background-primary-default p-0;
+}
+
+:root[data-admin-ui='boardui'] .table-scroll-container table:not(.bui-table) thead,
+:root[data-admin-ui='boardui'] .table:not(.bui-table) thead {
+  @apply bg-background-secondary-default;
+}
+
+:root[data-admin-ui='boardui'] .table-scroll-container table:not(.bui-table) th,
+:root[data-admin-ui='boardui'] .table:not(.bui-table) th {
+  @apply border-separator-border py-3 text-caption-1-medium text-text-secondary lg:py-2;
+  background: rgb(var(--boardui-background-secondary-default));
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+:root[data-admin-ui='boardui'] .table-scroll-container table:not(.bui-table) td,
+:root[data-admin-ui='boardui'] .table:not(.bui-table) td {
+  @apply border-separator-border text-body-2-regular text-text-primary lg:py-3;
+}
+
+:root[data-admin-ui='boardui'] .table-scroll-container table:not(.bui-table) tbody tr:hover,
+:root[data-admin-ui='boardui'] .table:not(.bui-table) tbody tr:hover {
+  @apply bg-background-primary-hover;
+}
+
+:root[data-admin-ui='boardui'] .badge {
+  @apply gap-1 rounded-lg border border-border-button-default px-2 py-0.5 text-caption-1-medium;
+}
+
+:root[data-admin-ui='boardui'] .badge-primary {
+  @apply bg-background-accent-subtle text-text-accent;
+}
+
+:root[data-admin-ui='boardui'] .badge-success {
+  @apply bg-background-success-subtle text-text-success;
+}
+
+:root[data-admin-ui='boardui'] .badge-warning {
+  @apply bg-background-warning-subtle text-text-warning;
+}
+
+:root[data-admin-ui='boardui'] .badge-danger {
+  @apply bg-background-error-subtle text-text-error-primary;
+}
+
+:root[data-admin-ui='boardui'] .badge-gray {
+  @apply bg-background-secondary-default text-text-secondary;
+}
+
+:root[data-admin-ui='boardui'] .badge-purple {
+  @apply bg-background-feature-subtle text-text-feature;
+}
+
+:root[data-admin-ui='boardui'] .dropdown {
+  @apply rounded-2xl border-border-button-default bg-background-primary-default p-1;
+  box-shadow: 0 8px 24px rgb(var(--boardui-background-overlay) / 0.1);
+}
+
+:root[data-admin-ui='boardui'] .dropdown-item {
+  @apply rounded-lg text-body-regular text-text-secondary;
+}
+
+:root[data-admin-ui='boardui'] .dropdown-item:hover {
+  @apply bg-background-primary-hover text-text-primary;
+}
+
+:root[data-admin-ui='boardui'] .modal-overlay,
+:root[data-admin-ui='boardui'] .dialog-overlay {
+  @apply bg-background-overlay/60;
+  backdrop-filter: blur(2px);
+}
+
+:root[data-admin-ui='boardui'] .modal-content,
+:root[data-admin-ui='boardui'] .dialog-container {
+  @apply rounded-3xl border border-border-button-default bg-background-primary-default;
+  box-shadow: 0 24px 64px rgb(var(--boardui-background-overlay) / 0.18);
+}
+
+:root[data-admin-ui='boardui'] .modal-header,
+:root[data-admin-ui='boardui'] .dialog-header {
+  @apply border-separator-border px-6 py-5 lg:py-4;
+}
+
+:root[data-admin-ui='boardui'] .modal-title {
+  @apply text-title-3-semibold text-text-primary;
+}
+
+:root[data-admin-ui='boardui'] .modal-footer,
+:root[data-admin-ui='boardui'] .dialog-footer {
+  @apply border-separator-border bg-background-secondary-default px-6 py-4 lg:py-3;
+}
+
+:root[data-admin-ui='boardui'] .tabs {
+  @apply rounded-xl border border-border-button-default bg-background-secondary-default;
+}
+
+:root[data-admin-ui='boardui'] .tab {
+  @apply rounded-lg text-body-2-medium text-text-secondary;
+}
+
+:root[data-admin-ui='boardui'] .tab-active {
+  @apply bg-background-primary-default text-text-primary shadow-sm;
+}
+
+:root[data-admin-ui='boardui'] :is(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid rgb(var(--boardui-border-focus-ring));
+  outline-offset: 2px;
+}
+
+@media (max-width: 1023px) {
+  :root[data-admin-ui='boardui'] .table-page-layout { height: auto; min-height: calc(100dvh - 8rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-admin-ui='boardui'] *,
+  :root[data-admin-ui='boardui'] *::before,
+  :root[data-admin-ui='boardui'] *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+:root[data-admin-ui='boardui'] .btn-danger {
+  @apply border border-background-error-default bg-background-error-default text-text-white;
+  background-image: none;
+  box-shadow: none;
+}
+
+:root[data-admin-ui='boardui'] .btn-success {
+  @apply border border-background-success-default bg-background-success-default text-text-white;
+  background-image: none;
+  box-shadow: none;
+}
+
+:root[data-admin-ui='boardui'] .btn-warning {
+  @apply border border-background-warning-default bg-background-warning-default text-text-white;
+  background-image: none;
+  box-shadow: none;
+}
+
+:root[data-admin-ui='boardui'] .stat-card {
+  @apply rounded-3xl border-border-button-default bg-background-primary-default;
+}
+
+:root[data-admin-ui='boardui'] .stat-value {
+  @apply text-title-1-medium text-text-primary;
+}
+
+:root[data-admin-ui='boardui'] .stat-label {
+  @apply text-body-2-regular text-text-secondary;
+}
+
+:root[data-admin-ui='boardui'] .sidebar > div:last-child {
+  @apply border-separator-border;
+}
+
+/* Modal and drawer anatomy follows the free registry, preserving Vue focus handling. */
+:root[data-admin-ui='boardui'] .boardui-drawer-overlay {
+  align-items: stretch;
+  justify-content: flex-end;
+  padding: 0;
+}
+
+:root[data-admin-ui='boardui'] .boardui-drawer-overlay .modal-content {
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 24px 0 0 24px;
+}
+
+:root[data-admin-ui='boardui'] .modal-enter-active .modal-content {
+  transition: transform 300ms cubic-bezier(0.32, 0.72, 0, 1), opacity 300ms ease-out, filter 300ms ease-out;
+}
+
+:root[data-admin-ui='boardui'] .modal-leave-active .modal-content {
+  transition: transform 220ms ease-in, opacity 220ms ease-in, filter 220ms ease-in;
+}
+
+:root[data-admin-ui='boardui'] .modal-enter-from .modal-content,
+:root[data-admin-ui='boardui'] .modal-leave-to .modal-content {
+  transform: scale(0.85);
+  filter: blur(4px);
+}
+
+:root[data-admin-ui='boardui'] .modal-enter-from.boardui-drawer-overlay .modal-content,
+:root[data-admin-ui='boardui'] .modal-leave-to.boardui-drawer-overlay .modal-content {
+  transform: translateX(100%);
+  filter: none;
+}
+
+.boardui-checkbox-tick {
+  stroke-dasharray: 18;
+  stroke-dashoffset: 0;
+  animation: boardui-check-draw 200ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+@keyframes boardui-check-draw {
+  from { stroke-dashoffset: 18; }
+  to { stroke-dashoffset: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boardui-checkbox-tick { animation: none; }
+  :root[data-admin-ui='boardui'] .modal-enter-from .modal-content,
+  :root[data-admin-ui='boardui'] .modal-leave-to .modal-content { transform: none; filter: none; }
+}
+
+:root[data-admin-ui='boardui'] .modal-content {
+  overflow: clip;
+}
+
+/* These fields draw focus on their complete container, including addons. */
+:root[data-admin-ui='boardui'] :is([data-boardui='input'], [data-boardui='search-field'], [data-boardui='number-field']) input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Sidebar-owned global controls; the entire right side is the content surface. */
+:root[data-admin-ui='boardui'] .boardui-admin-layout,
+:root[data-admin-ui='boardui'] .app-content {
+  background: rgb(var(--boardui-background-primary-default));
+}
+
+:root[data-admin-ui='boardui'] .sidebar {
+  @apply left-4 top-4 bottom-4 rounded-3xl border border-border-button-default bg-background-secondary-default;
+  box-shadow: inset 0 1px 0 rgb(var(--boardui-foreground-full) / .7), 0 2px 12px rgb(var(--boardui-background-overlay) / .03);
+}
+
+:root[data-admin-ui='boardui'] .sidebar.w-64 { width: 280px; }
+:root[data-admin-ui='boardui'] .sidebar-header { @apply h-20 gap-3 border-0 px-4; }
+:root[data-admin-ui='boardui'] .sidebar-header-collapsed { justify-content: center; padding-inline: 12px; gap: 0; }
+:root[data-admin-ui='boardui'] .sidebar-link-collapsed { justify-content: center; padding-inline: 0; gap: 0; }
+:root[data-admin-ui='boardui'] .sidebar-bottom { @apply border-0 p-3; }
+:root[data-admin-ui='boardui'] .sidebar-section { @apply mb-4; }
+:root[data-admin-ui='boardui'] .sidebar-global-controls .dropdown-item { @apply px-3 py-2; }
+
+:root[data-admin-ui='boardui'] .app-main { @apply max-w-none p-5 sm:p-6; }
+:root[data-admin-ui='boardui'] .admin-content-heading { flex-shrink: 0; }
+
+@media (min-width: 1024px) {
+  :root[data-admin-ui='boardui'] .sidebar { @apply bottom-3 left-3 top-3; }
+  :root[data-admin-ui='boardui'] .sidebar.w-64 { width: 264px; }
+  :root[data-admin-ui='boardui'] .sidebar-header { @apply h-16; }
+  :root[data-admin-ui='boardui'] .sidebar-nav { @apply pt-3; }
+  :root[data-admin-ui='boardui'] .sidebar-section { @apply mb-3; }
+  :root[data-admin-ui='boardui'] .sidebar-bottom { @apply p-2; }
+  :root[data-admin-ui='boardui'] .app-content { margin-left: 288px; height: 100dvh; min-height: 0; overflow: hidden; }
+  :root[data-admin-ui='boardui'] .app-content.lg\:ml-\[72px\] { margin-left: 96px; }
+  :root[data-admin-ui='boardui'] .app-main { display: flex; flex-direction: column; height: 100dvh; min-height: 0; overflow-y: auto; }
+  :root[data-admin-ui='boardui'] .table-page-layout { flex: 1; min-height: 0; height: auto; }
+}
+
+@media (max-width: 1023px) {
+  :root[data-admin-ui='boardui'] .sidebar { inset: 0 auto 0 0; border-radius: 0 24px 24px 0; }
+  :root[data-admin-ui='boardui'] .sidebar.w-64 { width: min(280px, calc(100vw - 48px)); }
+}

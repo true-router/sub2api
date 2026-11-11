@@ -6,11 +6,11 @@
         <button
           type="button"
           data-testid="group-i18n-menu"
-          class="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
+          class="flex items-center gap-1.5 rounded-lg px-2 py-1 text-caption-1-medium transition-colors"
           :class="
             activeLocale
-              ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400'
-              : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-dark-400 dark:hover:bg-dark-700 dark:hover:text-gray-200'
+              ? 'bg-background-accent-subtle text-text-accent '
+              : 'text-text-secondary hover:bg-background-secondary-default hover:text-text-primary '
           "
           :aria-expanded="menuOpen"
           @click="menuOpen = !menuOpen"
@@ -32,13 +32,13 @@
             :data-locale="option.code || 'default'"
             class="dropdown-item w-full whitespace-nowrap text-left"
             :class="{
-              'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400':
+              'bg-background-accent-subtle text-text-accent ':
                 option.active
             }"
             @click="selectLocale(option.code)"
           >
             <span>{{ option.label }}</span>
-            <Icon v-if="option.active" name="check" size="sm" class="ml-auto text-primary-500" />
+            <Icon v-if="option.active" name="check" size="sm" class="ml-auto text-text-accent" />
           </button>
         </div>
       </div>

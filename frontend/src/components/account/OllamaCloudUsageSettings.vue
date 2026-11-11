@@ -1,54 +1,54 @@
 <template>
-  <section v-if="state?.eligible" class="space-y-4 border-t border-gray-200 pt-4 dark:border-dark-600" data-testid="ollama-cloud-usage-settings">
+  <section v-if="state?.eligible" class="space-y-4 border-t border-border-button-default pt-4 " data-testid="ollama-cloud-usage-settings">
     <div class="flex items-start justify-between gap-4">
       <div>
-        <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+        <h3 class="text-body-semibold text-text-primary ">
           {{ t('admin.accounts.ollamaCloud.title') }}
         </h3>
-        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        <p class="mt-1 text-caption-1-regular text-text-secondary ">
           {{ t('admin.accounts.ollamaCloud.sessionSecurityHint') }}
         </p>
       </div>
       <span
-        class="whitespace-nowrap rounded px-2 py-1 text-xs font-medium"
+        class="whitespace-nowrap rounded px-2 py-1 text-caption-1-medium"
         :class="state.configured
-          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
-          : 'bg-gray-100 text-gray-600 dark:bg-dark-700 dark:text-gray-300'"
+          ? 'bg-background-success-subtle text-text-success '
+          : 'bg-background-secondary-default text-text-secondary '"
       >
         {{ state.configured ? t('admin.accounts.ollamaCloud.configured') : t('admin.accounts.ollamaCloud.notConfigured') }}
       </span>
     </div>
 
-    <div v-if="loading" class="flex h-20 items-center justify-center text-gray-400">
+    <div v-if="loading" class="flex h-20 items-center justify-center text-text-tertiary">
       <Icon name="refresh" size="sm" class="animate-spin" />
     </div>
     <template v-else>
-      <div v-if="!state.encryption_key_configured" class="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-800/50 dark:bg-amber-900/20 dark:text-amber-200">
+      <div v-if="!state.encryption_key_configured" class="rounded border border-text-warning bg-background-warning-subtle px-3 py-2 text-caption-1-regular text-text-warning ">
         {{ t('admin.accounts.ollamaCloud.encryptionKeyRequired') }}
       </div>
 
       <div
         v-if="snapshot"
-        class="border-y border-gray-100 py-3 dark:border-dark-700"
+        class="border-y border-border-button-default py-3 "
         data-testid="ollama-cloud-usage-details"
       >
-        <div class="grid grid-cols-[minmax(4rem,auto)_minmax(0,1fr)] gap-x-3 gap-y-1.5 text-xs">
-          <span class="text-gray-500 dark:text-gray-400">{{ t('admin.accounts.ollamaCloud.plan') }}</span>
-          <span class="break-words text-gray-900 dark:text-white">{{ snapshot.data?.plan || '-' }}</span>
-          <span class="text-gray-500 dark:text-gray-400">{{ t('admin.accounts.ollamaCloud.fiveHour') }}</span>
-          <span class="break-words text-gray-900 dark:text-white">{{ windowSummary(snapshot.data?.five_hour) }}</span>
-          <span class="text-gray-500 dark:text-gray-400">{{ t('admin.accounts.ollamaCloud.sevenDay') }}</span>
-          <span class="break-words text-gray-900 dark:text-white">{{ windowSummary(snapshot.data?.seven_day) }}</span>
-          <span class="text-gray-500 dark:text-gray-400">{{ t('admin.accounts.ollamaCloud.balance') }}</span>
-          <span class="break-words text-gray-900 dark:text-white">{{ snapshot.data?.balance || '-' }}</span>
-          <span class="text-gray-500 dark:text-gray-400">{{ t('admin.accounts.ollamaCloud.models') }}</span>
-          <span class="break-words text-gray-900 dark:text-white">{{ modelSummary }}</span>
-          <span class="text-gray-500 dark:text-gray-400">{{ t('admin.accounts.ollamaCloud.status') }}</span>
-          <span class="break-words font-medium text-gray-900 dark:text-white">{{ statusLabel }}</span>
-          <span class="text-gray-500 dark:text-gray-400">{{ t('admin.accounts.ollamaCloud.updatedAt') }}</span>
-          <span class="break-words text-gray-900 dark:text-white">{{ formatDate(snapshot.fetched_at || snapshot.last_attempt_at) }}</span>
+        <div class="grid grid-cols-[minmax(4rem,auto)_minmax(0,1fr)] gap-x-3 gap-y-1.5 text-caption-1-regular">
+          <span class="text-text-secondary ">{{ t('admin.accounts.ollamaCloud.plan') }}</span>
+          <span class="break-words text-text-primary ">{{ snapshot.data?.plan || '-' }}</span>
+          <span class="text-text-secondary ">{{ t('admin.accounts.ollamaCloud.fiveHour') }}</span>
+          <span class="break-words text-text-primary ">{{ windowSummary(snapshot.data?.five_hour) }}</span>
+          <span class="text-text-secondary ">{{ t('admin.accounts.ollamaCloud.sevenDay') }}</span>
+          <span class="break-words text-text-primary ">{{ windowSummary(snapshot.data?.seven_day) }}</span>
+          <span class="text-text-secondary ">{{ t('admin.accounts.ollamaCloud.balance') }}</span>
+          <span class="break-words text-text-primary ">{{ snapshot.data?.balance || '-' }}</span>
+          <span class="text-text-secondary ">{{ t('admin.accounts.ollamaCloud.models') }}</span>
+          <span class="break-words text-text-primary ">{{ modelSummary }}</span>
+          <span class="text-text-secondary ">{{ t('admin.accounts.ollamaCloud.status') }}</span>
+          <span class="break-words font-medium text-text-primary ">{{ statusLabel }}</span>
+          <span class="text-text-secondary ">{{ t('admin.accounts.ollamaCloud.updatedAt') }}</span>
+          <span class="break-words text-text-primary ">{{ formatDate(snapshot.fetched_at || snapshot.last_attempt_at) }}</span>
         </div>
-        <p v-if="snapshot.last_error" class="mt-2 break-words border-t border-gray-100 pt-2 text-xs text-amber-700 dark:border-dark-700 dark:text-amber-300">
+        <p v-if="snapshot.last_error" class="mt-2 break-words border-t border-border-button-default pt-2 text-caption-1-regular text-text-warning ">
           {{ t(`admin.accounts.ollamaCloud.errors.${snapshot.last_error}`, snapshot.last_error) }}
         </p>
       </div>
@@ -59,7 +59,7 @@
           id="ollama-cloud-session"
           v-model="session"
           rows="3"
-          class="input font-mono text-xs"
+          class="input font-mono text-caption-1-regular"
           autocomplete="new-password"
           data-1p-ignore
           data-lpignore="true"
@@ -70,46 +70,46 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <button
+        <BoardButton
           type="button"
-          class="btn btn-primary btn-sm"
+          variant="primary" size="small"
           :disabled="saving || !session.trim() || !state.encryption_key_configured"
           data-testid="ollama-cloud-session-save"
           @click="saveSession"
         >
           <Icon name="check" size="xs" class="mr-1.5" />
           {{ t('common.save') }}
-        </button>
-        <button
+        </BoardButton>
+        <BoardButton
           v-if="state.configured"
           type="button"
-          class="btn btn-secondary btn-sm text-red-600 dark:text-red-400"
+          class="text-text-error-primary" variant="secondary" size="small"
           :disabled="saving"
           data-testid="ollama-cloud-session-delete"
           @click="showDeleteConfirm = true"
         >
           <Icon name="trash" size="xs" class="mr-1.5" />
           {{ t('admin.accounts.ollamaCloud.deleteSession') }}
-        </button>
-        <button
+        </BoardButton>
+        <BoardButton
           v-if="state.configured"
           type="button"
-          class="btn btn-secondary btn-sm"
+          variant="secondary" size="small"
           :disabled="refreshing"
           data-testid="ollama-cloud-refresh"
           @click="refreshUsage"
         >
           <Icon name="refresh" size="xs" class="mr-1.5" :class="{ 'animate-spin': refreshing }" />
           {{ t('admin.accounts.ollamaCloud.refreshNow') }}
-        </button>
+        </BoardButton>
       </div>
 
-      <div v-if="state.configured" class="flex items-center justify-between gap-4 border-t border-gray-100 pt-4 dark:border-dark-700">
+      <div v-if="state.configured" class="flex items-center justify-between gap-4 border-t border-border-button-default pt-4 ">
         <div>
-          <label class="text-sm font-medium text-gray-900 dark:text-white">
+          <label class="text-body-medium text-text-primary ">
             {{ t('admin.accounts.ollamaCloud.autoRefresh') }}
           </label>
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          <p class="mt-1 text-caption-1-regular text-text-secondary ">
             {{ t('admin.accounts.ollamaCloud.autoRefreshHint') }}
           </p>
         </div>
@@ -136,6 +136,7 @@
 </template>
 
 <script setup lang="ts">
+import BoardButton from '@/components/boardui/Button.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminAPI } from '@/api/admin'

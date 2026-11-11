@@ -1,44 +1,44 @@
 <template>
-  <div class="border-t border-gray-100 pt-4 dark:border-dark-700" data-testid="email-blacklist-editor">
+  <div class="border-t border-border-button-default pt-4 " data-testid="email-blacklist-editor">
     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div class="min-w-0">
-        <label class="font-medium text-gray-900 dark:text-white">
+        <label class="font-medium text-text-primary ">
           {{ t('admin.settings.registration.emailBlacklist.title') }}
         </label>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <p class="mt-1 text-body-regular text-text-secondary ">
           {{ t('admin.settings.registration.emailBlacklist.hint') }}
         </p>
-        <p class="mt-2 text-sm" data-testid="email-blacklist-summary">
-          <span v-if="loading" class="text-gray-500 dark:text-gray-400">{{ t('common.loading') }}</span>
-          <span v-else-if="loadError" class="text-red-600 dark:text-red-400">
+        <p class="mt-2 text-body-regular" data-testid="email-blacklist-summary">
+          <span v-if="loading" class="text-text-secondary ">{{ t('common.loading') }}</span>
+          <span v-else-if="loadError" class="text-text-error-primary ">
             {{ t('admin.settings.registration.emailBlacklist.loadFailed') }}
             <button type="button" class="ml-2 underline" @click="load">{{ t('admin.settings.registration.emailBlacklist.retry') }}</button>
           </span>
-          <span v-else class="text-gray-700 dark:text-gray-300">
+          <span v-else class="text-text-primary ">
             {{ t('admin.settings.registration.emailBlacklist.count', { count: formatCount(savedEmails.length) }) }}
           </span>
         </p>
       </div>
       <div class="flex shrink-0 gap-2">
-        <button
+        <BoardButton
           type="button"
-          class="btn btn-secondary btn-sm"
+          variant="secondary" size="small"
           :disabled="loading || loadError || savedEmails.length === 0 || checking"
           data-testid="email-blacklist-check"
           @click="checkRegisteredUsers(savedEmails)"
         >
           <Icon name="search" size="sm" class="mr-1" />
           {{ t('admin.settings.registration.emailBlacklist.checkUsers') }}
-        </button>
-        <button
+        </BoardButton>
+        <BoardButton
           type="button"
-          class="btn btn-primary btn-sm"
+          variant="primary" size="small"
           :disabled="loading || loadError || checking"
           data-testid="email-blacklist-edit"
           @click="openEditor"
         >
           {{ t('admin.settings.registration.emailBlacklist.edit') }}
-        </button>
+        </BoardButton>
       </div>
     </div>
 
@@ -51,29 +51,29 @@
     >
       <div class="space-y-5">
         <section>
-          <label class="text-sm font-medium text-gray-700 dark:text-gray-300" for="email-blacklist-bulk">
+          <label class="text-body-medium text-text-primary " for="email-blacklist-bulk">
             {{ t('admin.settings.registration.emailBlacklist.bulkLabel') }}
           </label>
           <textarea
             id="email-blacklist-bulk"
             v-model="bulkInput"
             rows="5"
-            class="input mt-2 w-full font-mono text-sm"
+            class="input mt-2 w-full font-mono text-body-regular"
             :placeholder="t('admin.settings.registration.emailBlacklist.bulkPlaceholder')"
             data-testid="email-blacklist-bulk-input"
           />
           <div class="mt-2 flex flex-wrap items-center gap-3">
-            <button
+            <BoardButton
               type="button"
-              class="btn btn-secondary btn-sm"
+              variant="secondary" size="small"
               :disabled="!bulkInput.trim()"
               data-testid="email-blacklist-bulk-add"
               @click="addBulk"
             >
               <Icon name="plus" size="sm" class="mr-1" />
               {{ t('admin.settings.registration.emailBlacklist.bulkAdd') }}
-            </button>
-            <span v-if="addResult" class="text-sm text-gray-600 dark:text-gray-400" data-testid="email-blacklist-add-result">
+            </BoardButton>
+            <span v-if="addResult" class="text-body-regular text-text-secondary " data-testid="email-blacklist-add-result">
               {{
                 t('admin.settings.registration.emailBlacklist.addResult', {
                   added: formatCount(addResult.added),
@@ -84,7 +84,7 @@
           </div>
           <p
             v-if="addResult && addResult.invalid.length > 0"
-            class="mt-2 break-all text-sm text-amber-600 dark:text-amber-400"
+            class="mt-2 break-all text-body-regular text-text-warning "
             data-testid="email-blacklist-invalid"
           >
             {{
@@ -98,11 +98,11 @@
 
         <section>
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <div class="text-body-medium text-text-primary ">
               {{ t('admin.settings.registration.emailBlacklist.listLabel', { count: formatCount(draft.length) }) }}
               <span
                 v-if="pendingAdded > 0 || pendingRemoved > 0"
-                class="ml-2 font-normal text-primary-600 dark:text-primary-400"
+                class="ml-2 font-normal text-text-accent "
                 data-testid="email-blacklist-pending"
               >
                 {{
@@ -117,48 +117,48 @@
               <input
                 v-model="search"
                 type="search"
-                class="input w-full text-sm sm:w-64"
+                class="input w-full text-body-regular sm:w-64"
                 :placeholder="t('admin.settings.registration.emailBlacklist.searchPlaceholder')"
                 data-testid="email-blacklist-search"
               />
-              <button
+              <BoardButton
                 type="button"
-                class="btn btn-secondary btn-sm shrink-0"
+                class="shrink-0" variant="secondary" size="small"
                 :disabled="draft.length === 0"
                 data-testid="email-blacklist-clear"
                 @click="clearDraft"
               >
                 {{ t('admin.settings.registration.emailBlacklist.clear') }}
-              </button>
+              </BoardButton>
             </div>
           </div>
 
-          <div class="mt-2 max-h-80 overflow-y-auto rounded-lg border border-gray-200 dark:border-dark-600">
-            <p v-if="draft.length === 0" class="p-4 text-sm text-gray-500 dark:text-gray-400">
+          <div class="mt-2 max-h-80 overflow-y-auto rounded-lg border border-border-button-default ">
+            <p v-if="draft.length === 0" class="p-4 text-body-regular text-text-secondary ">
               {{ t('admin.settings.registration.emailBlacklist.empty') }}
             </p>
-            <p v-else-if="filtered.length === 0" class="p-4 text-sm text-gray-500 dark:text-gray-400">
+            <p v-else-if="filtered.length === 0" class="p-4 text-body-regular text-text-secondary ">
               {{ t('admin.settings.registration.emailBlacklist.noMatch') }}
             </p>
-            <ul v-else class="divide-y divide-gray-100 dark:divide-dark-700">
+            <ul v-else class="divide-y divide-border-button-default ">
               <li
                 v-for="email in visible"
                 :key="email"
                 class="flex items-center justify-between gap-3 px-3 py-1.5"
                 data-testid="email-blacklist-row"
               >
-                <span class="min-w-0 truncate font-mono text-sm text-gray-800 dark:text-gray-200" :title="email">
+                <span class="min-w-0 truncate font-mono text-body-regular text-text-primary " :title="email">
                   {{ email }}
                   <span
                     v-if="!savedSet.has(email)"
-                    class="ml-2 rounded bg-primary-50 px-1.5 py-0.5 font-sans text-xs text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+                    class="ml-2 rounded bg-background-accent-subtle px-1.5 py-0.5 font-sans text-caption-1-regular text-text-accent "
                   >
                     {{ t('admin.settings.registration.emailBlacklist.newTag') }}
                   </span>
                 </span>
                 <button
                   type="button"
-                  class="shrink-0 rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-dark-700 dark:hover:text-red-400"
+                  class="shrink-0 rounded p-1 text-text-tertiary hover:bg-background-error-subtle hover:text-text-error-primary "
                   :title="t('admin.settings.registration.emailBlacklist.remove')"
                   :aria-label="t('admin.settings.registration.emailBlacklist.remove')"
                   @click="removeEmail(email)"
@@ -168,10 +168,10 @@
               </li>
             </ul>
           </div>
-          <p v-if="filtered.length > VISIBLE_LIMIT" class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+          <p v-if="filtered.length > VISIBLE_LIMIT" class="mt-2 text-caption-1-regular text-text-secondary ">
             {{ t('admin.settings.registration.emailBlacklist.truncated', { limit: VISIBLE_LIMIT, total: formatCount(filtered.length) }) }}
           </p>
-          <p v-if="draft.length > maxEntries" class="mt-2 text-sm text-red-600 dark:text-red-400" data-testid="email-blacklist-too-many">
+          <p v-if="draft.length > maxEntries" class="mt-2 text-body-regular text-text-error-primary " data-testid="email-blacklist-too-many">
             {{ t('admin.settings.registration.emailBlacklist.tooMany', { max: formatCount(maxEntries) }) }}
           </p>
         </section>
@@ -179,18 +179,18 @@
 
       <template #footer>
         <div class="flex justify-end gap-3">
-          <button type="button" class="btn btn-secondary" :disabled="saving" @click="closeEditor">
+          <BoardButton type="button" variant="secondary" size="medium" :disabled="saving" @click="closeEditor">
             {{ t('common.cancel') }}
-          </button>
-          <button
+          </BoardButton>
+          <BoardButton
             type="button"
-            class="btn btn-primary"
+            variant="primary" size="medium"
             :disabled="saving || !dirty || draft.length > maxEntries"
             data-testid="email-blacklist-save"
             @click="save"
           >
             {{ saving ? t('common.saving') : t('admin.settings.registration.emailBlacklist.save') }}
-          </button>
+          </BoardButton>
         </div>
       </template>
     </BaseDialog>
@@ -219,16 +219,16 @@
       @close="closeDisableDialog"
     >
       <div class="space-y-3">
-        <p class="text-sm text-gray-600 dark:text-gray-400">
+        <p class="text-body-regular text-text-secondary ">
           {{ t('admin.settings.registration.emailBlacklist.disableMessage', { count: formatCount(matchedUsers.length) }) }}
         </p>
         <ul
-          class="max-h-72 divide-y divide-gray-100 overflow-y-auto rounded-lg border border-gray-200 dark:divide-dark-700 dark:border-dark-600"
+          class="max-h-72 divide-y divide-border-button-default overflow-y-auto rounded-lg border border-border-button-default "
           data-testid="email-blacklist-matched-users"
         >
-          <li v-for="user in matchedUsers" :key="user.id" class="flex items-center justify-between gap-3 px-3 py-1.5 text-sm">
-            <span class="min-w-0 truncate font-mono text-gray-800 dark:text-gray-200" :title="user.email">{{ user.email }}</span>
-            <span class="shrink-0 text-xs text-gray-500 dark:text-gray-400">
+          <li v-for="user in matchedUsers" :key="user.id" class="flex items-center justify-between gap-3 px-3 py-1.5 text-body-regular">
+            <span class="min-w-0 truncate font-mono text-text-primary " :title="user.email">{{ user.email }}</span>
+            <span class="shrink-0 text-caption-1-regular text-text-secondary ">
               <template v-if="user.username">{{ user.username }} · </template>#{{ user.id }}
             </span>
           </li>
@@ -236,18 +236,18 @@
       </div>
       <template #footer>
         <div class="flex justify-end gap-3">
-          <button type="button" class="btn btn-secondary" :disabled="disabling" @click="closeDisableDialog">
+          <BoardButton type="button" variant="secondary" size="medium" :disabled="disabling" @click="closeDisableDialog">
             {{ t('admin.settings.registration.emailBlacklist.disableLater') }}
-          </button>
-          <button
+          </BoardButton>
+          <BoardButton
             type="button"
-            class="btn btn-danger"
+            variant="danger" size="medium"
             :disabled="disabling"
             data-testid="email-blacklist-disable-confirm"
             @click="disableMatchedUsers"
           >
             {{ t('admin.settings.registration.emailBlacklist.disableConfirm', { count: formatCount(matchedUsers.length) }) }}
-          </button>
+          </BoardButton>
         </div>
       </template>
     </BaseDialog>
@@ -255,6 +255,7 @@
 </template>
 
 <script setup lang="ts">
+import BoardButton from '@/components/boardui/Button.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminAPI } from '@/api'

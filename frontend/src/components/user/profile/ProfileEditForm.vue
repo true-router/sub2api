@@ -2,36 +2,30 @@
   <div :class="props.embedded ? 'space-y-4' : 'card'">
     <div
       v-if="!props.embedded"
-      class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
+      class="border-b border-border-button-default px-6 py-4"
     >
-      <h2 class="text-lg font-medium text-gray-900 dark:text-white">
+      <h2 class="text-lg font-medium text-text-primary">
         {{ t('profile.editProfile') }}
       </h2>
     </div>
     <div :class="props.embedded ? '' : 'px-6 py-6'">
       <form @submit.prevent="handleUpdateProfile" class="space-y-4">
         <div v-if="props.embedded">
-          <p class="text-sm font-semibold text-gray-900 dark:text-white">
+          <p class="text-sm font-semibold text-text-primary">
             {{ t('profile.editProfile') }}
           </p>
         </div>
-        <div>
-          <label for="username" class="input-label">
-            {{ t('profile.username') }}
-          </label>
-          <input
-            id="username"
-            v-model="username"
-            type="text"
-            class="input"
-            :placeholder="t('profile.enterUsername')"
-          />
-        </div>
+        <BoardInput
+          v-model="username"
+          :label="t('profile.username')"
+          id="username"
+          :placeholder="t('profile.enterUsername')"
+        />
 
         <div class="flex justify-end pt-4">
-          <button type="submit" :disabled="loading" class="btn btn-primary">
+          <BoardButton type="submit" :disabled="loading" variant="primary" size="medium">
             {{ loading ? t('profile.updating') : t('profile.updateProfile') }}
-          </button>
+          </BoardButton>
         </div>
       </form>
     </div>
@@ -39,6 +33,8 @@
 </template>
 
 <script setup lang="ts">
+import BoardInput from '@/components/boardui/Input.vue'
+import BoardButton from '@/components/boardui/Button.vue'
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'

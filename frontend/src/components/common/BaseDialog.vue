@@ -4,9 +4,12 @@
       <div
         v-if="show"
         class="modal-overlay"
+        :class="{ 'boardui-drawer-overlay': presentation === 'drawer' }"
+        :data-boardui="presentation"
         :style="zIndexStyle"
         :aria-labelledby="dialogId"
-        role="dialog"
+        :aria-describedby="description ? `${dialogId}-description` : undefined"
+        :role="role"
         aria-modal="true"
         @click.self="handleClose"
       >
@@ -14,17 +17,21 @@
         <div ref="dialogRef" :class="['modal-content', widthClasses]" @click.stop>
           <!-- Header -->
           <div class="modal-header">
-            <h3 :id="dialogId" class="modal-title">
-              {{ title }}
-            </h3>
-            <button
+            <div class="flex min-w-0 flex-1 flex-col gap-1">
+              <h3 :id="dialogId" class="modal-title">{{ title }}</h3>
+              <p v-if="description" :id="`${dialogId}-description`" class="text-body-regular text-text-secondary">{{ description }}</p>
+            </div>
+            <BoardButton
               v-if="showCloseButton"
+              type="button"
+              variant="ghost"
+              size="small"
+              icon-only
               @click="emit('close')"
-              class="-mr-2 rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30 focus-visible:ring-offset-2 dark:text-dark-500 dark:hover:bg-dark-700 dark:hover:text-dark-300 dark:focus-visible:ring-offset-dark-900"
-              aria-label="Close modal"
+              :aria-label="t('common.close')"
             >
               <Icon name="x" size="md" />
-            </button>
+            </BoardButton>
           </div>
 
           <!-- Body -->
@@ -50,6 +57,10 @@ const openDialogs = new Set<string>()
 <script setup lang="ts">
 import { computed, watch, onMounted, onUnmounted, ref, nextTick } from 'vue'
 import Icon from '@/components/icons/Icon.vue'
+import BoardButton from '@/components/boardui/Button.vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // 生成唯一ID以避免多个对话框时ID冲突
 const dialogId = `modal-title-${++dialogIdCounter}`
@@ -64,6 +75,9 @@ type DialogWidth = 'narrow' | 'normal' | 'wide' | 'extra-wide' | 'full'
 interface Props {
   show: boolean
   title: string
+  description?: string
+  presentation?: 'modal' | 'drawer'
+  role?: 'dialog' | 'alertdialog'
   width?: DialogWidth
   closeOnEscape?: boolean
   closeOnClickOutside?: boolean
@@ -76,6 +90,8 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  presentation: 'modal',
+  role: 'dialog',
   width: 'normal',
   closeOnEscape: true,
   closeOnClickOutside: false,
@@ -138,7 +154,7 @@ watch(
         modalBodyRef.value.scrollTop = 0
       }
       if (dialogRef.value) {
-        const firstFocusable = dialogRef.value.querySelector<HTMLElement>(
+        const firstFocusable = dialogRef.value.querySelector<HTMLElement>('[autofocus]') ?? dialogRef.value.querySelector<HTMLElement>(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         )
         firstFocusable?.focus()

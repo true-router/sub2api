@@ -1,5 +1,5 @@
 <template>
-  <div class="table-page-layout" :class="{ 'mobile-mode': isMobile }">
+  <div class="table-page-layout">
     <!-- 固定区域：操作按钮 -->
     <div v-if="$slots.actions" class="layout-section-fixed">
       <slot name="actions" />
@@ -24,24 +24,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
 
-const isMobile = ref(false)
-
-const checkMobile = () => {
-  isMobile.value = window.innerWidth < 1024
-}
-
-onMounted(() => {
-  checkMobile()
-  window.addEventListener('resize', checkMobile)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('resize', checkMobile)
-})
-</script>
 
 <style scoped>
 /* 桌面端：Flexbox 布局 */
@@ -60,7 +43,7 @@ onUnmounted(() => {
 
 /* 表格滚动容器 - 增强版表体滚动方案 */
 .table-scroll-container {
-  @apply flex flex-col overflow-hidden h-full bg-white dark:bg-dark-800 rounded-2xl border border-gray-200 dark:border-dark-700 shadow-sm;
+  @apply flex flex-col overflow-hidden h-full bg-background-primary-default rounded-3xl border border-border-button-default shadow-sm;
 }
 
 .table-scroll-container :deep(.table-wrapper) {
@@ -75,34 +58,36 @@ onUnmounted(() => {
   display: table; /* 使用标准 table 布局以支持 sticky 列 */
 }
 
-.table-scroll-container :deep(thead) {
-  @apply bg-gray-50/80 dark:bg-dark-800/80 backdrop-blur-sm;
+.table-scroll-container :deep(table:not(.bui-table) thead) {
+  @apply bg-background-secondary-default backdrop-blur-sm;
 }
 
 .table-scroll-container :deep(tbody) {
   /* 保持默认 table-row-group 显示，不使用 block */
 }
 
-.table-scroll-container :deep(th) {
-  @apply px-5 py-4 text-left text-sm font-medium text-gray-600 dark:text-dark-300 border-b border-gray-200 dark:border-dark-700;
+.table-scroll-container :deep(table:not(.bui-table) th) {
+  @apply px-5 py-4 text-left text-caption-1-medium text-text-secondary border-b border-separator-border;
 }
 
-.table-scroll-container :deep(td) {
-  @apply px-5 py-4 text-sm text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-dark-800;
+.table-scroll-container :deep(table:not(.bui-table) td) {
+  @apply px-5 py-4 text-body-2-regular text-text-primary border-b border-separator-border;
 }
 
-/* 移动端：恢复正常滚动 */
-.table-page-layout.mobile-mode .table-scroll-container {
+/* Mobile layouts use CSS media queries, including emulated viewports. */
+@media (max-width: 1023px) {
+.table-page-layout .table-scroll-container {
   @apply h-auto overflow-visible border-none shadow-none bg-transparent;
 }
 
-.table-page-layout.mobile-mode .layout-section-scrollable {
+.table-page-layout .layout-section-scrollable {
   @apply flex-none min-h-fit;
 }
 
-.table-page-layout.mobile-mode .table-scroll-container :deep(table) {
+.table-page-layout .table-scroll-container :deep(table) {
   @apply flex-none;
   display: table;
   min-width: 100%;
+}
 }
 </style>

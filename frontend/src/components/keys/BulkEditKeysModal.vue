@@ -9,10 +9,10 @@
   >
     <form id="bulk-edit-keys-form" class="space-y-5" @submit.prevent="submit">
       <div class="space-y-1 text-sm">
-        <p class="font-medium text-gray-900 dark:text-white">
+        <p class="font-medium text-text-primary">
           {{ t('keys.bulkEdit.selectedCount', { count: pendingKeys.length }) }}
         </p>
-        <p class="text-gray-500 dark:text-gray-400">{{ t('keys.bulkEdit.hint') }}</p>
+        <p class="text-text-secondary">{{ t('keys.bulkEdit.hint') }}</p>
       </div>
 
       <fieldset :disabled="submitting" class="space-y-5">
@@ -132,23 +132,24 @@
     </form>
 
     <template #footer>
-      <button type="button" class="btn btn-secondary" :disabled="submitting" @click="close">
+      <BoardButton type="button" variant="secondary" size="medium" :disabled="submitting" @click="close">
         {{ t('common.cancel') }}
-      </button>
-      <button
+      </BoardButton>
+      <BoardButton
         type="submit"
         form="bulk-edit-keys-form"
-        class="btn btn-primary"
+        variant="primary" size="medium"
         :disabled="!canSubmit"
         data-test="submit"
       >
         {{ submitting ? t('keys.saving') : t('keys.bulkEdit.apply', { count: pendingKeys.length }) }}
-      </button>
+      </BoardButton>
     </template>
   </BaseDialog>
 </template>
 
 <script setup lang="ts">
+import BoardButton from '@/components/boardui/Button.vue'
 import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { keysAPI } from '@/api'

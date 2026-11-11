@@ -13,7 +13,7 @@
                   <Icon
                     name="search"
                     size="md"
-                    class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary"
                   />
                   <input
                     v-model.trim="filters.q"
@@ -67,16 +67,16 @@
 
             <!-- Right: actions -->
             <div class="flex w-full flex-wrap items-center justify-end gap-3 sm:w-auto">
-              <button type="button" class="btn btn-primary" :disabled="loading" @click="search">
+              <BoardButton type="button" variant="primary" size="medium" :disabled="loading" @click="search">
                 {{ t('common.search') }}
-              </button>
-              <button type="button" class="btn btn-secondary" :disabled="loading" @click="resetFilters">
+              </BoardButton>
+              <BoardButton type="button" variant="secondary" size="medium" :disabled="loading" @click="resetFilters">
                 {{ t('common.reset') }}
-              </button>
-              <button type="button" class="btn btn-danger" @click="openClearDialog">
+              </BoardButton>
+              <BoardButton type="button" variant="danger" size="medium" @click="openClearDialog">
                 <Icon name="trash" size="sm" class="mr-1.5" />
                 {{ t('admin.audit.clearAll') }}
-              </button>
+              </BoardButton>
             </div>
           </div>
         </div>
@@ -86,15 +86,15 @@
       <template #table>
         <DataTable :columns="columns" :data="logs" :loading="loading" row-key="id">
           <template #cell-created_at="{ value }">
-            <span class="whitespace-nowrap text-gray-600 dark:text-gray-300">{{ formatTime(value) }}</span>
+            <span class="whitespace-nowrap text-text-secondary ">{{ formatTime(value) }}</span>
           </template>
 
           <template #cell-actor="{ row }">
             <div class="min-w-0 max-w-[220px]">
-              <div class="truncate font-medium text-gray-900 dark:text-white" :title="row.actor_email">
+              <div class="truncate font-medium text-text-primary " :title="row.actor_email">
                 {{ row.actor_email || '—' }}
               </div>
-              <div class="mt-0.5 truncate text-xs text-gray-400">
+              <div class="mt-0.5 truncate text-caption-1-regular text-text-tertiary">
                 {{ row.actor_role }}<span v-if="row.auth_method"> · {{ authMethodLabel(row.auth_method) }}</span>
               </div>
             </div>
@@ -102,10 +102,10 @@
 
           <template #cell-action="{ row }">
             <div class="min-w-0 max-w-xs">
-              <div class="truncate font-mono text-sm text-gray-800 dark:text-gray-200" :title="row.action">
+              <div class="truncate font-mono text-body-regular text-text-primary " :title="row.action">
                 {{ row.action }}
               </div>
-              <div class="mt-0.5 truncate font-mono text-xs text-gray-400" :title="`${row.method} ${row.path}`">
+              <div class="mt-0.5 truncate font-mono text-caption-1-regular text-text-tertiary" :title="`${row.method} ${row.path}`">
                 {{ row.method }} {{ row.path }}
               </div>
             </div>
@@ -119,17 +119,17 @@
           </template>
 
           <template #cell-latency_ms="{ value }">
-            <span class="whitespace-nowrap text-gray-500 dark:text-gray-400">{{ value }} ms</span>
+            <span class="whitespace-nowrap text-text-secondary ">{{ value }} ms</span>
           </template>
 
           <template #cell-client_ip="{ value }">
-            <span class="whitespace-nowrap font-mono text-gray-600 dark:text-gray-300">{{ value || '—' }}</span>
+            <span class="whitespace-nowrap font-mono text-text-secondary ">{{ value || '—' }}</span>
           </template>
 
           <template #cell-actions="{ row }">
             <button
               type="button"
-              class="inline-flex items-center gap-1 font-medium text-primary-600 transition-colors hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+              class="inline-flex items-center gap-1 font-medium text-text-accent transition-colors hover:text-text-accent "
               @click="openDetail(row.id)"
             >
               <Icon name="eye" size="sm" />
@@ -139,8 +139,8 @@
 
           <template #empty>
             <div class="flex flex-col items-center py-8">
-              <Icon name="shield" size="xl" class="mb-4 h-12 w-12 text-gray-300 dark:text-dark-600" />
-              <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('admin.audit.empty') }}</p>
+              <Icon name="shield" size="xl" class="mb-4 h-12 w-12 text-text-disabled " />
+              <p class="text-body-medium text-text-secondary ">{{ t('admin.audit.empty') }}</p>
             </div>
           </template>
         </DataTable>
@@ -169,32 +169,32 @@
     >
       <div v-if="detailLoading" class="flex items-center justify-center py-16">
         <div class="flex flex-col items-center gap-3">
-          <div class="h-8 w-8 animate-spin rounded-full border-b-2 border-primary-600"></div>
-          <div class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('common.loading') }}</div>
+          <div class="h-8 w-8 animate-spin rounded-full border-b-2 border-border-focus-ring"></div>
+          <div class="text-body-medium text-text-secondary ">{{ t('common.loading') }}</div>
         </div>
       </div>
 
       <div v-else-if="detail" class="space-y-5 py-2">
         <!-- Hero: action + result at a glance -->
-        <div class="rounded-2xl border border-gray-200 bg-gray-50/60 p-5 dark:border-dark-700 dark:bg-dark-900/60">
+        <div class="rounded-2xl border border-border-button-default bg-background-secondary-default/60 p-5 ">
           <div class="flex flex-wrap items-center gap-3">
             <span :class="statusBadgeClass(detail.status_code)">
               <span class="h-1.5 w-1.5 rounded-full" :class="statusDotClass(detail.status_code)"></span>
               {{ detail.status_code }} {{ statusText(detail.status_code) }}
             </span>
-            <span class="break-all font-mono text-base font-semibold text-gray-900 dark:text-white">
+            <span class="break-all font-mono text-headline-semibold text-text-primary ">
               {{ detail.action }}
             </span>
           </div>
 
-          <div class="mt-3 flex items-center gap-2 rounded-lg bg-white px-3 py-2 ring-1 ring-gray-200 dark:bg-dark-800 dark:ring-dark-600">
-            <span class="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[11px] font-bold text-gray-700 dark:bg-dark-700 dark:text-gray-200">
+          <div class="mt-3 flex items-center gap-2 rounded-lg bg-background-primary-default px-3 py-2 ring-1 ring-border-button-default ">
+            <span class="rounded bg-background-secondary-default px-1.5 py-0.5 font-mono text-[11px] font-bold text-text-primary ">
               {{ detail.method }}
             </span>
-            <span class="break-all font-mono text-xs text-gray-600 dark:text-gray-300">{{ detail.path }}</span>
+            <span class="break-all font-mono text-caption-1-regular text-text-secondary ">{{ detail.path }}</span>
           </div>
 
-          <div class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-gray-500 dark:text-gray-400">
+          <div class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-caption-1-regular text-text-secondary ">
             <span class="inline-flex items-center gap-1.5">
               <Icon name="clock" size="xs" />
               {{ formatTime(detail.created_at) }}
@@ -209,33 +209,33 @@
 
         <!-- Actor / auth / source -->
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div class="rounded-xl bg-gray-50 p-4 dark:bg-dark-900">
-            <div class="text-xs font-bold uppercase tracking-wider text-gray-400">
+          <div class="rounded-xl bg-background-secondary-default p-4 ">
+            <div class="text-caption-1-bold uppercase tracking-wider text-text-tertiary">
               {{ t('admin.audit.columns.actor') }}
             </div>
-            <div class="mt-1 break-all text-sm font-medium text-gray-900 dark:text-white">
+            <div class="mt-1 break-all text-body-medium text-text-primary ">
               {{ detail.actor_email || '—' }}
             </div>
-            <div class="mt-0.5 text-xs text-gray-400">{{ detail.actor_role }}</div>
+            <div class="mt-0.5 text-caption-1-regular text-text-tertiary">{{ detail.actor_role }}</div>
           </div>
 
-          <div class="rounded-xl bg-gray-50 p-4 dark:bg-dark-900">
-            <div class="text-xs font-bold uppercase tracking-wider text-gray-400">
+          <div class="rounded-xl bg-background-secondary-default p-4 ">
+            <div class="text-caption-1-bold uppercase tracking-wider text-text-tertiary">
               {{ t('admin.audit.filters.authMethod') }}
             </div>
-            <div class="mt-1 text-sm font-medium text-gray-900 dark:text-white">
+            <div class="mt-1 text-body-medium text-text-primary ">
               {{ authMethodLabel(detail.auth_method) || '—' }}
             </div>
-            <div v-if="detail.credential_masked" class="mt-0.5 break-all font-mono text-xs text-gray-400">
+            <div v-if="detail.credential_masked" class="mt-0.5 break-all font-mono text-caption-1-regular text-text-tertiary">
               {{ detail.credential_masked }}
             </div>
           </div>
 
-          <div class="rounded-xl bg-gray-50 p-4 dark:bg-dark-900">
-            <div class="text-xs font-bold uppercase tracking-wider text-gray-400">
+          <div class="rounded-xl bg-background-secondary-default p-4 ">
+            <div class="text-caption-1-bold uppercase tracking-wider text-text-tertiary">
               {{ t('admin.audit.columns.clientIp') }}
             </div>
-            <div class="mt-1 break-all font-mono text-sm font-medium text-gray-900 dark:text-white">
+            <div class="mt-1 break-all font-mono text-body-medium text-text-primary ">
               {{ detail.client_ip || '—' }}
             </div>
           </div>
@@ -243,28 +243,28 @@
 
         <!-- User-Agent -->
         <section>
-          <h4 class="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-400">
+          <h4 class="mb-1.5 text-caption-1-bold uppercase tracking-wider text-text-tertiary">
             {{ t('admin.audit.detail.userAgent') }}
           </h4>
-          <div class="break-all rounded-xl bg-gray-50 p-3 font-mono text-xs leading-relaxed text-gray-600 dark:bg-dark-900 dark:text-gray-400">
+          <div class="break-all rounded-xl bg-background-secondary-default p-3 font-mono text-caption-1-regular leading-relaxed text-text-secondary ">
             {{ detail.user_agent || '—' }}
           </div>
         </section>
 
         <!-- Request body (redacted) -->
         <section v-if="detail.request_body">
-          <h4 class="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-400">
+          <h4 class="mb-1.5 text-caption-1-bold uppercase tracking-wider text-text-tertiary">
             {{ t('admin.audit.detail.requestBody') }}
           </h4>
-          <pre class="max-h-72 overflow-auto rounded-xl bg-gray-50 p-4 font-mono text-xs leading-relaxed text-gray-600 dark:bg-dark-900 dark:text-gray-400">{{ prettyBody(detail.request_body) }}</pre>
+          <pre class="max-h-72 overflow-auto rounded-xl bg-background-secondary-default p-4 font-mono text-caption-1-regular leading-relaxed text-text-secondary ">{{ prettyBody(detail.request_body) }}</pre>
         </section>
 
         <!-- Extra -->
         <section v-if="detail.extra && Object.keys(detail.extra).length">
-          <h4 class="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-400">
+          <h4 class="mb-1.5 text-caption-1-bold uppercase tracking-wider text-text-tertiary">
             {{ t('admin.audit.detail.extra') }}
           </h4>
-          <pre class="max-h-48 overflow-auto rounded-xl bg-gray-50 p-4 font-mono text-xs leading-relaxed text-gray-600 dark:bg-dark-900 dark:text-gray-400">{{ JSON.stringify(detail.extra, null, 2) }}</pre>
+          <pre class="max-h-48 overflow-auto rounded-xl bg-background-secondary-default p-4 font-mono text-caption-1-regular leading-relaxed text-text-secondary ">{{ JSON.stringify(detail.extra, null, 2) }}</pre>
         </section>
       </div>
     </BaseDialog>
@@ -287,17 +287,17 @@
         </div>
       </div>
       <template #footer>
-        <button type="button" class="btn btn-secondary" @click="handleCustomTimeRangeCancel">
+        <BoardButton type="button" variant="secondary" size="medium" @click="handleCustomTimeRangeCancel">
           {{ t('common.cancel') }}
-        </button>
-        <button
+        </BoardButton>
+        <BoardButton
           type="button"
-          class="btn btn-primary"
+          variant="primary" size="medium"
           :disabled="!customStartTimeInput || !customEndTimeInput"
           @click="handleCustomTimeRangeConfirm"
         >
           {{ t('common.confirm') }}
-        </button>
+        </BoardButton>
       </template>
     </BaseDialog>
 
@@ -322,36 +322,37 @@
       @close="cancelClearTotp"
     >
       <div class="py-2">
-        <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('admin.audit.clearConfirm.totpHint') }}</p>
+        <p class="text-body-regular text-text-secondary ">{{ t('admin.audit.clearConfirm.totpHint') }}</p>
         <input
           v-model.trim="clearTotpCode"
           type="text"
           inputmode="numeric"
           maxlength="6"
           autocomplete="one-time-code"
-          class="input mt-4 text-center text-lg tracking-[0.5em]"
+          class="input mt-4 text-center text-title-3-regular tracking-[0.5em]"
           placeholder="••••••"
           @keyup.enter="submitClear"
         />
       </div>
       <template #footer>
-        <button type="button" class="btn btn-secondary" :disabled="clearing" @click="cancelClearTotp">
+        <BoardButton type="button" variant="secondary" size="medium" :disabled="clearing" @click="cancelClearTotp">
           {{ t('common.cancel') }}
-        </button>
-        <button
+        </BoardButton>
+        <BoardButton
           type="button"
-          class="btn btn-danger"
+          variant="danger" size="medium"
           :disabled="clearing || clearTotpCode.length !== 6"
           @click="submitClear"
         >
           {{ clearing ? t('common.loading') : t('admin.audit.clearAll') }}
-        </button>
+        </BoardButton>
       </template>
     </BaseDialog>
   </AppLayout>
 </template>
 
 <script setup lang="ts">
+import BoardButton from '@/components/boardui/Button.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminAPI, type AuditLog } from '@/api/admin'
@@ -670,16 +671,16 @@ function statusText(status: number): string {
 }
 
 function statusBadgeClass(status: number): string {
-  const base = 'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold '
-  if (status >= 500) return base + 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-  if (status >= 400) return base + 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
-  return base + 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+  const base = 'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-caption-1-semibold '
+  if (status >= 500) return base + 'bg-background-error-subtle text-text-error-primary '
+  if (status >= 400) return base + 'bg-background-warning-subtle text-text-warning '
+  return base + 'bg-background-success-subtle text-text-success '
 }
 
 function statusDotClass(status: number): string {
-  if (status >= 500) return 'bg-red-500'
-  if (status >= 400) return 'bg-amber-500'
-  return 'bg-green-500'
+  if (status >= 500) return 'bg-background-error-default'
+  if (status >= 400) return 'bg-background-warning-default'
+  return 'bg-background-success-default'
 }
 
 onMounted(fetchLogs)

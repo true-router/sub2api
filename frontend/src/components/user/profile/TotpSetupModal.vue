@@ -1,15 +1,15 @@
 <template>
   <div class="fixed inset-0 z-50 overflow-y-auto" @click.self="$emit('close')">
     <div class="flex min-h-full items-center justify-center p-4">
-      <div class="fixed inset-0 bg-black/50 transition-opacity" @click="$emit('close')"></div>
+      <div class="fixed inset-0 bg-background-overlay/50 transition-opacity" @click="$emit('close')"></div>
 
-      <div class="relative w-full max-w-md transform rounded-xl bg-white p-6 shadow-xl transition-all dark:bg-dark-800">
+      <div class="relative w-full max-w-md transform rounded-xl bg-background-primary-default p-6 shadow-xl transition-all">
         <!-- Header -->
         <div class="mb-6 text-center">
-          <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+          <h3 class="text-xl font-semibold text-text-primary">
             {{ t('profile.totp.setupTitle') }}
           </h3>
-          <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          <p class="mt-2 text-sm text-text-secondary">
             {{ stepDescription }}
           </p>
         </div>
@@ -35,14 +35,14 @@
                     class="input flex-1"
                     :placeholder="t('profile.totp.enterEmailCode')"
                   />
-                  <button
+                  <BoardButton
                     type="button"
-                    class="btn btn-secondary whitespace-nowrap"
+                    class="whitespace-nowrap" variant="secondary" size="medium"
                     :disabled="sendingCode || codeCooldown > 0"
                     @click="handleSendCode"
                   >
                     {{ codeCooldown > 0 ? `${codeCooldown}s` : (sendingCode ? t('common.sending') : t('profile.totp.sendCode')) }}
-                  </button>
+                  </BoardButton>
                 </div>
               </div>
             </div>
@@ -62,17 +62,17 @@
             </div>
 
             <div class="flex justify-end gap-3 pt-4">
-              <button type="button" class="btn btn-secondary" @click="$emit('close')">
+              <BoardButton type="button" variant="secondary" size="medium" @click="$emit('close')">
                 {{ t('common.cancel') }}
-              </button>
-              <button
+              </BoardButton>
+              <BoardButton
                 type="button"
-                class="btn btn-primary"
+                variant="primary" size="medium"
                 :disabled="!canProceedFromVerify || setupLoading"
                 @click="handleVerifyAndSetup"
               >
                 {{ setupLoading ? t('common.loading') : t('common.next') }}
-              </button>
+              </BoardButton>
             </div>
           </template>
         </div>
@@ -82,22 +82,22 @@
           <!-- QR Code and Secret -->
           <template v-if="setupData">
             <div class="flex justify-center">
-              <div class="rounded-lg border border-gray-200 p-4 bg-white dark:border-dark-600 dark:bg-white">
+              <div class="rounded-lg border border-border-button-default p-4 bg-background-primary-default">
                 <img :src="qrCodeDataUrl" alt="QR Code" class="h-48 w-48" />
               </div>
             </div>
 
             <div class="text-center">
-              <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+              <p class="text-sm text-text-secondary mb-2">
                 {{ t('profile.totp.manualEntry') }}
               </p>
               <div class="flex items-center justify-center gap-2">
-                <code class="rounded bg-gray-100 px-3 py-2 font-mono text-sm dark:bg-dark-700">
+                <code class="rounded bg-background-secondary-default px-3 py-2 font-mono text-sm">
                   {{ setupData.secret }}
                 </code>
                 <button
                   type="button"
-                  class="rounded p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-700"
+                  class="rounded p-1.5 text-text-secondary hover:bg-background-secondary-default"
                   @click="copySecret"
                 >
                   <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -109,17 +109,17 @@
           </template>
 
           <div class="flex justify-end gap-3 pt-4">
-            <button type="button" class="btn btn-secondary" @click="$emit('close')">
+            <BoardButton type="button" variant="secondary" size="medium" @click="$emit('close')">
               {{ t('common.cancel') }}
-            </button>
-            <button
+            </BoardButton>
+            <BoardButton
               type="button"
-              class="btn btn-primary"
+              variant="primary" size="medium"
               :disabled="!setupData"
               @click="step = 2"
             >
               {{ t('common.next') }}
-            </button>
+            </BoardButton>
           </div>
         </div>
 
@@ -140,7 +140,7 @@
                   maxlength="1"
                   inputmode="numeric"
                   pattern="[0-9]"
-                  class="h-12 w-10 rounded-lg border border-gray-300 text-center text-lg font-semibold focus:border-primary-500 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
+                  class="h-12 w-10 rounded-lg border border-border-button-hover text-center text-lg font-semibold focus:border-primary-500 focus:ring-primary-500"
                   @input="handleCodeInput($event, index)"
                   @keydown="handleKeydown($event, index)"
                   @paste="handlePaste"
@@ -149,16 +149,16 @@
             </div>
 
             <div class="flex justify-end gap-3">
-              <button type="button" class="btn btn-secondary" @click="step = 1">
+              <BoardButton type="button" variant="secondary" size="medium" @click="step = 1">
                 {{ t('common.back') }}
-              </button>
-              <button
+              </BoardButton>
+              <BoardButton
                 type="submit"
-                class="btn btn-primary"
+                variant="primary" size="medium"
                 :disabled="verifying || code.join('').length !== 6"
               >
                 {{ verifying ? t('common.verifying') : t('profile.totp.verify') }}
-              </button>
+              </BoardButton>
             </div>
           </form>
         </div>
@@ -168,6 +168,7 @@
 </template>
 
 <script setup lang="ts">
+import BoardButton from '@/components/boardui/Button.vue'
 import { ref, onMounted, onUnmounted, nextTick, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'

@@ -8,69 +8,69 @@
     <div class="space-y-4">
       <!-- Header -->
       <div class="flex items-center justify-between">
-        <p class="text-sm text-gray-500 dark:text-gray-400">
+        <p class="text-body-regular text-text-secondary ">
           {{ t('admin.errorPassthrough.description') }}
         </p>
-        <button @click="showCreateModal = true" class="btn btn-primary btn-sm">
+        <BoardButton type="submit" @click="showCreateModal = true" variant="primary" size="small">
           <Icon name="plus" size="sm" class="mr-1" />
           {{ t('admin.errorPassthrough.createRule') }}
-        </button>
+        </BoardButton>
       </div>
 
       <!-- Rules Table -->
       <div v-if="loading" class="flex items-center justify-center py-8">
-        <Icon name="refresh" size="lg" class="animate-spin text-gray-400" />
+        <Icon name="refresh" size="lg" class="animate-spin text-text-tertiary" />
       </div>
 
       <div v-else-if="rules.length === 0" class="py-8 text-center">
-        <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-dark-700">
-          <Icon name="shield" size="lg" class="text-gray-400" />
+        <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-background-secondary-default ">
+          <Icon name="shield" size="lg" class="text-text-tertiary" />
         </div>
-        <h4 class="mb-1 text-sm font-medium text-gray-900 dark:text-white">
+        <h4 class="mb-1 text-body-medium text-text-primary ">
           {{ t('admin.errorPassthrough.noRules') }}
         </h4>
-        <p class="text-sm text-gray-500 dark:text-gray-400">
+        <p class="text-body-regular text-text-secondary ">
           {{ t('admin.errorPassthrough.createFirstRule') }}
         </p>
       </div>
 
-      <div v-else class="max-h-96 overflow-auto rounded-lg border border-gray-200 dark:border-dark-600">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-700">
-          <thead class="sticky top-0 bg-gray-50 dark:bg-dark-700">
+      <div v-else class="max-h-96 overflow-auto rounded-lg border border-border-button-default ">
+        <BoardTable size="sm" class="min-w-full">
+          <thead class="sticky top-0 bg-background-secondary-default ">
             <tr>
-              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+              <th class="px-3 py-2 text-left text-caption-1-medium uppercase text-text-secondary ">
                 {{ t('admin.errorPassthrough.columns.priority') }}
               </th>
-              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+              <th class="px-3 py-2 text-left text-caption-1-medium uppercase text-text-secondary ">
                 {{ t('admin.errorPassthrough.columns.name') }}
               </th>
-              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+              <th class="px-3 py-2 text-left text-caption-1-medium uppercase text-text-secondary ">
                 {{ t('admin.errorPassthrough.columns.conditions') }}
               </th>
-              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+              <th class="px-3 py-2 text-left text-caption-1-medium uppercase text-text-secondary ">
                 {{ t('admin.errorPassthrough.columns.platforms') }}
               </th>
-              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+              <th class="px-3 py-2 text-left text-caption-1-medium uppercase text-text-secondary ">
                 {{ t('admin.errorPassthrough.columns.behavior') }}
               </th>
-              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+              <th class="px-3 py-2 text-left text-caption-1-medium uppercase text-text-secondary ">
                 {{ t('admin.errorPassthrough.columns.status') }}
               </th>
-              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+              <th class="px-3 py-2 text-left text-caption-1-medium uppercase text-text-secondary ">
                 {{ t('admin.errorPassthrough.columns.actions') }}
               </th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200 bg-white dark:divide-dark-700 dark:bg-dark-800">
-            <tr v-for="rule in rules" :key="rule.id" class="hover:bg-gray-50 dark:hover:bg-dark-700">
+          <tbody class="divide-y divide-border-button-default bg-background-primary-default ">
+            <tr v-for="rule in rules" :key="rule.id" class="hover:bg-background-secondary-default ">
               <td class="whitespace-nowrap px-3 py-2">
-                <span class="inline-flex h-5 w-5 items-center justify-center rounded bg-gray-100 text-xs font-medium text-gray-700 dark:bg-dark-600 dark:text-gray-300">
+                <span class="inline-flex h-5 w-5 items-center justify-center rounded bg-background-secondary-default text-caption-1-medium text-text-primary ">
                   {{ rule.priority }}
                 </span>
               </td>
               <td class="px-3 py-2">
-                <div class="font-medium text-gray-900 dark:text-white text-sm">{{ rule.name }}</div>
-                <div v-if="rule.description" class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 max-w-xs truncate">
+                <div class="font-medium text-text-primary text-body-regular">{{ rule.name }}</div>
+                <div v-if="rule.description" class="mt-0.5 text-caption-1-regular text-text-secondary max-w-xs truncate">
                   {{ rule.description }}
                 </div>
               </td>
@@ -79,60 +79,60 @@
                   <span
                     v-for="code in rule.error_codes.slice(0, 3)"
                     :key="code"
-                    class="badge badge-danger text-xs"
+                    class="badge badge-danger text-caption-1-regular"
                   >
                     {{ code }}
                   </span>
                   <span
                     v-if="rule.error_codes.length > 3"
-                    class="text-xs text-gray-500"
+                    class="text-caption-1-regular text-text-secondary"
                   >
                     +{{ rule.error_codes.length - 3 }}
                   </span>
                   <span
                     v-for="keyword in rule.keywords.slice(0, 1)"
                     :key="keyword"
-                    class="badge badge-gray text-xs"
+                    class="badge badge-gray text-caption-1-regular"
                   >
                     "{{ keyword.length > 10 ? keyword.substring(0, 10) + '...' : keyword }}"
                   </span>
                   <span
                     v-if="rule.keywords.length > 1"
-                    class="text-xs text-gray-500"
+                    class="text-caption-1-regular text-text-secondary"
                   >
                     +{{ rule.keywords.length - 1 }}
                   </span>
                 </div>
-                <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                <div class="mt-0.5 text-caption-1-regular text-text-secondary ">
                   {{ t('admin.errorPassthrough.matchMode.' + rule.match_mode) }}
                 </div>
               </td>
               <td class="px-3 py-2">
-                <div v-if="rule.platforms.length === 0" class="text-xs text-gray-500 dark:text-gray-400">
+                <div v-if="rule.platforms.length === 0" class="text-caption-1-regular text-text-secondary ">
                   {{ t('admin.errorPassthrough.allPlatforms') }}
                 </div>
                 <div v-else class="flex flex-wrap gap-1">
                   <span
                     v-for="platform in rule.platforms.slice(0, 2)"
                     :key="platform"
-                    class="badge badge-primary text-xs"
+                    class="badge badge-primary text-caption-1-regular"
                   >
                     {{ platform }}
                   </span>
-                  <span v-if="rule.platforms.length > 2" class="text-xs text-gray-500">
+                  <span v-if="rule.platforms.length > 2" class="text-caption-1-regular text-text-secondary">
                     +{{ rule.platforms.length - 2 }}
                   </span>
                 </div>
               </td>
               <td class="px-3 py-2">
-                <div class="text-xs space-y-0.5">
+                <div class="text-caption-1-regular space-y-0.5">
                   <div class="flex items-center gap-1">
                     <Icon
                       :name="rule.passthrough_code ? 'checkCircle' : 'xCircle'"
                       size="xs"
-                      :class="rule.passthrough_code ? 'text-green-500' : 'text-gray-400'"
+                      :class="rule.passthrough_code ? 'text-text-success' : 'text-text-tertiary'"
                     />
-                    <span class="text-gray-600 dark:text-gray-400">
+                    <span class="text-text-secondary ">
                       {{ t('admin.errorPassthrough.code') }}:
                       {{ rule.passthrough_code ? t('admin.errorPassthrough.passthrough') : (rule.response_code || '-') }}
                     </span>
@@ -141,9 +141,9 @@
                     <Icon
                       :name="rule.passthrough_body ? 'checkCircle' : 'xCircle'"
                       size="xs"
-                      :class="rule.passthrough_body ? 'text-green-500' : 'text-gray-400'"
+                      :class="rule.passthrough_body ? 'text-text-success' : 'text-text-tertiary'"
                     />
-                    <span class="text-gray-600 dark:text-gray-400">
+                    <span class="text-text-secondary ">
                       {{ t('admin.errorPassthrough.body') }}:
                       {{ rule.passthrough_body ? t('admin.errorPassthrough.passthrough') : t('admin.errorPassthrough.custom') }}
                     </span>
@@ -152,9 +152,9 @@
                     <Icon
                       name="checkCircle"
                       size="xs"
-                      class="text-yellow-500"
+                      class="text-text-warning"
                     />
-                    <span class="text-gray-600 dark:text-gray-400">
+                    <span class="text-text-secondary ">
                       {{ t('admin.errorPassthrough.skipMonitoring') }}
                     </span>
                   </div>
@@ -164,13 +164,13 @@
                 <button
                   @click="toggleEnabled(rule)"
                   :class="[
-                    'relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
-                    rule.enabled ? 'bg-primary-600' : 'bg-gray-200 dark:bg-dark-600'
+                    'relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-border-focus-ring focus:ring-offset-2',
+                    rule.enabled ? 'bg-background-accent-hover' : 'bg-background-tertiary-default '
                   ]"
                 >
                   <span
                     :class="[
-                      'pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                      'pointer-events-none inline-block h-3 w-3 transform rounded-full bg-background-primary-default shadow ring-0 transition duration-200 ease-in-out',
                       rule.enabled ? 'translate-x-3' : 'translate-x-0'
                     ]"
                   />
@@ -180,14 +180,14 @@
                 <div class="flex items-center gap-1">
                   <button
                     @click="handleEdit(rule)"
-                    class="p-1 text-gray-500 hover:text-primary-600 dark:hover:text-primary-400"
+                    class="p-1 text-text-secondary hover:text-text-accent "
                     :title="t('common.edit')"
                   >
                     <Icon name="edit" size="sm" />
                   </button>
                   <button
                     @click="handleDelete(rule)"
-                    class="p-1 text-gray-500 hover:text-red-600 dark:hover:text-red-400"
+                    class="p-1 text-text-secondary hover:text-text-error-primary "
                     :title="t('common.delete')"
                   >
                     <Icon name="trash" size="sm" />
@@ -196,15 +196,15 @@
               </td>
             </tr>
           </tbody>
-        </table>
+        </BoardTable>
       </div>
     </div>
 
     <template #footer>
       <div class="flex justify-end">
-        <button @click="$emit('close')" class="btn btn-secondary">
+        <BoardButton type="submit" @click="$emit('close')" variant="secondary" size="medium">
           {{ t('common.close') }}
-        </button>
+        </BoardButton>
       </div>
     </template>
 
@@ -251,36 +251,36 @@
         </div>
 
         <!-- Match Conditions -->
-        <div class="rounded-lg border border-gray-200 p-3 dark:border-dark-600">
-          <h4 class="mb-2 text-sm font-medium text-gray-900 dark:text-white">
+        <div class="rounded-lg border border-border-button-default p-3 ">
+          <h4 class="mb-2 text-body-medium text-text-primary ">
             {{ t('admin.errorPassthrough.form.matchConditions') }}
           </h4>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="input-label text-xs">{{ t('admin.errorPassthrough.form.errorCodes') }}</label>
+              <label class="input-label text-caption-1-regular">{{ t('admin.errorPassthrough.form.errorCodes') }}</label>
               <input
                 v-model="errorCodesInput"
                 type="text"
-                class="input text-sm"
+                class="input text-body-regular"
                 :placeholder="t('admin.errorPassthrough.form.errorCodesPlaceholder')"
               />
-              <p class="input-hint text-xs">{{ t('admin.errorPassthrough.form.errorCodesHint') }}</p>
+              <p class="input-hint text-caption-1-regular">{{ t('admin.errorPassthrough.form.errorCodesHint') }}</p>
             </div>
             <div>
-              <label class="input-label text-xs">{{ t('admin.errorPassthrough.form.keywords') }}</label>
+              <label class="input-label text-caption-1-regular">{{ t('admin.errorPassthrough.form.keywords') }}</label>
               <textarea
                 v-model="keywordsInput"
                 rows="2"
-                class="input font-mono text-xs"
+                class="input font-mono text-caption-1-regular"
                 :placeholder="t('admin.errorPassthrough.form.keywordsPlaceholder')"
               />
-              <p class="input-hint text-xs">{{ t('admin.errorPassthrough.form.keywordsHint') }}</p>
+              <p class="input-hint text-caption-1-regular">{{ t('admin.errorPassthrough.form.keywordsHint') }}</p>
             </div>
           </div>
 
           <div class="mt-3">
-            <label class="input-label text-xs">{{ t('admin.errorPassthrough.form.matchMode') }}</label>
+            <label class="input-label text-caption-1-regular">{{ t('admin.errorPassthrough.form.matchMode') }}</label>
             <div class="mt-1 space-y-2">
               <label
                 v-for="option in matchModeOptions"
@@ -291,18 +291,18 @@
                   type="radio"
                   :value="option.value"
                   v-model="form.match_mode"
-                  class="mt-0.5 h-3.5 w-3.5 border-gray-300 text-primary-600 focus:ring-primary-500"
+                  class="mt-0.5 h-3.5 w-3.5 border-border-button-hover text-text-accent focus:ring-border-focus-ring"
                 />
                 <div class="flex-1">
-                  <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ option.label }}</span>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ option.description }}</p>
+                  <span class="text-caption-1-medium text-text-primary ">{{ option.label }}</span>
+                  <p class="text-caption-1-regular text-text-secondary ">{{ option.description }}</p>
                 </div>
               </label>
             </div>
           </div>
 
           <div class="mt-3">
-            <label class="input-label text-xs">{{ t('admin.errorPassthrough.form.platforms') }}</label>
+            <label class="input-label text-caption-1-regular">{{ t('admin.errorPassthrough.form.platforms') }}</label>
             <div class="flex flex-wrap gap-3">
               <label
                 v-for="platform in platformOptions"
@@ -313,18 +313,18 @@
                   type="checkbox"
                   :value="platform.value"
                   v-model="form.platforms"
-                  class="h-3.5 w-3.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  class="h-3.5 w-3.5 rounded border-border-button-hover text-text-accent focus:ring-border-focus-ring"
                 />
-                <span class="text-xs text-gray-700 dark:text-gray-300">{{ platform.label }}</span>
+                <span class="text-caption-1-regular text-text-primary ">{{ platform.label }}</span>
               </label>
             </div>
-            <p class="input-hint text-xs mt-1">{{ t('admin.errorPassthrough.form.platformsHint') }}</p>
+            <p class="input-hint text-caption-1-regular mt-1">{{ t('admin.errorPassthrough.form.platformsHint') }}</p>
           </div>
         </div>
 
         <!-- Response Behavior -->
-        <div class="rounded-lg border border-gray-200 p-3 dark:border-dark-600">
-          <h4 class="mb-2 text-sm font-medium text-gray-900 dark:text-white">
+        <div class="rounded-lg border border-border-button-default p-3 ">
+          <h4 class="mb-2 text-body-medium text-text-primary ">
             {{ t('admin.errorPassthrough.form.responseBehavior') }}
           </h4>
 
@@ -334,20 +334,20 @@
                 <input
                   type="checkbox"
                   v-model="form.passthrough_code"
-                  class="h-3.5 w-3.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  class="h-3.5 w-3.5 rounded border-border-button-hover text-text-accent focus:ring-border-focus-ring"
                 />
-                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                <span class="text-caption-1-medium text-text-primary ">
                   {{ t('admin.errorPassthrough.form.passthroughCode') }}
                 </span>
               </label>
               <div v-if="!form.passthrough_code" class="mt-2">
-                <label class="input-label text-xs">{{ t('admin.errorPassthrough.form.responseCode') }}</label>
+                <label class="input-label text-caption-1-regular">{{ t('admin.errorPassthrough.form.responseCode') }}</label>
                 <input
                   v-model.number="form.response_code"
                   type="number"
                   min="100"
                   max="599"
-                  class="input text-sm"
+                  class="input text-body-regular"
                   placeholder="422"
                 />
               </div>
@@ -357,18 +357,18 @@
                 <input
                   type="checkbox"
                   v-model="form.passthrough_body"
-                  class="h-3.5 w-3.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  class="h-3.5 w-3.5 rounded border-border-button-hover text-text-accent focus:ring-border-focus-ring"
                 />
-                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                <span class="text-caption-1-medium text-text-primary ">
                   {{ t('admin.errorPassthrough.form.passthroughBody') }}
                 </span>
               </label>
               <div v-if="!form.passthrough_body" class="mt-2">
-                <label class="input-label text-xs">{{ t('admin.errorPassthrough.form.customMessage') }}</label>
+                <label class="input-label text-caption-1-regular">{{ t('admin.errorPassthrough.form.customMessage') }}</label>
                 <input
                   v-model="form.custom_message"
                   type="text"
-                  class="input text-sm"
+                  class="input text-body-regular"
                   :placeholder="t('admin.errorPassthrough.form.customMessagePlaceholder')"
                 />
               </div>
@@ -381,22 +381,22 @@
           <input
             type="checkbox"
             v-model="form.skip_monitoring"
-            class="h-3.5 w-3.5 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+            class="h-3.5 w-3.5 rounded border-border-button-hover text-text-warning focus:ring-text-warning"
           />
-          <span class="text-xs font-medium text-gray-700 dark:text-gray-300">
+          <span class="text-caption-1-medium text-text-primary ">
             {{ t('admin.errorPassthrough.form.skipMonitoring') }}
           </span>
         </div>
-        <p class="input-hint text-xs -mt-3">{{ t('admin.errorPassthrough.form.skipMonitoringHint') }}</p>
+        <p class="input-hint text-caption-1-regular -mt-3">{{ t('admin.errorPassthrough.form.skipMonitoringHint') }}</p>
 
         <!-- Enabled -->
         <div class="flex items-center gap-1.5">
           <input
             type="checkbox"
             v-model="form.enabled"
-            class="h-3.5 w-3.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            class="h-3.5 w-3.5 rounded border-border-button-hover text-text-accent focus:ring-border-focus-ring"
           />
-          <span class="text-xs font-medium text-gray-700 dark:text-gray-300">
+          <span class="text-caption-1-medium text-text-primary ">
             {{ t('admin.errorPassthrough.form.enabled') }}
           </span>
         </div>
@@ -404,13 +404,13 @@
 
       <template #footer>
         <div class="flex justify-end gap-3">
-          <button @click="closeFormModal" type="button" class="btn btn-secondary">
+          <BoardButton @click="closeFormModal" type="button" variant="secondary" size="medium">
             {{ t('common.cancel') }}
-          </button>
-          <button @click="handleSubmit" :disabled="submitting" class="btn btn-primary">
+          </BoardButton>
+          <BoardButton type="submit" @click="handleSubmit" :disabled="submitting" variant="primary" size="medium">
             <Icon v-if="submitting" name="refresh" size="sm" class="mr-1 animate-spin" />
             {{ showEditModal ? t('common.update') : t('common.create') }}
-          </button>
+          </BoardButton>
         </div>
       </template>
     </BaseDialog>
@@ -430,6 +430,8 @@
 </template>
 
 <script setup lang="ts">
+import BoardTable from '@/components/boardui/Table.vue'
+import BoardButton from '@/components/boardui/Button.vue'
 import { ref, reactive, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'

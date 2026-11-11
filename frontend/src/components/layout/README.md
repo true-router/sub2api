@@ -6,7 +6,9 @@ Vue 3 layout components for the Sub2API frontend, built with Composition API, Ty
 
 ### 1. AppLayout.vue
 
-Main application layout with sidebar and header.
+Main application layout. Admin and My Account routes use a sidebar-owned global control area and a continuous content region. `AppHeader` renders inside the sidebar in account mode. `AdminContentHeading` renders the breadcrumb, page title, description, mobile navigation trigger, and page-local notification action inside `main`. Routes outside this workspace retain the original top header.
+
+The desktop admin sidebar is 264px wide (72px collapsed), with a 12px outer inset. Workspace and quick search live at the top. Navigation scrolls independently. Theme, settings, and account controls stay at the bottom. The content region owns its desktop scroll area. Below 1024px, the sidebar becomes a 280px overlay (or narrower on a small screen) and the content uses normal page scrolling.
 
 **Usage:**
 

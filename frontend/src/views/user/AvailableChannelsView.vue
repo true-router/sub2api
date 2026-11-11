@@ -4,30 +4,24 @@
       <template #filters>
         <div class="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
           <div class="flex flex-1 flex-wrap items-center gap-3">
-            <div class="relative w-full sm:w-80">
-              <Icon
-                name="search"
-                size="md"
-                class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-              />
-              <input
-                v-model="searchQuery"
-                type="text"
-                :placeholder="t('availableChannels.searchPlaceholder')"
-                class="input pl-10"
-              />
-            </div>
+            <BoardSearchField
+              v-model="searchQuery"
+              :placeholder="t('availableChannels.searchPlaceholder')"
+              :clear-label="t('boardui.clearSearch')"
+              shape="rounded"
+              class="w-full sm:w-80"
+            />
           </div>
 
           <div class="flex w-full flex-shrink-0 flex-wrap items-center justify-end gap-3 lg:w-auto">
-            <button
+            <BoardButton
               @click="loadChannels"
               :disabled="loading"
-              class="btn btn-secondary"
+              variant="secondary" size="medium"
               :title="t('common.refresh', 'Refresh')"
             >
               <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
-            </button>
+            </BoardButton>
           </div>
         </div>
       </template>
@@ -49,6 +43,8 @@
 </template>
 
 <script setup lang="ts">
+import BoardSearchField from '@/components/boardui/SearchField.vue'
+import BoardButton from '@/components/boardui/Button.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppLayout from '@/components/layout/AppLayout.vue'

@@ -10,17 +10,17 @@
         <label class="input-label">{{ t('admin.affiliates.withdraw.user') }}</label>
         <div
           v-if="selectedUser"
-          class="flex items-center justify-between gap-3 rounded-md border border-primary-200 bg-primary-50 px-3 py-2 dark:border-primary-700/50 dark:bg-primary-900/20"
+          class="flex items-center justify-between gap-3 rounded-md border border-border-focus-ring bg-background-accent-subtle px-3 py-2 "
           data-test="withdraw-selected-user"
         >
-          <div class="min-w-0 truncate text-sm">
-            <span class="font-mono text-gray-500 dark:text-dark-400">#{{ selectedUser.id }}</span>
-            <span class="ml-2 font-medium text-gray-900 dark:text-white">{{ selectedUser.email }}</span>
-            <span v-if="selectedUser.username" class="ml-1 text-xs text-gray-500 dark:text-dark-400">({{ selectedUser.username }})</span>
+          <div class="min-w-0 truncate text-body-regular">
+            <span class="font-mono text-text-secondary ">#{{ selectedUser.id }}</span>
+            <span class="ml-2 font-medium text-text-primary ">{{ selectedUser.email }}</span>
+            <span v-if="selectedUser.username" class="ml-1 text-caption-1-regular text-text-secondary ">({{ selectedUser.username }})</span>
           </div>
           <button
             type="button"
-            class="text-lg leading-none text-gray-400 hover:text-red-600 disabled:opacity-50"
+            class="text-title-3-regular leading-none text-text-tertiary hover:text-text-error-primary disabled:opacity-50"
             :title="t('admin.affiliates.withdraw.changeUser')"
             :disabled="submitting || outcomeUncertain"
             data-test="withdraw-clear-user"
@@ -40,17 +40,17 @@
           />
           <div
             v-if="userResults.length > 0"
-            class="mt-1 max-h-40 overflow-y-auto rounded border border-gray-200 dark:border-dark-700"
+            class="mt-1 max-h-40 overflow-y-auto rounded border border-border-button-default "
           >
             <button
               v-for="user in userResults"
               :key="user.id"
               type="button"
-              class="w-full px-3 py-1.5 text-left text-sm text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-dark-800"
+              class="w-full px-3 py-1.5 text-left text-body-regular text-text-primary hover:bg-background-secondary-default "
               data-test="withdraw-user-option"
               @click="selectUser(user)"
             >
-              {{ user.email }} <span class="text-xs text-gray-500 dark:text-dark-400">({{ user.username }})</span>
+              {{ user.email }} <span class="text-caption-1-regular text-text-secondary ">({{ user.username }})</span>
             </button>
           </div>
           <p v-else-if="searched" class="input-hint">{{ t('admin.affiliates.withdraw.noUserFound') }}</p>
@@ -59,19 +59,19 @@
 
       <div
         v-if="selectedUser"
-        class="rounded-lg border border-gray-100 bg-gray-50 p-3 dark:border-dark-700 dark:bg-dark-800"
+        class="rounded-lg border border-border-button-default bg-background-secondary-default p-3 "
       >
-        <div class="flex items-center justify-between text-sm">
-          <span class="text-gray-500 dark:text-dark-400">{{ t('admin.affiliates.withdraw.availableQuota') }}</span>
+        <div class="flex items-center justify-between text-body-regular">
+          <span class="text-text-secondary ">{{ t('admin.affiliates.withdraw.availableQuota') }}</span>
           <span
             v-if="overviewLoading"
-            class="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"
+            class="h-4 w-4 animate-spin rounded-full border-2 border-border-focus-ring border-t-transparent"
           ></span>
-          <span v-else class="font-semibold text-gray-900 dark:text-white" data-test="withdraw-available-quota">
+          <span v-else class="font-semibold text-text-primary " data-test="withdraw-available-quota">
             ${{ formatPreciseAmount(availableQuota) }}
           </span>
         </div>
-        <p class="mt-1 text-xs text-gray-500 dark:text-dark-400">{{ t('admin.affiliates.withdraw.frozenHint') }}</p>
+        <p class="mt-1 text-caption-1-regular text-text-secondary ">{{ t('admin.affiliates.withdraw.frozenHint') }}</p>
       </div>
 
       <div>
@@ -87,15 +87,15 @@
             :disabled="!selectedUser || overviewLoading || submitting || outcomeUncertain"
             data-test="withdraw-amount"
           />
-          <button
+          <BoardButton
             type="button"
-            class="btn btn-secondary shrink-0"
+            class="shrink-0" variant="secondary" size="medium"
             :disabled="!selectedUser || overviewLoading || submitting || outcomeUncertain || availableQuota <= 0"
             data-test="withdraw-fill-all"
             @click="fillAll"
           >
             {{ t('admin.affiliates.withdraw.fillAll') }}
-          </button>
+          </BoardButton>
         </div>
         <p v-if="amountError" class="input-error-text" data-test="withdraw-amount-error">{{ amountError }}</p>
         <p v-else class="input-hint">{{ t('admin.affiliates.withdraw.amountHint') }}</p>
@@ -103,37 +103,38 @@
 
       <div
         v-if="outcomeUncertain"
-        class="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800 dark:border-blue-700/50 dark:bg-blue-900/20 dark:text-blue-300"
+        class="rounded-lg border border-text-info bg-background-info-subtle p-3 text-body-regular text-text-info "
         data-test="withdraw-uncertain-hint"
       >
         {{ t('admin.affiliates.withdraw.uncertainHint') }}
       </div>
 
-      <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-700/50 dark:bg-amber-900/20 dark:text-amber-300">
+      <div class="rounded-lg border border-text-warning bg-background-warning-subtle p-3 text-body-regular text-text-warning ">
         {{ t('admin.affiliates.withdraw.warning') }}
       </div>
     </form>
 
     <template #footer>
       <div class="flex justify-end gap-3">
-        <button type="button" class="btn btn-secondary" :disabled="submitting" @click="handleClose">
+        <BoardButton type="button" variant="secondary" size="medium" :disabled="submitting" @click="handleClose">
           {{ t('common.cancel') }}
-        </button>
-        <button
+        </BoardButton>
+        <BoardButton
           type="button"
-          class="btn btn-primary"
+          variant="primary" size="medium"
           :disabled="!canSubmit"
           data-test="withdraw-submit"
           @click="submit"
         >
           {{ submitting ? t('admin.affiliates.withdraw.submitting') : t('admin.affiliates.withdraw.submit') }}
-        </button>
+        </BoardButton>
       </div>
     </template>
   </BaseDialog>
 </template>
 
 <script setup lang="ts">
+import BoardButton from '@/components/boardui/Button.vue'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/common/BaseDialog.vue'

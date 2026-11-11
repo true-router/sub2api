@@ -4,6 +4,7 @@ import { computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import Toast from '@/components/common/Toast.vue'
 import NavigationProgress from '@/components/common/NavigationProgress.vue'
 import AdminComplianceDialog from '@/components/admin/AdminComplianceDialog.vue'
+import { usesBoardUIWorkspace } from '@/router/workspace'
 import { resolveRouteDocumentTitle } from '@/router/title'
 import AnnouncementPopup from '@/components/common/AnnouncementPopup.vue'
 import { useAppStore, useAuthStore, useSubscriptionStore, useAnnouncementStore, useAdminComplianceStore, useAdminSettingsStore } from '@/stores'
@@ -20,6 +21,12 @@ const subscriptionStore = useSubscriptionStore()
 const announcementStore = useAnnouncementStore()
 const adminComplianceStore = useAdminComplianceStore()
 const adminSettingsStore = useAdminSettingsStore()
+
+// Put the skin on the document so Vue Teleport overlays inherit it too.
+watch(() => usesBoardUIWorkspace(route.meta), (workspace) => {
+  if (workspace) document.documentElement.dataset.adminUi = 'boardui'
+  else delete document.documentElement.dataset.adminUi
+}, { immediate: true })
 
 function updateDocumentTitle() {
   const customMenuItems = [

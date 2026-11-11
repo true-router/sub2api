@@ -6,7 +6,7 @@
         <Icon
           name="search"
           size="md"
-          class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+          class="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary "
         />
         <input
           v-model="search"
@@ -36,31 +36,32 @@
 
     <!-- Right: Actions -->
     <div class="flex w-full flex-shrink-0 flex-wrap items-center justify-end gap-3 lg:w-auto">
-      <button
+      <BoardButton type="submit"
         @click="$emit('reload')"
         :disabled="loading"
-        class="btn btn-secondary"
+        variant="secondary" size="medium"
         :title="t('common.refresh')"
       >
         <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
-      </button>
-      <button
+      </BoardButton>
+      <BoardButton type="submit"
         @click="$emit('manage-templates')"
-        class="btn btn-secondary"
+        variant="secondary" size="medium"
         :title="t('admin.channelMonitor.template.manageButton')"
       >
         <Icon name="cog" size="md" class="mr-2" />
         {{ t('admin.channelMonitor.template.manageButton') }}
-      </button>
-      <button @click="$emit('create')" class="btn btn-primary">
+      </BoardButton>
+      <BoardButton type="submit" @click="$emit('create')" variant="primary" size="medium">
         <Icon name="plus" size="md" class="mr-2" />
         {{ t('admin.channelMonitor.createButton') }}
-      </button>
+      </BoardButton>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import BoardButton from '@/components/boardui/Button.vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Provider } from '@/api/admin/channelMonitor'

@@ -1,11 +1,11 @@
 <template>
   <div class="card p-4">
-    <h3 class="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
+    <h3 class="mb-4 text-body-semibold text-text-primary ">
       {{ t('payment.admin.paymentDistribution') }}
     </h3>
     <div
       v-if="!methods?.length"
-      class="flex h-32 items-center justify-center text-sm text-gray-500 dark:text-gray-400"
+      class="flex h-32 items-center justify-center text-body-regular text-text-secondary "
     >
       {{ t('payment.admin.noData') }}
     </div>
@@ -13,25 +13,25 @@
       <div v-for="method in methods" :key="method.type" class="space-y-1">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <span :class="['inline-block h-3 w-3 rounded-full', colorMap[method.type] || 'bg-gray-400']"></span>
-            <span class="text-sm text-gray-700 dark:text-gray-300">
+            <span :class="['inline-block h-3 w-3 rounded-full', colorMap[method.type] || 'bg-background-quaternary-default']"></span>
+            <span class="text-body-regular text-text-primary ">
               {{ t('payment.methods.' + method.type, method.type) }}
             </span>
           </div>
           <div class="space-y-1 text-right">
-            <span v-for="[currency, amount] in sortedAmounts(method.amount)" :key="currency" class="block text-sm font-medium text-gray-900 dark:text-white">
+            <span v-for="[currency, amount] in sortedAmounts(method.amount)" :key="currency" class="block text-body-medium text-text-primary ">
               {{ formatMoney(currency, amount) }}
             </span>
-            <span class="ml-2 text-xs text-gray-500 dark:text-gray-400">
+            <span class="ml-2 text-caption-1-regular text-text-secondary ">
               ({{ method.count }})
             </span>
           </div>
         </div>
         <div v-for="[currency, amount] in sortedAmounts(method.amount)" :key="currency" class="flex items-center gap-2">
-          <span class="w-10 text-xs text-gray-500 dark:text-gray-400">{{ currency }}</span>
-          <div class="h-2 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-dark-700">
+          <span class="w-10 text-caption-1-regular text-text-secondary ">{{ currency }}</span>
+          <div class="h-2 flex-1 overflow-hidden rounded-full bg-background-secondary-default ">
             <div
-              :class="['h-full rounded-full transition-all', barColorMap[method.type] || 'bg-gray-400']"
+              :class="['h-full rounded-full transition-all', barColorMap[method.type] || 'bg-background-quaternary-default']"
               :style="{ width: barWidth(currency, amount) + '%' }"
             ></div>
           </div>
@@ -53,19 +53,19 @@ const props = defineProps<{
 }>()
 
 const colorMap: Record<string, string> = {
-  alipay: 'bg-blue-500',
-  wxpay: 'bg-green-500',
-  alipay_direct: 'bg-blue-400',
-  wxpay_direct: 'bg-green-400',
-  stripe: 'bg-purple-500',
+  alipay: 'bg-background-info-default',
+  wxpay: 'bg-background-success-default',
+  alipay_direct: 'bg-background-info-default',
+  wxpay_direct: 'bg-background-success-default',
+  stripe: 'bg-background-feature-default',
 }
 
 const barColorMap: Record<string, string> = {
-  alipay: 'bg-blue-500',
-  wxpay: 'bg-green-500',
-  alipay_direct: 'bg-blue-400',
-  wxpay_direct: 'bg-green-400',
-  stripe: 'bg-purple-500',
+  alipay: 'bg-background-info-default',
+  wxpay: 'bg-background-success-default',
+  alipay_direct: 'bg-background-info-default',
+  wxpay_direct: 'bg-background-success-default',
+  stripe: 'bg-background-feature-default',
 }
 
 const maxAmounts = computed<CurrencyAmounts>(() => {

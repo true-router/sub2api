@@ -7,58 +7,58 @@
             <Icon name="mcp" size="lg" />
           </div>
           <div>
-            <h2 id="mcp-connection-title" class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('mcp.connectionTitle') }}</h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('mcp.connectionDescription') }}</p>
+            <h2 id="mcp-connection-title" class="text-lg font-semibold text-text-primary">{{ t('mcp.connectionTitle') }}</h2>
+            <p class="mt-1 text-sm text-text-secondary">{{ t('mcp.connectionDescription') }}</p>
           </div>
         </div>
         <div class="mt-5">
           <label for="mcp-endpoint" class="input-label">{{ t('mcp.endpoint') }}</label>
           <div class="flex flex-col gap-2 sm:flex-row">
-            <input id="mcp-endpoint" :value="endpoint" :placeholder="connectionLoading ? t('mcp.connectionLoading') : ''" class="input min-w-0 flex-1 font-mono text-sm" readonly />
-            <button data-testid="copy-endpoint" class="btn btn-secondary shrink-0" type="button" :disabled="!endpoint || connectionLoading" @click="copyToClipboard(endpoint)">{{ t('mcp.copyEndpoint') }}</button>
+            <BoardInput id="mcp-endpoint" :model-value="endpoint" :placeholder="connectionLoading ? t('mcp.connectionLoading') : ''" class="min-w-0 flex-1 font-mono" readonly />
+            <BoardButton data-testid="copy-endpoint" class="shrink-0" variant="secondary" size="medium" type="button" :disabled="!endpoint || connectionLoading" @click="copyToClipboard(endpoint)">{{ t('mcp.copyEndpoint') }}</BoardButton>
           </div>
           <div v-if="connectionError" class="mt-3 flex flex-wrap items-center gap-3">
             <p role="alert" class="text-sm text-red-600 dark:text-red-400">{{ connectionError }}</p>
-            <button data-testid="retry-connection" class="btn btn-secondary btn-sm" type="button" :disabled="connectionLoading" @click="loadConnection">{{ t('common.refresh') }}</button>
+            <BoardButton data-testid="retry-connection" variant="secondary" size="small" type="button" :disabled="connectionLoading" @click="loadConnection">{{ t('common.refresh') }}</BoardButton>
           </div>
-          <ol class="mt-5 list-decimal space-y-2 pl-5 text-sm text-gray-600 dark:text-gray-300">
+          <ol class="mt-5 list-decimal space-y-2 pl-5 text-sm text-text-secondary">
             <li>{{ t('mcp.connectStep1') }}</li>
             <li>{{ t('mcp.connectStep2') }}</li>
             <li>{{ t('mcp.connectStep3') }}</li>
           </ol>
         </div>
-        <p class="mt-5 border-t border-gray-100 pt-4 text-sm text-gray-500 dark:border-dark-700 dark:text-gray-400">{{ t('mcp.capabilities') }}</p>
+        <p class="mt-5 border-t border-border-button-default pt-4 text-sm text-text-secondary">{{ t('mcp.capabilities') }}</p>
       </section>
 
       <section class="card" aria-labelledby="mcp-grants-title">
-        <div class="flex flex-wrap items-start justify-between gap-4 border-b border-gray-100 p-5 dark:border-dark-700 sm:p-6">
+        <div class="flex flex-wrap items-start justify-between gap-4 border-b border-border-button-default p-5 sm:p-6">
           <div class="max-w-xl">
-            <h2 id="mcp-grants-title" class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('mcp.grantsTitle') }}</h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('mcp.grantsDescription') }}</p>
+            <h2 id="mcp-grants-title" class="text-lg font-semibold text-text-primary">{{ t('mcp.grantsTitle') }}</h2>
+            <p class="mt-1 text-sm text-text-secondary">{{ t('mcp.grantsDescription') }}</p>
           </div>
-          <button data-testid="refresh-grants" type="button" class="btn btn-secondary" :disabled="loading || revoking" @click="loadGrants">{{ t('common.refresh') }}</button>
+          <BoardButton data-testid="refresh-grants" type="button" variant="secondary" size="medium" :disabled="loading || revoking" @click="loadGrants">{{ t('common.refresh') }}</BoardButton>
         </div>
         <div class="p-5 sm:p-6" :aria-busy="loading">
           <p v-if="loadError" role="alert" class="text-sm text-red-600 dark:text-red-400">{{ loadError }}</p>
-          <p v-else-if="loading" role="status" class="py-8 text-center text-sm text-gray-500 dark:text-gray-400">{{ t('mcp.loading') }}</p>
-          <p v-else-if="grants.length === 0" class="rounded-xl border border-dashed border-gray-200 px-4 py-10 text-center text-sm text-gray-500 dark:border-dark-700 dark:text-gray-400">{{ t('mcp.empty') }}</p>
-          <ul v-else class="divide-y divide-gray-100 dark:divide-dark-700">
+          <p v-else-if="loading" role="status" class="py-8 text-center text-sm text-text-secondary">{{ t('mcp.loading') }}</p>
+          <p v-else-if="grants.length === 0" class="rounded-xl border border-dashed border-border-button-default px-4 py-10 text-center text-sm text-text-secondary">{{ t('mcp.empty') }}</p>
+          <ul v-else class="divide-y divide-border-button-default">
             <li v-for="grant in grants" :key="grant.id" class="flex items-start justify-between gap-4 py-5 first:pt-0 last:pb-0" :data-grant-id="grant.id">
               <div class="min-w-0 space-y-2">
                 <div class="flex flex-wrap items-center gap-2">
-                  <span class="break-all font-medium text-gray-900 dark:text-white">{{ grant.client_name }}</span>
-                  <span class="rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-dark-700 dark:text-gray-300">{{ grant.scope === 'admin' ? t('mcp.adminScope') : t('mcp.userScope') }}</span>
+                  <span class="break-all font-medium text-text-primary">{{ grant.client_name }}</span>
+                  <span class="rounded-md bg-background-secondary-default px-2 py-0.5 text-xs text-text-secondary">{{ grant.scope === 'admin' ? t('mcp.adminScope') : t('mcp.userScope') }}</span>
                   <span class="rounded-md bg-primary-50 px-2 py-0.5 text-xs text-primary-700 dark:bg-primary-900/20 dark:text-primary-300">{{ grant.read_only ? t('mcp.readOnly') : t('mcp.readWrite') }}</span>
-                  <span class="text-xs" :class="isActive(grant) ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400'">{{ grantStatus(grant) }}</span>
+                  <span class="text-xs" :class="isActive(grant) ? 'text-emerald-600 dark:text-emerald-400' : 'text-text-secondary '">{{ grantStatus(grant) }}</span>
                 </div>
-                <p class="truncate font-mono text-xs text-gray-500 dark:text-gray-400" :title="grant.client_id">{{ grant.client_id }}</p>
-                <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+                <p class="truncate font-mono text-xs text-text-secondary" :title="grant.client_id">{{ grant.client_id }}</p>
+                <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-secondary">
                   <span>{{ t('mcp.createdAt', { date: formatDate(grant.created_at) }) }}</span>
                   <span>{{ t('mcp.expiresAt', { date: formatDate(grant.expires_at) }) }}</span>
                   <span>{{ grant.last_used_at ? t('mcp.lastUsedAt', { date: formatDate(grant.last_used_at) }) : t('mcp.neverUsed') }}</span>
                 </div>
               </div>
-              <button v-if="!grant.revoked_at" type="button" class="btn btn-ghost btn-sm shrink-0 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20" :aria-label="`${t('mcp.revoke')} ${grant.client_name}`" @click="revokeTarget = grant">{{ t('mcp.revoke') }}</button>
+              <BoardButton v-if="!grant.revoked_at" type="button" class="shrink-0 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20" variant="ghost" size="small" :aria-label="`${t('mcp.revoke')} ${grant.client_name}`" @click="revokeTarget = grant">{{ t('mcp.revoke') }}</BoardButton>
             </li>
           </ul>
         </div>
@@ -66,12 +66,12 @@
     </div>
 
     <BaseDialog :show="!!revokeTarget" :title="t('mcp.revokeTitle')" width="narrow" :close-on-escape="!revoking" :show-close-button="!revoking" @close="closeRevoke">
-      <p class="text-sm text-gray-600 dark:text-gray-300">{{ t('mcp.revokeConfirm', { name: revokeTarget?.client_name || '' }) }}</p>
+      <p class="text-sm text-text-secondary">{{ t('mcp.revokeConfirm', { name: revokeTarget?.client_name || '' }) }}</p>
       <p v-if="revokeError" role="alert" class="mt-3 text-sm text-red-600 dark:text-red-400">{{ revokeError }}</p>
       <template #footer>
         <div class="flex justify-end gap-3">
-          <button type="button" class="btn btn-secondary" :disabled="revoking" @click="closeRevoke">{{ t('common.cancel') }}</button>
-          <button data-testid="confirm-revoke" type="button" class="btn btn-danger" :disabled="revoking || loading" @click="revokeGrant">{{ revoking ? t('common.processing') : t('mcp.revoke') }}</button>
+          <BoardButton type="button" variant="secondary" size="medium" :disabled="revoking" @click="closeRevoke">{{ t('common.cancel') }}</BoardButton>
+          <BoardButton data-testid="confirm-revoke" type="button" variant="danger" size="medium" :disabled="revoking || loading" @click="revokeGrant">{{ revoking ? t('common.processing') : t('mcp.revoke') }}</BoardButton>
         </div>
       </template>
     </BaseDialog>
@@ -79,6 +79,8 @@
 </template>
 
 <script setup lang="ts">
+import BoardInput from '@/components/boardui/Input.vue'
+import BoardButton from '@/components/boardui/Button.vue'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { mcpAPI, type MCPGrant } from '@/api/mcp'

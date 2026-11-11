@@ -15,7 +15,7 @@
         <!-- Email Input -->
         <div>
           <label for="email" class="input-label">
-            {{ t('auth.emailLabel') }}
+            {{ t(accountPreview ? 'auth.previewAccountLabel' : 'auth.emailLabel') }}
           </label>
           <div class="relative">
             <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
@@ -24,14 +24,14 @@
             <input
               id="email"
               v-model="formData.email"
-              type="email"
+              :type="accountPreview ? 'text' : 'email'"
               required
               autofocus
-              autocomplete="email"
+              :autocomplete="accountPreview ? 'username' : 'email'"
               :disabled="authActionDisabled"
               class="input pl-11"
               :class="{ 'input-error': errors.email }"
-              :placeholder="t('auth.emailPlaceholder')"
+              :placeholder="accountPreview ? 'admin' : t('auth.emailPlaceholder')"
             />
           </div>
         </div>
@@ -253,6 +253,7 @@ import { extractI18nErrorMessage } from '@/utils/apiError'
 import { clearAllAffiliateReferralCodes } from '@/utils/oauthAffiliate'
 
 const { t } = useI18n()
+const accountPreview = import.meta.env.DEV && import.meta.env.VITE_ACCOUNT_PREVIEW === 'true'
 const LOGIN_AGREEMENT_STORAGE_KEY = 'sub2api_login_agreement_consent'
 
 // ==================== Router & Stores ====================
@@ -531,11 +532,13 @@ function validateForm(): boolean {
     return false
   }
 
+  const isPreviewAdmin = accountPreview && formData.email === 'admin'
+
   // Email validation
   if (!formData.email.trim()) {
     errors.email = t('auth.emailRequired')
     isValid = false
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+  } else if (!isPreviewAdmin && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
     errors.email = t('auth.invalidEmail')
     isValid = false
   }
@@ -544,7 +547,7 @@ function validateForm(): boolean {
   if (!formData.password) {
     errors.password = t('auth.passwordRequired')
     isValid = false
-  } else if (formData.password.length < 6) {
+  } else if (!isPreviewAdmin && formData.password.length < 6) {
     errors.password = t('auth.passwordMinLength')
     isValid = false
   }

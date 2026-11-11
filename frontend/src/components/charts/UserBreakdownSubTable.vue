@@ -6,7 +6,7 @@
     <div v-else-if="items.length === 0" class="py-2 text-center text-xs text-gray-400">
       {{ t('admin.dashboard.noDataAvailable') }}
     </div>
-    <table v-else class="w-full text-xs">
+    <BoardTable size="sm" v-else class="w-full text-xs">
       <tbody>
         <tr
           v-for="user in items"
@@ -33,11 +33,12 @@
           </td>
         </tr>
       </tbody>
-    </table>
+    </BoardTable>
   </div>
 </template>
 
 <script setup lang="ts">
+import BoardTable from '@/components/boardui/Table.vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'

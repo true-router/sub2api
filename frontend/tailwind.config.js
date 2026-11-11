@@ -1,3 +1,5 @@
+import plugin from 'tailwindcss/plugin'
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
@@ -5,6 +7,58 @@ export default {
   theme: {
     extend: {
       colors: {
+        'background-success-default': 'rgb(var(--boardui-background-success-default) / <alpha-value>)',
+        'background-warning-default': 'rgb(var(--boardui-background-warning-default) / <alpha-value>)',
+        'background-error-default': 'rgb(var(--boardui-background-error-default) / <alpha-value>)',
+        'background-info-default': 'rgb(var(--boardui-background-info-default) / <alpha-value>)',
+        'background-feature-default': 'rgb(var(--boardui-background-feature-default) / <alpha-value>)',
+        'text-primary': 'rgb(var(--boardui-text-primary) / <alpha-value>)',
+        'text-secondary': 'rgb(var(--boardui-text-secondary) / <alpha-value>)',
+        'text-tertiary': 'rgb(var(--boardui-text-tertiary) / <alpha-value>)',
+        'text-placeholder': 'rgb(var(--boardui-text-placeholder) / <alpha-value>)',
+        'text-disabled': 'rgb(var(--boardui-text-disabled) / <alpha-value>)',
+        'text-white': 'rgb(var(--boardui-text-white) / <alpha-value>)',
+        'text-accent': 'rgb(var(--boardui-text-accent) / <alpha-value>)',
+        'text-error-primary': 'rgb(var(--boardui-text-error-primary) / <alpha-value>)',
+        'text-success': 'rgb(var(--boardui-text-success) / <alpha-value>)',
+        'text-warning': 'rgb(var(--boardui-text-warning) / <alpha-value>)',
+        'text-info': 'rgb(var(--boardui-text-info) / <alpha-value>)',
+        'text-feature': 'rgb(var(--boardui-text-feature) / <alpha-value>)',
+        'background-full': 'rgb(var(--boardui-background-full) / <alpha-value>)',
+        'background-primary-default': 'rgb(var(--boardui-background-primary-default) / <alpha-value>)',
+        'background-primary-hover': 'rgb(var(--boardui-background-primary-hover) / <alpha-value>)',
+        'background-primary-active': 'rgb(var(--boardui-background-primary-active) / <alpha-value>)',
+        'background-secondary-default': 'rgb(var(--boardui-background-secondary-default) / <alpha-value>)',
+        'background-secondary-hover': 'rgb(var(--boardui-background-secondary-hover) / <alpha-value>)',
+        'background-tertiary-default': 'rgb(var(--boardui-background-tertiary-default) / <alpha-value>)',
+        'background-quaternary-default': 'rgb(var(--boardui-background-quaternary-default) / <alpha-value>)',
+        'background-accent-default': 'rgb(var(--boardui-background-accent-default) / <alpha-value>)',
+        'background-accent-hover': 'rgb(var(--boardui-background-accent-hover) / <alpha-value>)',
+        'background-accent-subtle': 'rgb(var(--boardui-background-accent-subtle) / <alpha-value>)',
+        'background-success-subtle': 'rgb(var(--boardui-background-success-subtle) / <alpha-value>)',
+        'background-warning-subtle': 'rgb(var(--boardui-background-warning-subtle) / <alpha-value>)',
+        'background-error-subtle': 'rgb(var(--boardui-background-error-subtle) / <alpha-value>)',
+        'background-info-subtle': 'rgb(var(--boardui-background-info-subtle) / <alpha-value>)',
+        'background-feature-subtle': 'rgb(var(--boardui-background-feature-subtle) / <alpha-value>)',
+        'background-overlay': 'rgb(var(--boardui-background-overlay) / <alpha-value>)',
+        'border-button-default': 'rgb(var(--boardui-border-button-default) / <alpha-value>)',
+        'border-button-hover': 'rgb(var(--boardui-border-button-hover) / <alpha-value>)',
+        'border-button-active': 'rgb(var(--boardui-border-button-active) / <alpha-value>)',
+        'border-focus-ring': 'rgb(var(--boardui-border-focus-ring) / <alpha-value>)',
+        'border-error-default': 'rgb(var(--boardui-border-error-default) / <alpha-value>)',
+        'border-table': 'rgb(var(--boardui-border-table) / <alpha-value>)',
+        'separator-border': 'rgb(var(--boardui-separator-border) / <alpha-value>)',
+        'foreground-icon-primary': 'rgb(var(--boardui-foreground-icon-primary) / <alpha-value>)',
+        'foreground-icon-secondary': 'rgb(var(--boardui-foreground-icon-secondary) / <alpha-value>)',
+        'foreground-icon-tertiary': 'rgb(var(--boardui-foreground-icon-tertiary) / <alpha-value>)',
+        'foreground-icon-quaternary': 'rgb(var(--boardui-foreground-icon-quaternary) / <alpha-value>)',
+        'foreground-full': 'rgb(var(--boardui-foreground-full) / <alpha-value>)',
+        'chart-1': 'rgb(var(--boardui-chart-1) / <alpha-value>)',
+        'chart-2': 'rgb(var(--boardui-chart-2) / <alpha-value>)',
+        'chart-3': 'rgb(var(--boardui-chart-3) / <alpha-value>)',
+        'chart-4': 'rgb(var(--boardui-chart-4) / <alpha-value>)',
+        'chart-5': 'rgb(var(--boardui-chart-5) / <alpha-value>)',
+        'chart-track': 'rgb(var(--boardui-chart-track) / <alpha-value>)',
         // 主色调 - Teal/Cyan 青色系
         primary: {
           50: '#f0fdfa',
@@ -130,5 +184,23 @@ export default {
       }
     }
   },
-  plugins: []
+  plugins: [
+    plugin(({ addUtilities }) => {
+      const styles = {
+        'display-4': ['40px', '48px', '-1px'],
+        'title-1': ['24px', '32px', '-0.5px'],
+        'title-2': ['20px', '28px', '-0.4px'],
+        'title-3': ['18px', '26px', '-0.3px'],
+        headline: ['16px', '24px', '-0.2px'],
+        body: ['14px', '20px', '-0.1px'],
+        'body-2': ['13px', '20px', '0px'],
+        'caption-1': ['12px', '16px', '0px'],
+        'caption-2': ['11px', '16px', '0px']
+      }
+      const weights = { regular: '400', medium: '500', semibold: '600', bold: '700' }
+      addUtilities(Object.fromEntries(Object.entries(styles).flatMap(([family, [fontSize, lineHeight, letterSpacing]]) =>
+        Object.entries(weights).map(([weight, fontWeight]) => [`.text-${family}-${weight}`, { fontSize, lineHeight, letterSpacing, fontWeight }])
+      )))
+    })
+  ]
 }

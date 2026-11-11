@@ -3,7 +3,7 @@
     <button
       type="button"
       data-testid="referral-count"
-      class="rounded px-1.5 py-0.5 text-[10px] font-medium text-violet-600 hover:bg-violet-50 disabled:opacity-50 dark:text-violet-400 dark:hover:bg-violet-900/30"
+      class="rounded px-1.5 py-0.5 text-[10px] font-medium text-text-feature hover:bg-background-feature-subtle disabled:opacity-50 "
       :disabled="loading || sending"
       :title="countTitle"
       @click="refresh()"
@@ -13,15 +13,15 @@
     <button
       type="button"
       data-testid="referral-open"
-      class="rounded px-1.5 py-0.5 text-[10px] font-medium text-blue-600 hover:bg-blue-50 disabled:opacity-50 dark:text-blue-400 dark:hover:bg-blue-900/30"
+      class="rounded px-1.5 py-0.5 text-[10px] font-medium text-text-info hover:bg-background-info-subtle disabled:opacity-50 "
       :disabled="sending || isShadow"
       :title="isShadow ? t('admin.accounts.openaiReferral.shadowHint') : undefined"
       @click="openDialog"
     >
       {{ t('admin.accounts.openaiReferral.invite') }}
     </button>
-    <span v-if="error && !show" class="max-w-48 truncate text-[10px] text-red-600" :title="error">{{ error }}</span>
-    <span v-if="warning && !show" class="max-w-48 truncate text-[10px] text-amber-700 dark:text-amber-400" :title="warning">{{ warning }}</span>
+    <span v-if="error && !show" class="max-w-48 truncate text-[10px] text-text-error-primary" :title="error">{{ error }}</span>
+    <span v-if="warning && !show" class="max-w-48 truncate text-[10px] text-text-warning " :title="warning">{{ warning }}</span>
     <BaseDialog
       v-if="show"
       :show="show"
@@ -31,26 +31,26 @@
       @close="closeDialog"
     >
       <form :id="formID" class="space-y-4" @submit.prevent="sendInvite">
-        <p class="text-sm text-gray-600 dark:text-gray-300">
+        <p class="text-body-regular text-text-secondary ">
           {{ t('admin.accounts.openaiReferral.fromAccount') }} <strong>{{ account.name }}</strong>
         </p>
-        <div class="flex items-center justify-between rounded-lg bg-violet-50 p-3 text-sm dark:bg-violet-900/20">
+        <div class="flex items-center justify-between rounded-lg bg-background-feature-subtle p-3 text-body-regular ">
           <div>
-            <p class="font-medium text-violet-800 dark:text-violet-300">{{ programLabel }}</p>
-            <p class="mt-1 text-gray-600 dark:text-gray-300">{{ t('admin.accounts.openaiReferral.available') }} {{ countDisplay }}</p>
+            <p class="font-medium text-text-feature ">{{ programLabel }}</p>
+            <p class="mt-1 text-text-secondary ">{{ t('admin.accounts.openaiReferral.available') }} {{ countDisplay }}</p>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" :disabled="loading || sending" @click="refresh()">
+          <BoardButton type="button" variant="secondary" size="small" :disabled="loading || sending" @click="refresh()">
             {{ loading ? t('common.loading') : t('common.refresh') }}
-          </button>
+          </BoardButton>
         </div>
-        <div v-if="eligibility?.title || eligibility?.description || eligibility?.rules?.length" class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+        <div v-if="eligibility?.title || eligibility?.description || eligibility?.rules?.length" class="space-y-2 text-body-regular text-text-secondary ">
           <p v-if="eligibility.title" class="font-medium">{{ eligibility.title }}</p>
           <p v-if="eligibility.description">{{ eligibility.description }}</p>
           <ul v-if="eligibility.rules?.length" class="list-disc space-y-1 pl-5">
             <li v-for="(rule, index) in eligibility.rules" :key="index">{{ rule }}</li>
           </ul>
         </div>
-        <p v-if="fresh && (!eligibility?.should_show || count === null || count <= 0)" class="text-sm text-amber-700 dark:text-amber-400">
+        <p v-if="fresh && (!eligibility?.should_show || count === null || count <= 0)" class="text-body-regular text-text-warning ">
           {{ t('admin.accounts.openaiReferral.unavailable') }}
         </p>
         <div>
@@ -68,27 +68,28 @@
             data-testid="referral-email"
           />
         </div>
-        <label v-if="needsConsent" class="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
+        <label v-if="needsConsent" class="flex items-start gap-2 text-body-regular text-text-secondary ">
           <input v-model="confirmed" type="checkbox" class="mt-1" :disabled="sending" data-testid="referral-consent" />
           {{ t('admin.accounts.openaiReferral.consent') }}
         </label>
-        <p v-if="error" role="alert" class="text-sm text-red-600 dark:text-red-400">{{ error }}</p>
-        <p v-if="sentEmail" role="status" class="text-sm text-emerald-700 dark:text-emerald-400">
+        <p v-if="error" role="alert" class="text-body-regular text-text-error-primary ">{{ error }}</p>
+        <p v-if="sentEmail" role="status" class="text-body-regular text-text-success ">
           {{ t('admin.accounts.openaiReferral.sent', { email: sentEmail }) }}
         </p>
-        <p v-if="warning" role="status" class="text-sm text-amber-700 dark:text-amber-400">{{ warning }}</p>
+        <p v-if="warning" role="status" class="text-body-regular text-text-warning ">{{ warning }}</p>
       </form>
       <template #footer>
-        <button type="button" class="btn btn-secondary" :disabled="sending" @click="closeDialog">{{ t('common.close') }}</button>
-        <button type="submit" :form="formID" class="btn btn-primary" :disabled="!canSend" data-testid="referral-send">
+        <BoardButton type="button" variant="secondary" size="medium" :disabled="sending" @click="closeDialog">{{ t('common.close') }}</BoardButton>
+        <BoardButton type="submit" :form="formID" variant="primary" size="medium" :disabled="!canSend" data-testid="referral-send">
           {{ sending ? t('admin.accounts.openaiReferral.sending') : t('admin.accounts.openaiReferral.send') }}
-        </button>
+        </BoardButton>
       </template>
     </BaseDialog>
   </div>
 </template>
 
 <script setup lang="ts">
+import BoardButton from '@/components/boardui/Button.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Account } from '@/types'

@@ -14,7 +14,7 @@
             type="text"
             spellcheck="false"
             :placeholder="t('admin.channelMonitor.advanced.headerNamePlaceholder')"
-            class="input w-52 flex-none font-mono text-xs"
+            class="input w-52 flex-none font-mono text-caption-1-regular"
             @blur="commitHeaders"
           />
           <input
@@ -22,12 +22,12 @@
             type="text"
             spellcheck="false"
             :placeholder="t('admin.channelMonitor.advanced.headerValuePlaceholder')"
-            class="input flex-1 font-mono text-xs"
+            class="input flex-1 font-mono text-caption-1-regular"
             @blur="commitHeaders"
           />
           <button
             type="button"
-            class="flex-none rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+            class="flex-none rounded p-1 text-text-tertiary hover:bg-background-error-subtle hover:text-text-error-primary "
             :title="t('common.delete')"
             @click="removeRow(i)"
           >
@@ -38,7 +38,7 @@
         </div>
         <button
           type="button"
-          class="inline-flex items-center gap-1 rounded border border-dashed border-gray-300 px-2 py-1 text-xs text-gray-500 hover:border-primary-400 hover:text-primary-600 dark:border-dark-600 dark:text-gray-400 dark:hover:border-primary-500 dark:hover:text-primary-400"
+          class="inline-flex items-center gap-1 rounded border border-dashed border-border-button-hover px-2 py-1 text-caption-1-regular text-text-secondary hover:border-border-focus-ring hover:text-text-accent "
           @click="addRow"
         >
           <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -47,8 +47,8 @@
           {{ t('admin.channelMonitor.advanced.headerAddRow') }}
         </button>
       </div>
-      <p v-if="headersError" class="mt-1 text-xs text-red-500">{{ headersError }}</p>
-      <p v-else class="mt-1 text-xs text-gray-400">
+      <p v-if="headersError" class="mt-1 text-caption-1-regular text-text-error-primary">{{ headersError }}</p>
+      <p v-else class="mt-1 text-caption-1-regular text-text-tertiary">
         {{ t('admin.channelMonitor.advanced.headersHint') }}
       </p>
     </div>
@@ -61,14 +61,14 @@
           v-for="opt in bodyModeOptions"
           :key="opt.value"
           type="button"
-          class="rounded-lg border-2 px-3 py-2 text-sm font-medium transition-colors"
+          class="rounded-lg border-2 px-3 py-2 text-body-medium transition-colors"
           :class="bodyModeButtonClass(opt.value)"
           @click="updateBodyMode(opt.value)"
         >
           {{ opt.label }}
         </button>
       </div>
-      <p class="mt-1 text-xs text-gray-400">
+      <p class="mt-1 text-caption-1-regular text-text-tertiary">
         {{ bodyModeHint }}
       </p>
     </div>
@@ -79,7 +79,7 @@
         <label class="input-label !mb-0">{{ t('admin.channelMonitor.advanced.bodyJson') }}</label>
         <button
           type="button"
-          class="text-xs text-primary-600 hover:underline disabled:cursor-not-allowed disabled:text-gray-400 disabled:no-underline dark:text-primary-400"
+          class="text-caption-1-regular text-text-accent hover:underline disabled:cursor-not-allowed disabled:text-text-tertiary disabled:no-underline "
           :disabled="!bodyText.trim()"
           @click="formatBody"
         >
@@ -90,13 +90,13 @@
         v-model="bodyText"
         rows="10"
         :placeholder="bodyPlaceholder"
-        class="input font-mono text-xs"
+        class="input font-mono text-caption-1-regular"
         style="white-space: pre; overflow-wrap: normal; overflow-x: auto;"
         spellcheck="false"
         @blur="commitBody"
       />
-      <p v-if="bodyError" class="mt-1 text-xs text-red-500">{{ bodyError }}</p>
-      <p v-else class="mt-1 text-xs text-gray-400">
+      <p v-if="bodyError" class="mt-1 text-caption-1-regular text-text-error-primary">{{ bodyError }}</p>
+      <p v-else class="mt-1 text-caption-1-regular text-text-tertiary">
         {{ t('admin.channelMonitor.advanced.bodyJsonHint') }}
       </p>
     </div>
@@ -284,9 +284,9 @@ const bodyModeOptions = computed<{ value: BodyOverrideMode; label: string }[]>((
 function bodyModeButtonClass(mode: BodyOverrideMode): string {
   const active = props.bodyOverrideMode === mode
   if (active) {
-    return 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-500/15 dark:text-primary-300 dark:border-primary-400'
+    return 'border-border-focus-ring bg-background-accent-subtle text-text-accent '
   }
-  return 'border-gray-200 bg-white text-gray-600 hover:border-primary-300 dark:border-dark-700 dark:bg-dark-800 dark:text-gray-400'
+  return 'border-border-button-default bg-background-primary-default text-text-secondary hover:border-border-focus-ring '
 }
 
 const bodyModeHint = computed(() => {
@@ -312,7 +312,7 @@ const bodyPlaceholder = computed(() => {
       return '{\n  "max_tokens": 20\n}'
     }
     const model = props.provider === PROVIDER_GROK ? DEFAULT_GROK_MODEL : 'gpt-4o-mini'
-    return `{\n  "model": "${model}",\n  "messages": [{"role":"user","content":"Reply with exactly: ok"}],\n  "max_tokens": 20,\n  "stream": false\n}`
+    return `{\n "model": "${model}",\n "messages": [{"role":"user","content":"Reply with exactly: ok"}],\n "max_tokens": 20,\n "stream": false\n}`
   }
   if (props.bodyOverrideMode === 'merge') {
     return '{\n  "system": "You are Claude Code..."\n}'

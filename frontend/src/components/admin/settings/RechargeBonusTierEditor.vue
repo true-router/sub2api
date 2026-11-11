@@ -1,37 +1,37 @@
 <template>
   <div class="card" data-testid="recharge-bonus-tier-editor">
     <!-- Header：与服务商管理卡片同款 -->
-    <div class="border-b border-gray-100 px-4 py-3 dark:border-dark-700">
+    <div class="border-b border-border-button-default px-4 py-3 ">
       <div class="flex items-center justify-between gap-3">
         <div class="min-w-0">
-          <h2 class="text-base font-semibold text-gray-900 dark:text-white">
+          <h2 class="text-headline-semibold text-text-primary ">
             {{ t('admin.settings.payment.rechargeBonus.label') }}
           </h2>
-          <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+          <p class="mt-0.5 text-caption-1-regular text-text-secondary ">
             {{ t('admin.settings.payment.rechargeBonus.hint') }}
           </p>
         </div>
-        <button
+        <BoardButton
           type="button"
-          class="btn btn-primary btn-sm shrink-0"
+          class="shrink-0" variant="primary" size="small"
           :disabled="tiers.length >= MAX_RECHARGE_BONUS_TIERS"
           data-testid="recharge-bonus-tier-add"
           @click="addTier"
         >
           <Icon name="plus" size="sm" class="mr-1" />
           {{ t('admin.settings.payment.rechargeBonus.addTier') }}
-        </button>
+        </BoardButton>
       </div>
     </div>
 
     <div class="space-y-4 p-4">
       <!-- 模式：整条阶梯共用 -->
       <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+        <span class="text-body-medium text-text-primary ">
           {{ t('admin.settings.payment.rechargeBonus.modeLabel') }}
         </span>
         <div
-          class="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5 dark:border-dark-600 dark:bg-dark-800"
+          class="inline-flex rounded-lg border border-border-button-default bg-background-secondary-default p-0.5 "
           role="group"
         >
           <button
@@ -39,10 +39,10 @@
             :key="option.value"
             type="button"
             :class="[
-              'rounded-md px-3 py-1 text-sm font-medium transition-colors',
+              'rounded-md px-3 py-1 text-body-medium transition-colors',
               currentMode === option.value
-                ? 'bg-white text-gray-900 shadow-sm dark:bg-dark-700 dark:text-white'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200',
+                ? 'bg-background-primary-default text-text-primary shadow-sm '
+                : 'text-text-secondary hover:text-text-primary ',
             ]"
             :aria-pressed="currentMode === option.value"
             :data-testid="`recharge-bonus-mode-${option.value}`"
@@ -51,7 +51,7 @@
             {{ option.label }}
           </button>
         </div>
-        <span class="text-xs text-gray-400 dark:text-gray-500">
+        <span class="text-caption-1-regular text-text-tertiary ">
           {{ currentMode === 'discount'
             ? t('admin.settings.payment.rechargeBonus.modeDiscountHint')
             : t('admin.settings.payment.rechargeBonus.modeBonusHint') }}
@@ -61,13 +61,13 @@
       <!-- 档位列表：紧凑表格 -->
       <div
         v-if="tiers.length === 0"
-        class="rounded-xl border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 dark:border-dark-600 dark:text-gray-400"
+        class="rounded-xl border border-dashed border-border-button-hover px-4 py-3 text-body-regular text-text-secondary "
       >
         {{ t('admin.settings.payment.rechargeBonus.empty') }}
       </div>
-      <div v-else class="overflow-hidden rounded-xl border border-gray-200 dark:border-dark-600">
+      <div v-else class="overflow-hidden rounded-xl border border-border-button-default ">
         <div
-          class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2rem] items-center gap-3 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-500 dark:bg-dark-800 dark:text-gray-400"
+          class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2rem] items-center gap-3 bg-background-secondary-default px-3 py-2 text-caption-1-medium text-text-secondary "
         >
           <span>{{ t('admin.settings.payment.rechargeBonus.minAmountLabel') }}</span>
           <span>
@@ -77,7 +77,7 @@
           </span>
           <span></span>
         </div>
-        <div class="divide-y divide-gray-100 dark:divide-dark-700">
+        <div class="divide-y divide-border-button-default ">
           <div
             v-for="(tier, index) in tiers"
             :key="index"
@@ -107,13 +107,13 @@
                 @input="onPercentInput(index, $event)"
               />
               <span
-                class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-xs font-medium"
-                :class="currentMode === 'discount' ? 'text-red-600 dark:text-red-400' : 'text-gray-400'"
+                class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-caption-1-medium"
+                :class="currentMode === 'discount' ? 'text-text-error-primary ' : 'text-text-tertiary'"
               >{{ currentMode === 'discount' ? '% OFF' : '%' }}</span>
             </div>
             <button
               type="button"
-              class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-dark-700 dark:hover:text-red-400"
+              class="flex h-8 w-8 items-center justify-center rounded-lg text-text-tertiary hover:bg-background-error-subtle hover:text-text-error-primary "
               :title="t('admin.settings.payment.rechargeBonus.removeTier')"
               data-testid="recharge-bonus-tier-remove"
               @click="removeTier(index)"
@@ -122,14 +122,14 @@
             </button>
             <p
               v-if="rowError(index)"
-              class="col-span-3 -mt-1 text-xs text-red-600 dark:text-red-400"
+              class="col-span-3 -mt-1 text-caption-1-regular text-text-error-primary "
               data-testid="recharge-bonus-tier-error"
             >
               {{ t(`admin.settings.payment.rechargeBonus.${rowError(index)}`) }}
             </p>
             <p
               v-else-if="rowIncomplete(index)"
-              class="col-span-3 -mt-1 text-xs text-gray-400 dark:text-gray-500"
+              class="col-span-3 -mt-1 text-caption-1-regular text-text-tertiary "
               data-testid="recharge-bonus-tier-incomplete"
             >
               {{ t('admin.settings.payment.rechargeBonus.incompleteRow') }}
@@ -141,21 +141,21 @@
       <!-- 区间预览：单行内联 -->
       <p
         v-if="intervals.length > 0"
-        class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 dark:text-gray-400"
+        class="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption-1-regular text-text-secondary "
         data-testid="recharge-bonus-tier-preview"
       >
-        <span class="font-medium text-gray-700 dark:text-gray-300">
+        <span class="font-medium text-text-primary ">
           {{ t('admin.settings.payment.rechargeBonus.previewTitle') }}
         </span>
         <span
           v-for="(interval, index) in intervals"
           :key="index"
-          class="rounded-md bg-gray-100 px-2 py-0.5 dark:bg-dark-700"
+          class="rounded-md bg-background-secondary-default px-2 py-0.5 "
         >{{ intervalLabel(interval) }}</span>
       </p>
 
       <!-- 活动文案 -->
-      <div class="border-t border-gray-100 pt-4 dark:border-dark-700">
+      <div class="border-t border-border-button-default pt-4 ">
         <label class="input-label">
           {{ t('admin.settings.payment.rechargeBonus.noticeLabel') }}
         </label>
@@ -167,7 +167,7 @@
           data-testid="recharge-bonus-notice-input"
           @input="emit('update:notice', ($event.target as HTMLTextAreaElement).value)"
         ></textarea>
-        <p class="mt-1 text-xs text-gray-400">
+        <p class="mt-1 text-caption-1-regular text-text-tertiary">
           {{ t('admin.settings.payment.rechargeBonus.noticeHint') }}
         </p>
       </div>
@@ -176,6 +176,7 @@
 </template>
 
 <script setup lang="ts">
+import BoardButton from '@/components/boardui/Button.vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 

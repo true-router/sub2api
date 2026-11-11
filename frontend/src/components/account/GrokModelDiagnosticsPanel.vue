@@ -1,7 +1,7 @@
 <template>
   <section
     data-testid="grok-model-diagnostics"
-    class="min-w-0 max-w-full overflow-hidden rounded-xl border border-gray-200 bg-white text-sm text-gray-700 dark:border-dark-600 dark:bg-dark-800 dark:text-gray-200"
+    class="min-w-0 max-w-full overflow-hidden rounded-xl border border-border-button-default bg-background-primary-default text-body-regular text-text-primary "
   >
     <div
       data-testid="grok-diagnostics-summary"
@@ -9,12 +9,12 @@
     >
       <div class="min-w-0">
         <div class="flex flex-wrap items-center gap-2">
-          <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">
+          <h3 class="text-body-medium text-text-primary ">
             {{ t('admin.accounts.grokModelDiagnostics.catalogTitle') }}
           </h3>
           <p data-testid="grok-diagnostics-state" :class="stateClass">{{ headline }}</p>
         </div>
-        <p class="mt-1 text-xs text-gray-500 dark:text-dark-400">
+        <p class="mt-1 text-caption-1-regular text-text-secondary ">
           <span v-if="modelCountLabel">{{ modelCountLabel }}</span>
           <span v-if="catalogHost">{{ modelCountLabel ? ' · ' : '' }}{{ catalogHost }}</span>
           <span data-testid="grok-diagnostics-last-success">
@@ -22,11 +22,11 @@
           </span>
         </p>
       </div>
-      <button
+      <BoardButton
         v-if="canSync"
         type="button"
         data-testid="grok-diagnostics-sync"
-        class="btn btn-secondary btn-sm"
+        variant="secondary" size="small"
         :title="t('admin.accounts.grokModelDiagnostics.syncSavedConfig')"
         :aria-label="`${t('admin.accounts.grokModelDiagnostics.syncCatalog')} — ${t('admin.accounts.grokModelDiagnostics.syncSavedConfig')}`"
         :disabled="syncing || loading"
@@ -34,23 +34,23 @@
       >
         <Icon name="refresh" size="xs" aria-hidden="true" class="max-sm:hidden" />
         {{ syncing ? t('common.loading') : t('admin.accounts.grokModelDiagnostics.syncCatalog') }}
-      </button>
+      </BoardButton>
     </div>
 
-    <p v-if="loading" class="px-4 pb-3 text-xs text-gray-500 dark:text-dark-400">
+    <p v-if="loading" class="px-4 pb-3 text-caption-1-regular text-text-secondary ">
       {{ t('common.loading') }}
     </p>
     <p
       v-if="refreshFailed"
       data-testid="grok-diagnostics-refresh-failed"
-      class="px-4 pb-3 text-xs text-red-600 dark:text-red-400"
+      class="px-4 pb-3 text-caption-1-regular text-text-error-primary "
     >
       {{ t('admin.accounts.grokModelDiagnostics.refreshFailed') }}
     </p>
 
     <div
       v-if="showFailureNotice || showFallbackNotice || showStateNotice || showPreviousValid"
-      class="mx-4 mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-200"
+      class="mx-4 mb-3 rounded-lg bg-background-warning-subtle px-3 py-2 text-caption-1-regular text-text-warning "
     >
       <p v-if="showFailureNotice" class="flex items-start gap-2">
         <Icon name="exclamationTriangle" size="xs" aria-hidden="true" class="mt-0.5 shrink-0" />
@@ -68,7 +68,7 @@
 
     <div
       v-if="missingMappings.length > 0"
-      class="mx-4 mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-200"
+      class="mx-4 mb-3 rounded-lg bg-background-warning-subtle px-3 py-2 text-caption-1-regular text-text-warning "
     >
       <p data-testid="grok-diagnostics-missing-summary" class="flex items-start gap-2">
         <Icon name="exclamationTriangle" size="xs" aria-hidden="true" class="mt-0.5 shrink-0" />
@@ -111,11 +111,11 @@
       </div>
     </div>
 
-    <div class="border-t border-gray-200 dark:border-dark-600">
+    <div class="border-t border-border-button-default ">
       <button
         type="button"
         data-testid="grok-diagnostics-details-toggle"
-        class="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium text-gray-800 dark:text-gray-100"
+        class="flex w-full items-center gap-2 px-4 py-3 text-left text-body-medium text-text-primary "
         :aria-expanded="detailsOpen"
         :aria-controls="detailsId"
         @click="detailsOpen = !detailsOpen"
@@ -132,25 +132,25 @@
         v-if="detailsOpen"
         :id="detailsId"
         data-testid="grok-diagnostics-details"
-        class="border-t border-gray-200 p-4 dark:border-dark-600"
+        class="border-t border-border-button-default p-4 "
       >
-        <dl class="space-y-3 text-xs">
+        <dl class="space-y-3 text-caption-1-regular">
           <div>
-            <dt class="text-gray-500 dark:text-dark-400">
+            <dt class="text-text-secondary ">
               {{ effectiveState !== 'fresh'
                 ? t('admin.accounts.grokModelDiagnostics.historicalSource')
                 : t('admin.accounts.grokModelDiagnostics.source') }}
             </dt>
-            <dd data-testid="grok-diagnostics-endpoint" class="min-w-0 break-all font-mono text-xs">
+            <dd data-testid="grok-diagnostics-endpoint" class="min-w-0 break-all font-mono text-caption-1-regular">
               {{ diagnostics?.endpoint || t('admin.accounts.grokModelDiagnostics.unknown') }}
             </dd>
           </div>
           <div>
-            <dt class="text-gray-500 dark:text-dark-400">{{ t('admin.accounts.grokModelDiagnostics.lastSuccess') }}</dt>
+            <dt class="text-text-secondary ">{{ t('admin.accounts.grokModelDiagnostics.lastSuccess') }}</dt>
             <dd>{{ observedTime(diagnostics?.fetched_at) }}</dd>
           </div>
           <div>
-            <dt class="text-gray-500 dark:text-dark-400">{{ t('admin.accounts.grokModelDiagnostics.lastAttempt') }}</dt>
+            <dt class="text-text-secondary ">{{ t('admin.accounts.grokModelDiagnostics.lastAttempt') }}</dt>
             <dd data-testid="grok-diagnostics-last-attempt" class="min-w-0 break-all">
               <template v-if="diagnostics?.last_attempt">
                 {{ attemptLabel }}
@@ -163,7 +163,7 @@
         </dl>
 
         <div class="mt-4">
-          <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100">
+          <h4 class="text-body-medium text-text-primary ">
             {{ effectiveState !== 'fresh'
               ? t('admin.accounts.grokModelDiagnostics.historicalModels')
               : t('admin.accounts.grokModelDiagnostics.upstreamModels') }}
@@ -173,7 +173,7 @@
               v-for="model in diagnostics?.models ?? []"
               :key="model"
               data-testid="grok-diagnostics-model"
-              class="min-w-0 break-all font-mono text-xs"
+              class="min-w-0 break-all font-mono text-caption-1-regular"
             >
               {{ model }}
             </li>
@@ -181,13 +181,13 @@
         </div>
 
         <div class="mt-4" data-testid="grok-diagnostics-mappings">
-          <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100">
+          <h4 class="text-body-medium text-text-primary ">
             {{ t('admin.accounts.grokModelDiagnostics.savedMappings') }}
           </h4>
-          <p v-if="hasFreshGaps" class="mt-1 text-xs text-gray-500 dark:text-dark-400">
+          <p v-if="hasFreshGaps" class="mt-1 text-caption-1-regular text-text-secondary ">
             {{ t('admin.accounts.grokModelDiagnostics.compatibilityNotice') }}
           </p>
-          <div class="mt-2 hidden text-xs text-gray-500 dark:text-dark-400 sm:grid sm:grid-cols-2 sm:gap-3">
+          <div class="mt-2 hidden text-caption-1-regular text-text-secondary sm:grid sm:grid-cols-2 sm:gap-3">
             <span>{{ t('admin.accounts.grokModelDiagnostics.requestColumn') }}</span>
             <span>{{ t('admin.accounts.grokModelDiagnostics.targetColumn') }}</span>
           </div>
@@ -203,7 +203,7 @@
     <p
       v-if="dirty"
       data-testid="grok-diagnostics-dirty"
-      class="flex items-start gap-2 px-4 py-3 text-xs text-gray-500 dark:text-dark-400"
+      class="flex items-start gap-2 px-4 py-3 text-caption-1-regular text-text-secondary "
     >
       <Icon name="infoCircle" size="xs" aria-hidden="true" class="mt-0.5 shrink-0" />
       <span>{{ t('admin.accounts.grokModelDiagnostics.savedConfigHint') }}</span>
@@ -212,6 +212,7 @@
 </template>
 
 <script setup lang="ts">
+import BoardButton from '@/components/boardui/Button.vue'
 import { computed, defineComponent, h, onBeforeUnmount, onMounted, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { GrokModelDiagnosticItem, GrokModelDiagnostics } from '@/types'
@@ -372,12 +373,12 @@ const stateClass = computed(() => {
     || attemptStatus.value === 'failed'
     || attemptStatus.value === 'configured_fallback'
   if (!attention && effectiveState.value === 'fresh') {
-    return 'text-xs font-medium text-emerald-700 dark:text-emerald-300'
+    return 'text-caption-1-medium text-text-success '
   }
   if (effectiveState.value === 'unknown' && attemptStatus.value !== 'failed' && attemptStatus.value !== 'configured_fallback') {
-    return 'text-xs font-medium text-gray-500 dark:text-dark-400'
+    return 'text-caption-1-medium text-text-secondary '
   }
-  return 'text-xs font-medium text-amber-800 dark:text-amber-200'
+  return 'text-caption-1-medium text-text-warning '
 })
 
 const attemptLabel = computed(() => {
@@ -443,17 +444,17 @@ const MappingRow = defineComponent({
   },
   setup(rowProps) {
     return () => h('div', { class: 'grid grid-cols-1 gap-1 sm:grid-cols-2 sm:items-start sm:gap-3' }, [
-      h('div', { class: 'min-w-0 break-all font-mono text-xs' }, rowProps.item.requested),
+      h('div', { class: 'min-w-0 break-all font-mono text-caption-1-regular' }, rowProps.item.requested),
       h('div', { class: 'flex min-w-0 items-start gap-1' }, [
         rowProps.item.upstream
           ? h(Icon, { name: 'arrowRight', size: 'xs', 'aria-hidden': 'true', class: 'mt-0.5 shrink-0' })
           : null,
         h('div', { class: 'min-w-0' }, [
           rowProps.item.upstream
-            ? h('div', { class: 'min-w-0 break-all font-mono text-xs' }, rowProps.item.upstream)
+            ? h('div', { class: 'min-w-0 break-all font-mono text-caption-1-regular' }, rowProps.item.upstream)
             : null,
           rowProps.status
-            ? h('div', { class: 'text-xs' }, rowProps.status)
+            ? h('div', { class: 'text-caption-1-regular' }, rowProps.status)
             : null
         ])
       ])

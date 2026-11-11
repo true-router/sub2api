@@ -11,12 +11,12 @@
       <!-- Custom Logo or Default Logo -->
       <router-link
         :to="homePath"
-        class="sidebar-logo flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl shadow-glow transition-opacity hover:opacity-80"
+        v-if="!isWorkspace || !sidebarCollapsed" class="sidebar-logo flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl shadow-glow transition-opacity hover:opacity-80"
         @click="handleMenuItemClick(homePath)"
       >
         <img v-if="settingsLoaded" :src="siteLogo || '/logo.svg'" alt="Logo" class="h-full w-full object-contain" />
       </router-link>
-      <div class="sidebar-brand" :class="{ 'sidebar-brand-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">
+      <div v-if="!isWorkspace || !sidebarCollapsed" class="sidebar-brand" :class="{ 'sidebar-brand-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">
         <router-link
           :to="homePath"
           class="sidebar-brand-title text-lg font-bold text-gray-900 transition-colors hover:text-primary-600 dark:text-white dark:hover:text-primary-400"
@@ -25,7 +25,19 @@
           {{ siteName }}
         </router-link>
         <!-- Version Badge -->
-        <VersionBadge :version="siteVersion" />
+        <VersionBadge v-if="!isWorkspace" :version="siteVersion" />
+        <span v-else class="text-caption-1-regular text-text-secondary">{{ t('boardui.workspace') }}</span>
+      </div>
+      <BoardButton v-if="isWorkspace" data-testid="sidebar-collapse" variant="ghost" size="small" icon-only class="shrink-0" :aria-label="sidebarCollapsed ? t('nav.expand') : t('nav.collapse')" @click="mobileOpen ? closeMobile() : toggleSidebar()"><Icon :name="mobileOpen ? 'x' : 'menu'" size="md" /></BoardButton>
+    </div>
+
+    <div v-if="isWorkspace" class="sidebar-search px-3 pt-2">
+      <button data-testid="command-trigger" type="button" :aria-label="t('boardui.commandTitle')" :class="['flex h-10 w-full items-center gap-2 rounded-full lg:h-9 bg-background-secondary-hover px-3 text-body-regular text-text-secondary outline-none hover:bg-background-tertiary-default focus-visible:ring-2 focus-visible:ring-border-focus-ring', sidebarCollapsed && 'justify-center px-0']" @click="commandOpen = true"><Icon name="search" size="md" class="shrink-0" /><span v-if="!sidebarCollapsed" class="min-w-0 flex-1 text-start">{{ t('boardui.quickSearch') }}</span><kbd v-if="!sidebarCollapsed" class="rounded-md bg-background-tertiary-default px-1.5 py-1 text-caption-1-medium">⌘K</kbd></button>
+    </div>
+    <div v-else-if="isAdmin && !sidebarCollapsed" class="sidebar-search px-3 pt-3">
+      <div class="relative">
+        <Icon name="search" size="sm" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-foreground-icon-tertiary" />
+        <input v-model="navigationQuery" type="search" class="input pl-9" :placeholder="t('boardui.searchNavigation')" :aria-label="t('boardui.searchNavigation')" />
       </div>
     </div>
 
@@ -34,13 +46,16 @@
       <!-- Admin View: Admin menu first, then personal menu -->
       <template v-if="isAdmin">
         <!-- Admin Section -->
-        <div class="sidebar-section">
-          <template v-for="item in adminNavItems" :key="item.path">
+        <div v-for="section in adminNavSections" :key="section.label" class="sidebar-section">
+          <div class="sidebar-section-title" :class="{ 'sidebar-section-title-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">{{ section.label }}</div>
+          <template v-for="item in section.items" :key="item.path">
             <!-- Collapsible group (has children) -->
             <template v-if="item.children?.length">
               <button
                 type="button"
                 class="sidebar-link mb-1 w-full"
+                :aria-expanded="!sidebarCollapsed && !!(navigationQuery || isGroupExpanded(item))"
+                :aria-label="item.label"
                 :class="{
                   'sidebar-link-active': isGroupActive(item) && !isGroupExpanded(item),
                   'sidebar-link-collapsed': sidebarCollapsed
@@ -62,7 +77,7 @@
                 </span>
               </button>
               <!-- Children -->
-              <div v-if="!sidebarCollapsed && isGroupExpanded(item)" class="mb-1 ml-4 border-l border-gray-200 pl-2 dark:border-dark-600">
+              <div v-if="!sidebarCollapsed && (navigationQuery || isGroupExpanded(item))" class="mb-1 ml-4 border-l border-gray-200 pl-2 dark:border-dark-600">
                 <router-link
                   v-for="child in item.children"
                   :key="child.path"
@@ -81,6 +96,7 @@
               v-else
               :to="item.path"
               class="sidebar-link mb-1"
+              :aria-current="isActive(item.path) ? 'page' : undefined"
               :class="{ 'sidebar-link-active': isActive(item.path), 'sidebar-link-collapsed': sidebarCollapsed }"
               :title="sidebarCollapsed ? item.label : undefined"
               :id="
@@ -101,6 +117,8 @@
           </template>
         </div>
 
+        <p v-if="!adminNavSections.length && !sidebarCollapsed" class="px-3 py-4 text-body-2-regular text-text-secondary">{{ t('empty.noData') }}</p>
+
         <!-- Personal Section for Admin (hidden in simple mode) -->
         <div v-if="!authStore.isSimpleMode" class="sidebar-section">
           <div class="sidebar-section-title" :class="{ 'sidebar-section-title-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">
@@ -114,6 +132,7 @@
             :key="item.path"
             :to="item.path"
             class="sidebar-link mb-1"
+            :aria-current="isActive(item.path) ? 'page' : undefined"
             :class="{ 'sidebar-link-active': isActive(item.path), 'sidebar-link-collapsed': sidebarCollapsed }"
             :title="sidebarCollapsed ? item.label : undefined"
             :data-tour="item.path === '/keys' ? 'sidebar-my-keys' : undefined"
@@ -134,6 +153,7 @@
             :key="item.path"
             :to="item.path"
             class="sidebar-link mb-1"
+            :aria-current="isActive(item.path) ? 'page' : undefined"
             :class="{ 'sidebar-link-active': isActive(item.path), 'sidebar-link-collapsed': sidebarCollapsed }"
             :title="sidebarCollapsed ? item.label : undefined"
             :data-tour="item.path === '/keys' ? 'sidebar-my-keys' : undefined"
@@ -148,9 +168,15 @@
     </nav>
 
     <!-- Bottom Section -->
-    <div class="mt-auto border-t border-gray-100 p-3 dark:border-dark-800">
+    <div class="sidebar-bottom mt-auto border-t border-gray-100 p-3 dark:border-dark-800">
+      <div v-if="isWorkspace" :class="sidebarCollapsed && 'flex-col'" class="mb-4 inline-flex gap-1 rounded-full lg:mb-3 bg-background-secondary-hover p-1" :aria-label="t('boardui.theme')" role="group">
+        <BoardButton data-testid="sidebar-theme-light" variant="ghost" size="small" icon-only class="rounded-full" :class="!isDark && 'bg-background-primary-default shadow-sm'" :aria-label="t('nav.lightMode')" :aria-pressed="!isDark" @click="setTheme(false)"><SunIcon class="h-5 w-5" /></BoardButton>
+        <BoardButton data-testid="sidebar-theme-dark" variant="ghost" size="small" icon-only class="rounded-full" :class="isDark && 'bg-background-primary-default shadow-sm'" :aria-label="t('nav.darkMode')" :aria-pressed="isDark" @click="setTheme(true)"><MoonIcon class="h-5 w-5" /></BoardButton>
+      </div>
       <!-- Theme Toggle -->
       <button
+        v-if="!isWorkspace"
+        data-testid="sidebar-theme-toggle"
         @click="toggleTheme"
         class="sidebar-link mb-2 w-full"
         :class="{ 'sidebar-link-collapsed': sidebarCollapsed }"
@@ -165,6 +191,8 @@
 
       <!-- Collapse Button -->
       <button
+        v-if="!isWorkspace"
+        data-testid="sidebar-collapse"
         @click="toggleSidebar"
         class="sidebar-link w-full"
         :class="{ 'sidebar-link-collapsed': sidebarCollapsed }"
@@ -174,8 +202,12 @@
         <ChevronDoubleRightIcon v-else class="h-5 w-5 flex-shrink-0" />
         <span class="sidebar-label" :class="{ 'sidebar-label-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">{{ t('nav.collapse') }}</span>
       </button>
+      <RouterLink v-if="isWorkspace && isAdmin" to="/admin/settings" class="sidebar-link mb-3" :class="{ 'sidebar-link-active': route.path === '/admin/settings', 'sidebar-link-collapsed': sidebarCollapsed }" :title="sidebarCollapsed ? t('nav.settings') : undefined"><component :is="CogIcon" class="h-5 w-5 shrink-0" /><span v-if="!sidebarCollapsed">{{ t('nav.settings') }}</span></RouterLink>
+      <AppHeader v-if="isWorkspace" placement="sidebar" :collapsed="sidebarCollapsed" />
     </div>
   </aside>
+
+  <BoardCommandPalette v-if="isWorkspace" :show="commandOpen" :items="commandItems" @close="commandOpen = false" @select="selectCommand" />
 
   <!-- Mobile Overlay -->
   <transition name="fade">
@@ -189,7 +221,12 @@
 
 <script setup lang="ts">
 import { computed, h, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { usesBoardUIWorkspace } from '@/router/workspace'
 import { useRoute, useRouter } from 'vue-router'
+import { useEventListener } from '@vueuse/core'
+import BoardCommandPalette from '@/components/boardui/CommandPalette.vue'
+import BoardButton from '@/components/boardui/Button.vue'
+import AppHeader from './AppHeader.vue'
 import { useI18n } from 'vue-i18n'
 import { useAdminSettingsStore, useAppStore, useAuthStore, useOnboardingStore } from '@/stores'
 import VersionBadge from '@/components/common/VersionBadge.vue'
@@ -246,10 +283,20 @@ const onboardingStore = useOnboardingStore()
 const adminSettingsStore = useAdminSettingsStore()
 const { canUseBatchImage, refreshBatchImageAccess } = useBatchImageAccess()
 
-const sidebarCollapsed = computed(() => appStore.sidebarCollapsed)
+const sidebarCollapsed = computed(() => appStore.sidebarCollapsed && !appStore.mobileOpen)
 const mobileOpen = computed(() => appStore.mobileOpen)
 const isAdmin = computed(() => authStore.isAdmin)
+const isWorkspace = computed(() => usesBoardUIWorkspace(route.meta))
 const sidebarNavRef = ref<HTMLElement | null>(null)
+const navigationQuery = ref('')
+const commandOpen = ref(false)
+useEventListener(window, 'boardui-open-command', () => { commandOpen.value = true })
+useEventListener(window, 'keydown', (event: KeyboardEvent) => {
+  if (isWorkspace.value && (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+    event.preventDefault()
+    commandOpen.value = !commandOpen.value
+  }
+})
 const isDark = ref(document.documentElement.classList.contains('dark'))
 
 const homePath = computed(() => (isAdmin.value ? '/admin/dashboard' : '/dashboard'))
@@ -866,12 +913,57 @@ const adminNavItems = computed((): NavItem[] => {
   return visible
 })
 
+const adminNavSections = computed(() => {
+  const groups = [
+    { label: t('boardui.overview'), paths: ['/admin/dashboard', '/admin/ops'] },
+    { label: t('boardui.resources'), paths: ['/admin/accounts', '/admin/groups', '/admin/channels', '/admin/proxies', '/admin/plugins'] },
+    { label: t('boardui.business'), paths: ['/admin/users', '/admin/subscriptions', '/admin/orders', '/admin/redeem', '/admin/promo-codes', '/admin/affiliates'] },
+    { label: t('boardui.system'), paths: [] as string[] }
+  ]
+  const query = navigationQuery.value.trim().toLocaleLowerCase()
+  const assigned = new Set(groups.flatMap(group => group.paths))
+  return groups.map((group, index) => ({
+    label: group.label,
+    items: adminNavItems.value.filter(item => !isWorkspace.value || item.path !== '/admin/settings').filter(item => index === groups.length - 1 ? !assigned.has(item.path) : group.paths.includes(item.path))
+      .flatMap(item => {
+        if (!query || item.label.toLocaleLowerCase().includes(query)) return [item]
+        const children = item.children?.filter(child => child.label.toLocaleLowerCase().includes(query))
+        return children?.length ? [{ ...item, children }] : []
+      })
+  })).filter(group => group.items.length)
+})
+
+const commandItems = computed(() => {
+  const adminItems = isAdmin.value ? adminNavItems.value.flatMap(item =>
+    item.children?.length
+      ? item.children.map(child => ({ id: child.path, label: child.label, section: item.label }))
+      : [{ id: item.path, label: item.label, section: t('boardui.commandNavigation') }]
+  ) : []
+  const accountItems = isAdmin.value
+    ? (authStore.isSimpleMode ? [] : personalNavItems.value)
+    : (appStore.backendModeEnabled ? [] : userNavItems.value)
+  const ids = new Set(adminItems.map(item => item.id))
+  return [...adminItems, ...accountItems.filter(item => !ids.has(item.path)).map(item => ({
+    id: item.path, label: item.label, section: t('nav.myAccount')
+  }))]
+})
+
+function selectCommand(path: string) {
+  commandOpen.value = false
+  closeMobile()
+  router.push(path)
+}
+
 function toggleSidebar() {
   appStore.toggleSidebar()
 }
 
 function toggleTheme() {
-  isDark.value = !isDark.value
+  setTheme(!isDark.value)
+}
+
+function setTheme(dark: boolean) {
+  isDark.value = dark
   document.documentElement.classList.toggle('dark', isDark.value)
   localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
 }
@@ -960,19 +1052,28 @@ watch(
   { immediate: true }
 )
 
+function revealActiveAccountLink() {
+  if (route.meta.workspace !== 'account') return
+  const nav = sidebarNavRef.value
+  const link = nav?.querySelector<HTMLElement>('.sidebar-link[aria-current="page"]')
+  if (!nav || !link || !nav.clientHeight) return
+  const viewport = nav.getBoundingClientRect()
+  const active = link.getBoundingClientRect()
+  if (active.top < viewport.top) nav.scrollTop += active.top - viewport.top - 4
+  if (active.bottom > viewport.bottom) nav.scrollTop += active.bottom - viewport.bottom + 4
+}
+
+watch([() => route.path, mobileOpen, () => appStore.cachedPublicSettings], revealActiveAccountLink, { flush: 'post' })
+
 onMounted(() => {
-  void refreshBatchImageAccess()
+  void refreshBatchImageAccess().then(revealActiveAccountLink)
   if (isAdmin.value) {
     adminSettingsStore.fetch()
   }
-  // Restore sidebar scroll position after route change re-mounts the component
-  if (appStore.sidebarScrollTop > 0 && sidebarNavRef.value) {
-    void nextTick(() => {
-      if (sidebarNavRef.value) {
-        sidebarNavRef.value.scrollTop = appStore.sidebarScrollTop
-      }
-    })
-  }
+  void nextTick(() => {
+    if (sidebarNavRef.value) sidebarNavRef.value.scrollTop = appStore.sidebarScrollTop
+    revealActiveAccountLink()
+  })
 })
 
 onBeforeUnmount(() => {
