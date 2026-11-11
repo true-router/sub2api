@@ -198,6 +198,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       requiresAuth: true,
       requiresAdmin: false,
+      workspace: 'account',
       title: 'Dashboard',
       titleKey: 'dashboard.title',
       descriptionKey: 'dashboard.welcomeMessage'

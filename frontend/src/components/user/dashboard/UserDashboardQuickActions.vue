@@ -1,83 +1,32 @@
 <template>
-  <div class="card">
-    <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('dashboard.quickActions') }}</h2>
+  <section class="card" data-testid="dashboard-quick-actions">
+    <h2 class="px-4 pt-4 text-title-3-semibold text-text-primary">{{ t('dashboard.quickActions') }}</h2>
+    <div class="space-y-1 p-2">
+      <router-link v-for="action in actions" :key="action.path" :to="action.path"
+        class="flex items-center gap-3 rounded-xl p-3 text-start outline-none transition-colors hover:bg-background-secondary-hover focus-visible:ring-2 focus-visible:ring-border-focus-ring">
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-background-secondary-default text-foreground-icon-primary"><Icon :name="action.icon" size="md" /></span>
+        <span class="min-w-0 flex-1">
+          <span class="block text-body-medium text-text-primary">{{ t(action.label) }}</span>
+          <span class="block text-caption-1-regular text-text-secondary">{{ t(action.description) }}</span>
+        </span>
+        <Icon name="chevronRight" size="sm" class="text-foreground-icon-tertiary" />
+      </router-link>
     </div>
-    <div class="space-y-3 p-4">
-      <button @click="router.push('/keys')" class="group flex w-full items-center gap-4 rounded-xl bg-gray-50 p-4 text-left transition-all duration-200 hover:bg-gray-100 dark:bg-dark-800/50 dark:hover:bg-dark-800">
-        <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-primary-100 transition-transform group-hover:scale-105 dark:bg-primary-900/30">
-          <Icon name="key" size="lg" class="text-primary-600 dark:text-primary-400" />
-        </div>
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-medium text-gray-900 dark:text-white">{{ t('dashboard.createApiKey') }}</p>
-          <p class="text-xs text-gray-500 dark:text-dark-400">{{ t('dashboard.generateNewKey') }}</p>
-        </div>
-        <Icon
-          name="chevronRight"
-          size="md"
-          class="text-gray-400 transition-colors group-hover:text-primary-500 dark:text-dark-500"
-        />
-      </button>
-
-      <button @click="router.push('/usage')" class="group flex w-full items-center gap-4 rounded-xl bg-gray-50 p-4 text-left transition-all duration-200 hover:bg-gray-100 dark:bg-dark-800/50 dark:hover:bg-dark-800">
-        <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-100 transition-transform group-hover:scale-105 dark:bg-emerald-900/30">
-          <Icon name="chart" size="lg" class="text-emerald-600 dark:text-emerald-400" />
-        </div>
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-medium text-gray-900 dark:text-white">{{ t('dashboard.viewUsage') }}</p>
-          <p class="text-xs text-gray-500 dark:text-dark-400">{{ t('dashboard.checkDetailedLogs') }}</p>
-        </div>
-        <Icon
-          name="chevronRight"
-          size="md"
-          class="text-gray-400 transition-colors group-hover:text-emerald-500 dark:text-dark-500"
-        />
-      </button>
-
-      <button v-if="canUseBatchImage" @click="router.push('/batch-image')" class="group flex w-full items-center gap-4 rounded-xl bg-gray-50 p-4 text-left transition-all duration-200 hover:bg-gray-100 dark:bg-dark-800/50 dark:hover:bg-dark-800">
-        <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-sky-100 transition-transform group-hover:scale-105 dark:bg-sky-900/30">
-          <Icon name="sparkles" size="lg" class="text-sky-600 dark:text-sky-400" />
-        </div>
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-medium text-gray-900 dark:text-white">{{ t('dashboard.batchImageAgent') }}</p>
-          <p class="text-xs text-gray-500 dark:text-dark-400">{{ t('dashboard.batchImageAgentDesc') }}</p>
-        </div>
-        <Icon
-          name="chevronRight"
-          size="md"
-          class="text-gray-400 transition-colors group-hover:text-sky-500 dark:text-dark-500"
-        />
-      </button>
-
-      <button @click="router.push('/redeem')" class="group flex w-full items-center gap-4 rounded-xl bg-gray-50 p-4 text-left transition-all duration-200 hover:bg-gray-100 dark:bg-dark-800/50 dark:hover:bg-dark-800">
-        <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-amber-100 transition-transform group-hover:scale-105 dark:bg-amber-900/30">
-          <Icon name="gift" size="lg" class="text-amber-600 dark:text-amber-400" />
-        </div>
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-medium text-gray-900 dark:text-white">{{ t('dashboard.redeemCode') }}</p>
-          <p class="text-xs text-gray-500 dark:text-dark-400">{{ t('dashboard.addBalanceWithCode') }}</p>
-        </div>
-        <Icon
-          name="chevronRight"
-          size="md"
-          class="text-gray-400 transition-colors group-hover:text-amber-500 dark:text-dark-500"
-        />
-      </button>
-    </div>
-  </div>
+  </section>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
 import { useBatchImageAccess } from '@/composables/useBatchImageAccess'
-const router = useRouter()
 const { t } = useI18n()
 const { canUseBatchImage, refreshBatchImageAccess } = useBatchImageAccess()
-
-onMounted(() => {
-  void refreshBatchImageAccess()
-})
+const actions = computed(() => [
+  { path: '/keys', icon: 'key' as const, label: 'dashboard.createApiKey', description: 'dashboard.generateNewKey' },
+  { path: '/usage', icon: 'chart' as const, label: 'dashboard.viewUsage', description: 'dashboard.checkDetailedLogs' },
+  ...(canUseBatchImage.value ? [{ path: '/batch-image', icon: 'sparkles' as const, label: 'dashboard.batchImageAgent', description: 'dashboard.batchImageAgentDesc' }] : []),
+  { path: '/redeem', icon: 'gift' as const, label: 'dashboard.redeemCode', description: 'dashboard.addBalanceWithCode' },
+])
+onMounted(() => { void refreshBatchImageAccess() })
 </script>

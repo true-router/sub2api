@@ -3,7 +3,7 @@ import { createServer } from 'node:http'
 export const PREVIEW_USER = { id: 1, email: 'admin@example.test', username: 'Admin', role: 'admin', status: 'active', balance: 100, concurrency: 10, allowed_groups: [], created_at: '2026-01-01T00:00:00Z' }
 
 /** Shared, in-memory API contracts for development preview and browser E2E. */
-export function createAdminFixtureServer({ requests = [], accountPreview = false } = {}) {
+export function createAdminFixtureServer({ requests = [], accountPreview = false, dashboardPreview = false } = {}) {
 const user = PREVIEW_USER
 const users = Array.from({ length: 28 }, (_, i) => ({ ...user, id: i + 2, role: 'user', username: `Member ${i + 1}`, email: `member${i + 1}@example.test`, subscriptions: [] }))
 const stats = Object.fromEntries(['total_users', 'today_new_users', 'active_users', 'hourly_active_users', 'total_api_keys', 'active_api_keys', 'total_accounts', 'normal_accounts', 'error_accounts', 'ratelimit_accounts', 'overload_accounts', 'total_requests', 'total_input_tokens', 'total_output_tokens', 'total_cache_creation_tokens', 'total_cache_read_tokens', 'total_tokens', 'total_cost', 'total_actual_cost', 'total_account_cost', 'today_requests', 'today_input_tokens', 'today_output_tokens', 'today_cache_creation_tokens', 'today_cache_read_tokens', 'today_tokens', 'today_cost', 'today_actual_cost', 'today_account_cost', 'average_duration_ms', 'uptime', 'rpm', 'tpm'].map((key, i) => [key, (i + 1) * 12]))
@@ -87,6 +87,11 @@ return createServer(async (req, res) => {
   else if (path.includes('/channel-monitor-v2/')) data = { coverage, items: [] }
   else if (['/groups/available', '/channels/available', '/subscriptions', '/user/mcp/grants'].includes(path)) data = []
   else if (path === '/groups/rates') data = {}
+  else if (path === '/usage/dashboard/stats') data = { ...stats, by_platform: [{ platform: 'anthropic', total_requests: 120, total_tokens: 25000, total_actual_cost: stats.total_actual_cost - 1, today_actual_cost: stats.today_actual_cost - 1 }] }
+  else if (path === '/usage/dashboard/trend') data = { trend: Array.from({ length: 7 }, (_, i) => ({ date: `2026-11-${String(i + 1).padStart(2, '0')}`, requests: 20 + i, input_tokens: 2000 + i * 500, output_tokens: 800 + i * 100, cache_creation_tokens: 100, cache_read_tokens: 50, total_tokens: 2950 + i * 600, cost: i + 1, actual_cost: i + 1 })) }
+  else if (path === '/usage/dashboard/models') data = { models: [{ model: 'claude-sonnet-4-5', requests: 120, total_tokens: 25000, cost: 12, actual_cost: 8 }, { model: 'gpt-5', requests: 60, total_tokens: 15000, cost: 4, actual_cost: 3 }] }
+  else if (path === '/user/platform-quotas') data = { platform_quotas: dashboardPreview ? [{ platform: 'anthropic', daily_limit_usd: 20, daily_usage_usd: 16, weekly_limit_usd: 0, monthly_limit_usd: null }] : [] }
+  else if (dashboardPreview && path === '/usage') data = { items: Array.from({ length: 6 }, (_, i) => ({ id: i + 1, model: 'claude-sonnet-4-5', input_tokens: 1000, output_tokens: 500, total_cost: 0.08, actual_cost: 0.04, created_at: '2026-11-11T04:00:00Z' })), total: 6, pages: 1, page: 1, page_size: 20 }
   else if (path === '/usage/stats') data = stats
   else if (path === '/user/totp/status') data = { enabled: false }
   else if (path === '/user/mcp/config') data = { resource: 'https://example.test/mcp' }

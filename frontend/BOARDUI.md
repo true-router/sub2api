@@ -22,7 +22,7 @@ The implementation adapts the floating navigation, neutral surfaces, blue select
 
 The adopted admin layout follows the user-provided medical-profile reference: workspace and quick search at the top of a floating sidebar; navigation in the middle; theme, settings, and account controls at the bottom. There is no global top header in the workspace. Breadcrumb, page heading, and page-local actions belong to the right content region.
 
-The My Account routes share this workspace and use the Vue ports for actions, fields, role and status badges, segmented controls, and pagination. The command palette lists only entries available to the signed-in role. Public pages, authentication pages, the standalone user dashboard, and payment redirects do not use the workspace shell.
+The My Account routes share this workspace and use the Vue ports for actions, fields, role and status badges, segmented controls, and pagination. The command palette lists only entries available to the signed-in role. Public pages, authentication pages, and payment redirects do not use the workspace shell.
 
 ## Maintenance
 
@@ -106,3 +106,7 @@ Table acceptance: with the account preview running, run `node e2e/check-preview.
 The login route uses `LoginLayout.vue` and the Vue AuthCard port. The page has a brand header, a theme action, a centered 400px card, labelled inputs, inline errors, and conditional authentication options below the password form. Existing CAPTCHA, OAuth, passkey, agreement, and second-factor handlers keep ownership of authentication. Other authentication routes keep their existing layout.
 
 With the account preview running, run `node e2e/check-preview.mjs login`. Artifacts are in `output/boardui-login/`. This fixture scenario verifies local credentials, password visibility, error handling, requested-route navigation, theme switching, and narrow-screen overflow. It does not establish real provider, CAPTCHA, or authenticator integration.
+
+The user dashboard shares the account workspace. Its statistics use the shared StatCard port. Model distribution and token trends reuse the themed chart modules. The date filter updates both charts and recent usage. Recent usage uses the BoardUI Table port. Quick actions remain native router links. Platform quota calculations and simple-mode visibility are preserved.
+
+Dashboard acceptance: run `node e2e/user-dashboard.mjs` from `frontend/`. It starts an isolated fixture and preview, checks charts, platform quotas, filters, navigation, access restrictions, light/dark mode, and narrow screens, then saves screenshots, checks, and API requests to `output/user-dashboard/`.

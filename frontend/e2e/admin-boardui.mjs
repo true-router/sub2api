@@ -102,9 +102,9 @@ await waitShell(() => document.querySelectorAll('[data-testid="admin-metric-card
 await waitShell(() => document.querySelector('.sidebar').getBoundingClientRect().right <= 0, 'Mobile drawer closes');
 check(await readShell(() => innerWidth === 390 && document.documentElement.scrollWidth <= innerWidth), 'Mobile dashboard has no horizontal overflow');
 await page.screenshot({ path: ${JSON.stringify(resolve(artifacts, 'dashboard-mobile.png'))} });
-await page.goto('http://127.0.0.1:13031/dashboard');
+await page.goto('http://127.0.0.1:13031/home');
 await page.waitForFunction(() => !document.documentElement.hasAttribute('data-admin-ui'));
-check(true, 'User route clears admin theme');
+check(true, 'Public route clears workspace theme');
 await fs.writeFile(${JSON.stringify(resolve(artifacts, 'browser-result.json'))}, JSON.stringify({ checks, fixture: true, checkedAt: new Date().toISOString() }, null, 2));
 await task.finish({ keep: [] });
 console.log(JSON.stringify({ checks }));

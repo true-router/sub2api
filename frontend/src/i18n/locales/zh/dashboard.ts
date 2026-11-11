@@ -1,5 +1,6 @@
 export default {
   dashboard: {
+    failedToLoad: '账户概览加载失败，请刷新重试。',
     title: '仪表盘',
     welcomeMessage: '欢迎回来！这是您账户的概览。',
     balance: '余额',

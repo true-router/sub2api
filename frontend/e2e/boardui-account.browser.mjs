@@ -132,7 +132,7 @@ try {
   ))
   await page.goto(origin + '/admin/users')
   await page.waitForURL('**/dashboard')
-  check('Regular user still cannot access admin routes', await page.evaluate(() => document.documentElement.dataset.adminUi === undefined))
+  check('Regular user still cannot access admin routes', await page.evaluate(() => document.documentElement.dataset.adminUi === 'boardui' && !document.querySelector('.sidebar a[href^="/admin"]')))
 } catch (error) { check('Regular user workspace and permissions', false, { error: error.message }) }
 
 await fs.writeFile(output + '/checks.json', JSON.stringify(results, null, 2))
