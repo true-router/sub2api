@@ -5,6 +5,26 @@ export default {
   },
   // Home Page
   home: {
+    redesign: {
+      navigation: '主页导航',
+      eyebrow: '统一的 AI API 入口',
+      title: '一个 API，',
+      titleAccent: '连接更多可能。',
+      description: '用一个密钥接入 Claude、GPT、Gemini。让模型接入更简单，让你专注于构建。',
+      routingLabel: '从应用到模型，一次连接',
+      illustration: '接入示意',
+      yourApp: '你的应用',
+      yourAppHint: 'SDK · CLI · AI 工具',
+      oneEndpoint: '一个入口，统一管理',
+      availability: '示意模型。实际可用模型以账号权限为准。',
+      featuresLabel: '平台功能',
+      footer: '让接入简单，让创造继续。',
+      assurances: {
+        compatible: 'OpenAI SDK 兼容',
+        usage: '用量明细',
+        control: '密钥与配额管理',
+      },
+    },
     viewOnGithub: '在 GitHub 上查看',
     viewDocs: '查看文档',
     docs: '文档',

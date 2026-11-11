@@ -5,6 +5,26 @@ export default {
   },
   // Home Page
   home: {
+    redesign: {
+      navigation: 'Home navigation',
+      eyebrow: 'Your unified AI API',
+      title: 'One API.',
+      titleAccent: 'More possibilities.',
+      description: 'Access Claude, GPT, and Gemini with one key. Spend less time on integrations and more time building.',
+      routingLabel: 'From your application to AI models',
+      illustration: 'Illustration',
+      yourApp: 'Your application',
+      yourAppHint: 'SDK · CLI · AI tools',
+      oneEndpoint: 'One endpoint. One place to manage.',
+      availability: 'Illustrative models. Availability depends on your account.',
+      featuresLabel: 'Platform capabilities',
+      footer: 'Less setup. More building.',
+      assurances: {
+        compatible: 'OpenAI SDK compatible',
+        usage: 'Usage details',
+        control: 'Keys and quotas',
+      },
+    },
     viewOnGithub: 'View on GitHub',
     viewDocs: 'View Documentation',
     docs: 'Docs',
