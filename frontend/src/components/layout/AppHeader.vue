@@ -264,7 +264,7 @@
       <Icon v-if="!collapsed" name="chevronDown" size="sm" class="shrink-0 text-foreground-icon-secondary" />
     </button>
     <Transition name="dropdown">
-      <div v-if="dropdownOpen" data-testid="sidebar-account-popover" class="absolute bottom-full left-0 z-50 mb-2 w-64 rounded-2xl border border-border-button-default bg-background-primary-default p-2 shadow-lg" @keydown.esc="closeDropdown">
+      <div v-if="dropdownOpen" data-testid="sidebar-account-popover" class="absolute bottom-full start-0 z-50 mb-2 w-64 rounded-2xl border border-border-button-default bg-background-primary-default p-2 shadow-lg lg:start-full lg:ms-5" @keydown.esc="closeDropdown">
         <div class="flex flex-col gap-1 border-b border-separator-border px-3 py-3"><span class="text-body-medium text-text-primary">{{ displayName }}</span><span class="break-all text-caption-1-regular text-text-secondary">{{ user.email }}</span></div>
         <div class="flex items-center justify-between gap-3 px-3 py-3 text-body-2-regular text-text-secondary"><span>{{ balanceAvailableText }}</span><span class="tabular-nums text-text-primary">{{ formatHeaderMoney(availableBalance) }}</span></div>
         <div v-if="frozenBalance > 0" class="px-3 pb-2 text-caption-1-regular text-text-warning">{{ balanceFrozenLabel }}</div>
