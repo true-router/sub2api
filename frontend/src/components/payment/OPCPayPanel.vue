@@ -54,8 +54,7 @@ async function accept(value: OPCPayOperation) {
   modalOpen.value = true
   if (value.kind === 'purchase' && value.status === 'READY') {
     link.value = safeURL(value.result?.purchase_url)
-    const code = safeURL(value.result?.purchase_qr_code) || link.value
-    qrImage.value = code ? await QRCode.toDataURL(code, { width: 224, margin: 2 }) : ''
+    qrImage.value = link.value ? await QRCode.toDataURL(link.value, { width: 224, margin: 2 }) : ''
     message.value = `购买入口已生成。完成支付宝购买后，点击“确认充值”，将核销 ${value.amount} 积分并增加 ${value.credit_usd} USD 余额。`
   } else if (value.status === 'COMPLETED') {
     message.value = `充值完成。已核销 ${value.amount} 积分，增加 ${value.credit_usd} USD 余额。`
