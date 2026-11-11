@@ -30,6 +30,8 @@ import (
 var (
 	ErrUserNotFound             = infraerrors.NotFound("USER_NOT_FOUND", "user not found")
 	ErrPasswordIncorrect        = infraerrors.BadRequest("PASSWORD_INCORRECT", "current password is incorrect")
+	ErrPaidBalanceInsufficient  = infraerrors.BadRequest("PAID_BALANCE_INSUFFICIENT", "available paid balance is insufficient for conversion")
+	ErrBalanceConversionInvalid = infraerrors.BadRequest("INVALID_BALANCE_CONVERSION", "conversion requires a positive amount with at most eight decimals and a reason")
 	ErrBalanceNegative          = infraerrors.BadRequest("BALANCE_NEGATIVE", "balance cannot be negative")
 	ErrInsufficientPerms        = infraerrors.Forbidden("INSUFFICIENT_PERMISSIONS", "insufficient permissions")
 	ErrNotifyCodeUserRateLimit  = infraerrors.TooManyRequests("NOTIFY_CODE_USER_RATE_LIMIT", "too many verification codes requested, please try again later")

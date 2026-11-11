@@ -61,10 +61,11 @@
             <span class="font-mono text-text-primary">#{{ refundTarget.id }}</span>
           </div>
           <div class="mt-2 flex justify-between text-sm">
-            <span class="text-text-secondary">{{ t('payment.orders.amount') }}</span>
-            <span class="text-text-primary">${{ refundTarget.amount.toFixed(2) }}</span>
+            <span class="text-text-secondary">{{ t('wallet.refundPrincipal') }}</span>
+            <span class="text-text-primary">${{ Math.max(0, refundTarget.amount - (refundTarget.bonus_amount ?? 0)).toFixed(2) }}</span>
           </div>
         </div>
+        <p class="text-caption-1-regular text-text-secondary">{{ t('wallet.refundRule') }}</p>
         <div>
           <label class="input-label">{{ t('payment.refundReason') }}</label>
           <textarea v-model="refundReason" rows="3" class="input mt-1 w-full" :placeholder="t('payment.refundReasonPlaceholder')" />

@@ -111,7 +111,7 @@
       </div>
     </BaseDialog>
 
-    <AdminRefundDialog :show="showRefundDialog" :order="selectedOrder" :submitting="refundSubmitting" :require-force="refundRequireForce" :warning="refundWarning" @confirm="handleRefund" @cancel="closeRefundDialog" />
+    <AdminRefundDialog :show="showRefundDialog" :order="selectedOrder" :submitting="refundSubmitting" :user-balance="refundPaidBalance" :require-force="refundRequireForce" :warning="refundWarning" @confirm="handleRefund" @cancel="closeRefundDialog" />
   </AppLayout>
 </template>
 
@@ -121,6 +121,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { adminPaymentAPI } from '@/api/admin/payment'
+import { getById as getUserById } from '@/api/admin/users'
 import { extractI18nErrorMessage } from '@/utils/apiError'
 import { formatOrderDateTime } from '@/components/payment/orderUtils'
 import type { PaymentOrder } from '@/types/payment'
@@ -154,6 +155,7 @@ const selectedOrder = ref<PaymentOrder | null>(null)
 const showDetailDialog = ref(false)
 const showRefundDialog = ref(false)
 const refundSubmitting = ref(false)
+const refundPaidBalance = ref<number | null>(null)
 const refundRequireForce = ref(false)
 const refundWarning = ref('')
 const refundQueryingIds = ref(new Set<number>())
@@ -238,11 +240,22 @@ async function handleRetryOrder(order: PaymentOrder) {
   catch (err: unknown) { appStore.showError(extractI18nErrorMessage(err, t, 'payment.errors', t('common.error'))) }
 }
 
-function openRefundDialog(order: PaymentOrder) {
+async function openRefundDialog(order: PaymentOrder) {
+  refundPaidBalance.value = null
   selectedOrder.value = order
   refundRequireForce.value = false
   refundWarning.value = ''
   showRefundDialog.value = true
+  if (order.order_type === 'balance') {
+    try {
+      const user = await getUserById(order.user_id)
+      if (selectedOrder.value?.id === order.id && showRefundDialog.value) {
+        refundPaidBalance.value = Math.max(0, user.paid_balance ?? 0)
+      }
+    } catch (err: unknown) {
+      appStore.showError(extractI18nErrorMessage(err, t, 'payment.errors', t('common.error')))
+    }
+  }
 }
 
 function closeRefundDialog() {

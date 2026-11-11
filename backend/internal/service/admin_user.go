@@ -522,6 +522,28 @@ func (s *adminServiceImpl) UpdateUserBalance(ctx context.Context, userID int64, 
 	switch operation {
 	case "set":
 		change, err = s.userRepo.SetBalance(ctx, userID, balance)
+	case "convert_paid_to_bonus":
+		if strings.TrimSpace(notes) == "" {
+			return nil, ErrBalanceConversionInvalid
+		}
+		repo, ok := s.userRepo.(interface {
+			ConvertPaidBalanceToBonus(context.Context, int64, float64, string) (BalanceChange, error)
+		})
+		if !ok {
+			return nil, fmt.Errorf("user repository does not support paid balance conversion")
+		}
+		change, err = repo.ConvertPaidBalanceToBonus(ctx, userID, balance, notes)
+	case "add_paid":
+		if strings.TrimSpace(notes) == "" {
+			return nil, infraerrors.BadRequest("PAID_CREDIT_EVIDENCE_REQUIRED", "paid balance adjustment requires funding evidence in notes")
+		}
+		repo, ok := s.userRepo.(interface {
+			CreditPaidBalance(context.Context, int64, float64, string) (BalanceChange, error)
+		})
+		if !ok {
+			return nil, fmt.Errorf("user repository does not support verified paid credits")
+		}
+		change, err = repo.CreditPaidBalance(ctx, userID, balance, notes)
 	case "add":
 		change, err = s.userRepo.AdjustBalance(ctx, userID, balance)
 	case "subtract":
@@ -542,7 +564,7 @@ func (s *adminServiceImpl) UpdateUserBalance(ctx context.Context, userID int64, 
 	}
 
 	balanceDiff := change.New - change.Old
-	if s.authCacheInvalidator != nil && balanceDiff != 0 {
+	if s.authCacheInvalidator != nil && (balanceDiff != 0 || operation == "convert_paid_to_bonus") {
 		s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, userID)
 	}
 	s.tryAccrueAffiliateRebateForAdminRecharge(ctx, userID, operation, balance)
@@ -584,7 +606,7 @@ func (s *adminServiceImpl) UpdateUserBalance(ctx context.Context, userID int64, 
 }
 
 func (s *adminServiceImpl) tryAccrueAffiliateRebateForAdminRecharge(ctx context.Context, userID int64, operation string, amount float64) {
-	if operation != "add" || amount <= 0 || s.settingService == nil || s.affiliateService == nil {
+	if operation != "add_paid" || amount <= 0 || s.settingService == nil || s.affiliateService == nil {
 		return
 	}
 	if !s.settingService.IsAffiliateAdminRechargeEnabled(ctx) {

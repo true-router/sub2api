@@ -141,6 +141,7 @@ function isEnabled(providerKey: string): boolean {
 }
 
 function getTypes(providerKey: string): TypeOption[] {
+  if (providerKey === 'opcpay') return []
   return getAvailableTypes(providerKey, props.allPaymentTypes, props.redirectLabel)
     .map(opt => opt.label === opt.value
       ? { ...opt, label: t(`payment.methods.${opt.value}`, opt.value) }

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 	"time"
@@ -166,6 +167,11 @@ func (r *userRepository) create(ctx context.Context, userIn *service.User, guard
 		return err
 	}
 
+	// Database accounting classifies initial balances as promotional credit.
+	created, err = txClient.User.Get(txCtx, created.ID)
+	if err != nil {
+		return err
+	}
 	if ownedTx != nil {
 		if err := ownedTx.Commit(); err != nil {
 			return err
@@ -842,10 +848,6 @@ func (r *userRepository) filterUsersByAttributes(ctx context.Context, attrs map[
 func (r *userRepository) UpdateBalance(ctx context.Context, id int64, amount float64) error {
 	client := clientFromContext(ctx, r.client)
 	update := client.User.Update().Where(dbuser.IDEQ(id)).AddBalance(amount)
-	// Track cumulative recharge amount for percentage-based notifications
-	if amount > 0 {
-		update = update.AddTotalRecharged(amount)
-	}
 	n, err := update.Save(ctx)
 	if err != nil {
 		return translatePersistenceError(err, service.ErrUserNotFound, nil)
@@ -1608,4 +1610,64 @@ func (r *userRepository) DisableTotp(ctx context.Context, userID int64) error {
 		return translatePersistenceError(err, service.ErrUserNotFound, nil)
 	}
 	return nil
+}
+
+// CreditPaidBalance records a verified manual payment in the same accounting
+// boundary as provider fulfillment. Evidence is retained in the wallet journal.
+func (r *userRepository) CreditPaidBalance(ctx context.Context, id int64, amount float64, evidence string) (service.BalanceChange, error) {
+	if math.IsNaN(amount) || math.IsInf(amount, 0) || amount <= 0 || service.QuantizeUsageBillingAmount(amount) != amount || strings.TrimSpace(evidence) == "" {
+		return service.BalanceChange{}, fmt.Errorf("verified paid credit requires a positive amount with at most eight decimals and funding evidence")
+	}
+	tx := dbent.TxFromContext(ctx)
+	owned := tx == nil
+	if owned {
+		var err error
+		tx, err = r.client.Tx(ctx)
+		if err != nil {
+			return service.BalanceChange{}, err
+		}
+		defer tx.Rollback()
+		ctx = dbent.NewTxContext(ctx, tx)
+	}
+	change, ok, err := scanBalanceChange(ctx, tx.Client(), `SELECT balance,balance+$1 FROM users WHERE id=$2 AND deleted_at IS NULL FOR UPDATE`, amount, id)
+	if err != nil {
+		return service.BalanceChange{}, err
+	}
+	if !ok {
+		return service.BalanceChange{}, service.ErrUserNotFound
+	}
+	if _, err := tx.Client().ExecContext(ctx, `SELECT wallet_credit_payment($1,$2,$2,NULL,$3)`, id, amount, evidence); err != nil {
+		return service.BalanceChange{}, err
+	}
+	if owned {
+		if err := tx.Commit(); err != nil {
+			return service.BalanceChange{}, err
+		}
+	}
+	return change, nil
+}
+
+// ConvertPaidBalanceToBonus atomically reclassifies available paid credit. The
+// database user-row lock serializes conversion with consumption and refunds.
+func (r *userRepository) ConvertPaidBalanceToBonus(ctx context.Context, id int64, amount float64, reason string) (service.BalanceChange, error) {
+	if math.IsNaN(amount) || math.IsInf(amount, 0) || amount <= 0 || service.QuantizeUsageBillingAmount(amount) != amount || strings.TrimSpace(reason) == "" {
+		return service.BalanceChange{}, service.ErrBalanceConversionInvalid
+	}
+	change, ok, err := scanBalanceChange(ctx, clientFromContext(ctx, r.client), `SELECT * FROM wallet_convert_paid_to_bonus($1,$2,$3)`, id, amount, strings.TrimSpace(reason))
+	if err != nil {
+		var pgErr *pq.Error
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "P0002" {
+				return service.BalanceChange{}, service.ErrUserNotFound
+			}
+			if pgErr.Code == "P0001" && pgErr.Message == "insufficient available paid balance" {
+				return service.BalanceChange{}, service.ErrPaidBalanceInsufficient
+			}
+		}
+		return service.BalanceChange{}, err
+	}
+	if !ok {
+		return service.BalanceChange{}, service.ErrUserNotFound
+	}
+	return change, nil
 }

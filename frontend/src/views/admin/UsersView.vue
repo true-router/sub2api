@@ -440,7 +440,14 @@
               >
                 {{ t('admin.users.deposit') }}
               </button>
+              <BoardButton
+                variant="ghost"
+                size="xs"
+                :disabled="(row.paid_balance ?? 0) <= 0"
+                @click.stop="handleConvertPaidBalance(row)"
+              >{{ t('wallet.convertToBonus') }}</BoardButton>
             </div>
+          <BalanceBreakdown :user="row" class="mt-2" />
           </template>
 
           <template #cell-balance_platform_quota="{ row }">
@@ -778,6 +785,7 @@
 </template>
 
 <script setup lang="ts">
+import BalanceBreakdown from '@/components/user/BalanceBreakdown.vue'
 import BoardDrawer from '@/components/boardui/Drawer.vue'
 import BoardButton from '@/components/boardui/Button.vue'
 import BoardSearchField from '@/components/boardui/SearchField.vue'
@@ -1543,7 +1551,7 @@ const groupReplaceOldGroup = ref<{ id: number; name: string } | null>(null)
 // Balance (Deposit/Withdraw) modal state
 const showBalanceModal = ref(false)
 const balanceUser = ref<AdminUser | null>(null)
-const balanceOperation = ref<'add' | 'subtract'>('add')
+const balanceOperation = ref<'add' | 'subtract' | 'convert_paid_to_bonus'>('add')
 
 // Balance History modal state
 const showBalanceHistoryModal = ref(false)
@@ -1835,6 +1843,12 @@ const confirmBulkDelete = async () => {
 const handleDeposit = (user: AdminUser) => {
   balanceUser.value = user
   balanceOperation.value = 'add'
+  showBalanceModal.value = true
+}
+
+const handleConvertPaidBalance = (user: AdminUser) => {
+  balanceUser.value = user
+  balanceOperation.value = 'convert_paid_to_bonus'
   showBalanceModal.value = true
 }
 

@@ -67,6 +67,7 @@
                 <p class="mt-1 text-lg font-semibold text-text-primary">
                   {{ formatCurrency(user?.balance || 0) }}
                 </p>
+                <BalanceBreakdown :user="user" class="mt-2" />
               </div>
               <div
                 data-testid="profile-overview-metric-concurrency"
@@ -178,6 +179,7 @@
 </template>
 
 <script setup lang="ts">
+import BalanceBreakdown from '@/components/user/BalanceBreakdown.vue'
 import BoardBadge from '@/components/boardui/Badge.vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'

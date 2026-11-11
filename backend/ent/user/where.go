@@ -90,6 +90,16 @@ func Balance(v float64) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldBalance, v))
 }
 
+// BonusBalance applies equality check predicate on the "bonus_balance" field. It's identical to BonusBalanceEQ.
+func BonusBalance(v float64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldBonusBalance, v))
+}
+
+// UnverifiedBalance applies equality check predicate on the "unverified_balance" field. It's identical to UnverifiedBalanceEQ.
+func UnverifiedBalance(v float64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldUnverifiedBalance, v))
+}
+
 // FrozenBalance applies equality check predicate on the "frozen_balance" field. It's identical to FrozenBalanceEQ.
 func FrozenBalance(v float64) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldFrozenBalance, v))
@@ -543,6 +553,86 @@ func BalanceLT(v float64) predicate.User {
 // BalanceLTE applies the LTE predicate on the "balance" field.
 func BalanceLTE(v float64) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldBalance, v))
+}
+
+// BonusBalanceEQ applies the EQ predicate on the "bonus_balance" field.
+func BonusBalanceEQ(v float64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldBonusBalance, v))
+}
+
+// BonusBalanceNEQ applies the NEQ predicate on the "bonus_balance" field.
+func BonusBalanceNEQ(v float64) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldBonusBalance, v))
+}
+
+// BonusBalanceIn applies the In predicate on the "bonus_balance" field.
+func BonusBalanceIn(vs ...float64) predicate.User {
+	return predicate.User(sql.FieldIn(FieldBonusBalance, vs...))
+}
+
+// BonusBalanceNotIn applies the NotIn predicate on the "bonus_balance" field.
+func BonusBalanceNotIn(vs ...float64) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldBonusBalance, vs...))
+}
+
+// BonusBalanceGT applies the GT predicate on the "bonus_balance" field.
+func BonusBalanceGT(v float64) predicate.User {
+	return predicate.User(sql.FieldGT(FieldBonusBalance, v))
+}
+
+// BonusBalanceGTE applies the GTE predicate on the "bonus_balance" field.
+func BonusBalanceGTE(v float64) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldBonusBalance, v))
+}
+
+// BonusBalanceLT applies the LT predicate on the "bonus_balance" field.
+func BonusBalanceLT(v float64) predicate.User {
+	return predicate.User(sql.FieldLT(FieldBonusBalance, v))
+}
+
+// BonusBalanceLTE applies the LTE predicate on the "bonus_balance" field.
+func BonusBalanceLTE(v float64) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldBonusBalance, v))
+}
+
+// UnverifiedBalanceEQ applies the EQ predicate on the "unverified_balance" field.
+func UnverifiedBalanceEQ(v float64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldUnverifiedBalance, v))
+}
+
+// UnverifiedBalanceNEQ applies the NEQ predicate on the "unverified_balance" field.
+func UnverifiedBalanceNEQ(v float64) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldUnverifiedBalance, v))
+}
+
+// UnverifiedBalanceIn applies the In predicate on the "unverified_balance" field.
+func UnverifiedBalanceIn(vs ...float64) predicate.User {
+	return predicate.User(sql.FieldIn(FieldUnverifiedBalance, vs...))
+}
+
+// UnverifiedBalanceNotIn applies the NotIn predicate on the "unverified_balance" field.
+func UnverifiedBalanceNotIn(vs ...float64) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldUnverifiedBalance, vs...))
+}
+
+// UnverifiedBalanceGT applies the GT predicate on the "unverified_balance" field.
+func UnverifiedBalanceGT(v float64) predicate.User {
+	return predicate.User(sql.FieldGT(FieldUnverifiedBalance, v))
+}
+
+// UnverifiedBalanceGTE applies the GTE predicate on the "unverified_balance" field.
+func UnverifiedBalanceGTE(v float64) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldUnverifiedBalance, v))
+}
+
+// UnverifiedBalanceLT applies the LT predicate on the "unverified_balance" field.
+func UnverifiedBalanceLT(v float64) predicate.User {
+	return predicate.User(sql.FieldLT(FieldUnverifiedBalance, v))
+}
+
+// UnverifiedBalanceLTE applies the LTE predicate on the "unverified_balance" field.
+func UnverifiedBalanceLTE(v float64) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldUnverifiedBalance, v))
 }
 
 // FrozenBalanceEQ applies the EQ predicate on the "frozen_balance" field.

@@ -32,8 +32,8 @@
       <!-- Toggles + Payment mode + Supported types (single row) -->
       <div class="flex flex-wrap items-center gap-x-5 gap-y-2">
         <ToggleSwitch :label="t('common.enabled')" :checked="form.enabled" @toggle="form.enabled = !form.enabled" />
-        <ToggleSwitch :label="t('admin.settings.payment.refundEnabled')" :checked="form.refund_enabled" @toggle="form.refund_enabled = !form.refund_enabled; if (!form.refund_enabled) form.allow_user_refund = false" />
-        <ToggleSwitch v-if="form.refund_enabled" :label="t('admin.settings.payment.allowUserRefund')" :checked="form.allow_user_refund" @toggle="form.allow_user_refund = !form.allow_user_refund" />
+        <ToggleSwitch v-if="form.provider_key !== 'opcpay'" :label="t('admin.settings.payment.refundEnabled')" :checked="form.refund_enabled" @toggle="form.refund_enabled = !form.refund_enabled; if (!form.refund_enabled) form.allow_user_refund = false" />
+        <ToggleSwitch v-if="form.provider_key !== 'opcpay' && form.refund_enabled" :label="t('admin.settings.payment.allowUserRefund')" :checked="form.allow_user_refund" @toggle="form.allow_user_refund = !form.allow_user_refund" />
         <div v-if="supportsPaymentMode" class="flex items-center gap-2">
           <span class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('admin.settings.payment.paymentMode') }}</span>
           <div class="flex gap-1.5">
@@ -114,6 +114,7 @@
       </div>
 
 
+      <p v-if="form.provider_key === 'opcpay'" class="text-body-regular text-text-secondary">{{ t('admin.settings.payment.opcpayCardsHint') }}</p>
       <!-- Config fields -->
       <div class="border-t border-gray-200 pt-4 dark:border-dark-700">
         <div class="mb-3 flex items-center gap-2">
@@ -159,8 +160,9 @@
               <span v-if="field.optional" class="text-xs text-gray-400">({{ t('common.optional') }})</span>
               <span v-else class="text-red-500"> *</span>
             </label>
+            <BoardInput v-if="form.provider_key === 'opcpay'" v-model="config[field.key]" :type="field.sensitive ? 'password' : 'text'" :revealable="field.sensitive" autocomplete="new-password" :aria-label="field.label" :placeholder="editing && field.sensitive ? t('admin.accounts.leaveEmptyToKeep') : ''" />
             <textarea
-              v-if="field.sensitive && field.key.toLowerCase().includes('key') && field.key !== 'pkey'"
+              v-else-if="field.sensitive && field.key.toLowerCase().includes('key') && field.key !== 'pkey'"
               v-model="config[field.key]"
               rows="3"
               class="input font-mono text-xs"
@@ -307,6 +309,7 @@
 <script setup lang="ts">
 import { reactive, computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import BoardInput from '@/components/boardui/Input.vue'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import HelpTooltip from '@/components/common/HelpTooltip.vue'
 import Select from '@/components/common/Select.vue'
@@ -542,6 +545,7 @@ const paymentGuide = computed<PaymentGuide | null>(() => {
 })
 
 const limitableTypes = computed(() => {
+  if (form.provider_key === 'opcpay') return []
   // Stripe: single "stripe" entry (one set of shared limits)
   if (form.provider_key === 'stripe') {
     return [{ value: 'stripe', label: 'Stripe' }]
@@ -589,6 +593,7 @@ function removeEasyPayCustomMethod(index: number) {
 }
 
 function onKeyChange() {
+  if (form.provider_key === 'opcpay') { form.refund_enabled = false; form.allow_user_refund = false }
   form.supported_types = [...(PROVIDER_SUPPORTED_TYPES[form.provider_key] || [])]
   form.payment_mode = defaultPaymentMode(form.provider_key)
   clearConfig()
@@ -719,8 +724,8 @@ function handleSave() {
     supported_types: form.supported_types,
     enabled: form.enabled,
     payment_mode: supportsPaymentMode.value ? form.payment_mode : '',
-    refund_enabled: form.refund_enabled,
-    allow_user_refund: form.refund_enabled ? form.allow_user_refund : false,
+    refund_enabled: form.provider_key !== 'opcpay' && form.refund_enabled,
+    allow_user_refund: form.provider_key !== 'opcpay' && form.refund_enabled ? form.allow_user_refund : false,
     config: filteredConfig,
     limits: serializeLimits(),
   })

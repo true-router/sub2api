@@ -129,6 +129,48 @@ func (_u *UserUpdate) AddBalance(v float64) *UserUpdate {
 	return _u
 }
 
+// SetBonusBalance sets the "bonus_balance" field.
+func (_u *UserUpdate) SetBonusBalance(v float64) *UserUpdate {
+	_u.mutation.ResetBonusBalance()
+	_u.mutation.SetBonusBalance(v)
+	return _u
+}
+
+// SetNillableBonusBalance sets the "bonus_balance" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableBonusBalance(v *float64) *UserUpdate {
+	if v != nil {
+		_u.SetBonusBalance(*v)
+	}
+	return _u
+}
+
+// AddBonusBalance adds value to the "bonus_balance" field.
+func (_u *UserUpdate) AddBonusBalance(v float64) *UserUpdate {
+	_u.mutation.AddBonusBalance(v)
+	return _u
+}
+
+// SetUnverifiedBalance sets the "unverified_balance" field.
+func (_u *UserUpdate) SetUnverifiedBalance(v float64) *UserUpdate {
+	_u.mutation.ResetUnverifiedBalance()
+	_u.mutation.SetUnverifiedBalance(v)
+	return _u
+}
+
+// SetNillableUnverifiedBalance sets the "unverified_balance" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableUnverifiedBalance(v *float64) *UserUpdate {
+	if v != nil {
+		_u.SetUnverifiedBalance(*v)
+	}
+	return _u
+}
+
+// AddUnverifiedBalance adds value to the "unverified_balance" field.
+func (_u *UserUpdate) AddUnverifiedBalance(v float64) *UserUpdate {
+	_u.mutation.AddUnverifiedBalance(v)
+	return _u
+}
+
 // SetFrozenBalance sets the "frozen_balance" field.
 func (_u *UserUpdate) SetFrozenBalance(v float64) *UserUpdate {
 	_u.mutation.ResetFrozenBalance()
@@ -1032,6 +1074,18 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.AddedBalance(); ok {
 		_spec.AddField(user.FieldBalance, field.TypeFloat64, value)
 	}
+	if value, ok := _u.mutation.BonusBalance(); ok {
+		_spec.SetField(user.FieldBonusBalance, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedBonusBalance(); ok {
+		_spec.AddField(user.FieldBonusBalance, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.UnverifiedBalance(); ok {
+		_spec.SetField(user.FieldUnverifiedBalance, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedUnverifiedBalance(); ok {
+		_spec.AddField(user.FieldUnverifiedBalance, field.TypeFloat64, value)
+	}
 	if value, ok := _u.mutation.FrozenBalance(); ok {
 		_spec.SetField(user.FieldFrozenBalance, field.TypeFloat64, value)
 	}
@@ -1819,6 +1873,48 @@ func (_u *UserUpdateOne) SetNillableBalance(v *float64) *UserUpdateOne {
 // AddBalance adds value to the "balance" field.
 func (_u *UserUpdateOne) AddBalance(v float64) *UserUpdateOne {
 	_u.mutation.AddBalance(v)
+	return _u
+}
+
+// SetBonusBalance sets the "bonus_balance" field.
+func (_u *UserUpdateOne) SetBonusBalance(v float64) *UserUpdateOne {
+	_u.mutation.ResetBonusBalance()
+	_u.mutation.SetBonusBalance(v)
+	return _u
+}
+
+// SetNillableBonusBalance sets the "bonus_balance" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableBonusBalance(v *float64) *UserUpdateOne {
+	if v != nil {
+		_u.SetBonusBalance(*v)
+	}
+	return _u
+}
+
+// AddBonusBalance adds value to the "bonus_balance" field.
+func (_u *UserUpdateOne) AddBonusBalance(v float64) *UserUpdateOne {
+	_u.mutation.AddBonusBalance(v)
+	return _u
+}
+
+// SetUnverifiedBalance sets the "unverified_balance" field.
+func (_u *UserUpdateOne) SetUnverifiedBalance(v float64) *UserUpdateOne {
+	_u.mutation.ResetUnverifiedBalance()
+	_u.mutation.SetUnverifiedBalance(v)
+	return _u
+}
+
+// SetNillableUnverifiedBalance sets the "unverified_balance" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableUnverifiedBalance(v *float64) *UserUpdateOne {
+	if v != nil {
+		_u.SetUnverifiedBalance(*v)
+	}
+	return _u
+}
+
+// AddUnverifiedBalance adds value to the "unverified_balance" field.
+func (_u *UserUpdateOne) AddUnverifiedBalance(v float64) *UserUpdateOne {
+	_u.mutation.AddUnverifiedBalance(v)
 	return _u
 }
 
@@ -2754,6 +2850,18 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if value, ok := _u.mutation.AddedBalance(); ok {
 		_spec.AddField(user.FieldBalance, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.BonusBalance(); ok {
+		_spec.SetField(user.FieldBonusBalance, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedBonusBalance(); ok {
+		_spec.AddField(user.FieldBonusBalance, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.UnverifiedBalance(); ok {
+		_spec.SetField(user.FieldUnverifiedBalance, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedUnverifiedBalance(); ok {
+		_spec.AddField(user.FieldUnverifiedBalance, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.FrozenBalance(); ok {
 		_spec.SetField(user.FieldFrozenBalance, field.TypeFloat64, value)

@@ -243,6 +243,9 @@ func (s *PaymentService) loadProviders(ctx context.Context) {
 		return
 	}
 	for _, inst := range instances {
+		if inst.ProviderKey == payment.TypeOPCPay {
+			continue
+		}
 		cfg, err := s.loadBalancer.GetInstanceConfig(ctx, int64(inst.ID))
 		if err != nil {
 			slog.Warn("[PaymentService] failed to decrypt config for instance", "instanceID", inst.ID, "error", err)

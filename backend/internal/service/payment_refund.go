@@ -163,20 +163,23 @@ func (s *PaymentService) RequestRefund(ctx context.Context, oid, uid int64, reas
 	if err != nil {
 		return fmt.Errorf("get user: %w", err)
 	}
-	if u.Balance < o.Amount {
+	if paymentOrderAmountWithoutBonus(o) <= 0 {
+		return infraerrors.BadRequest("NO_PAID_CREDIT", "order has no refundable paid credit")
+	}
+	if refundablePaidBalance(u) < paymentOrderAmountWithoutBonus(o) {
 		return infraerrors.BadRequest("BALANCE_NOT_ENOUGH", "refund amount exceeds balance")
 	}
 	nr := strings.TrimSpace(reason)
 	now := time.Now()
 	by := fmt.Sprintf("%d", uid)
-	c, err := s.entClient.PaymentOrder.Update().Where(paymentorder.IDEQ(oid), paymentorder.UserIDEQ(uid), paymentorder.StatusEQ(OrderStatusCompleted), paymentorder.OrderTypeEQ(payment.OrderTypeBalance)).SetStatus(OrderStatusRefundRequested).SetRefundRequestedAt(now).SetRefundRequestReason(nr).SetRefundRequestedBy(by).SetRefundAmount(o.Amount).Save(ctx)
+	c, err := s.entClient.PaymentOrder.Update().Where(paymentorder.IDEQ(oid), paymentorder.UserIDEQ(uid), paymentorder.StatusEQ(OrderStatusCompleted), paymentorder.OrderTypeEQ(payment.OrderTypeBalance)).SetStatus(OrderStatusRefundRequested).SetRefundRequestedAt(now).SetRefundRequestReason(nr).SetRefundRequestedBy(by).SetRefundAmount(paymentOrderAmountWithoutBonus(o)).Save(ctx)
 	if err != nil {
 		return fmt.Errorf("update: %w", err)
 	}
 	if c == 0 {
 		return infraerrors.Conflict("CONFLICT", "order status changed")
 	}
-	s.writeAuditLog(ctx, oid, "REFUND_REQUESTED", fmt.Sprintf("user:%d", uid), map[string]any{"amount": o.Amount, "reason": nr})
+	s.writeAuditLog(ctx, oid, "REFUND_REQUESTED", fmt.Sprintf("user:%d", uid), map[string]any{"amount": paymentOrderAmountWithoutBonus(o), "reason": nr})
 	return nil
 }
 
@@ -231,14 +234,27 @@ func (s *PaymentService) PrepareRefund(ctx context.Context, oid int64, amt float
 	if math.IsNaN(amt) || math.IsInf(amt, 0) {
 		return nil, nil, infraerrors.BadRequest("INVALID_AMOUNT", "invalid refund amount")
 	}
+	principal := paymentOrderAmountWithoutBonus(o)
+	if o.OrderType == payment.OrderTypeBalance && !deduct {
+		return nil, nil, infraerrors.BadRequest("REFUND_DEDUCTION_REQUIRED", "balance refunds must deduct paid credit")
+	}
 	if amt <= 0 {
-		amt = o.Amount
+		amt = principal
+	}
+	if principal <= 0 {
+		return nil, nil, infraerrors.BadRequest("NO_PAID_CREDIT", "order has no refundable paid credit")
 	}
 	orderCurrency := PaymentOrderCurrency(o)
-	if amt-o.Amount > paymentAmountToleranceForCurrency(orderCurrency) {
+	if QuantizeUsageBillingAmount(amt) != amt {
+		return nil, nil, infraerrors.BadRequest("INVALID_AMOUNT", "refund amount supports at most eight decimal places")
+	}
+	if amt > principal {
 		return nil, nil, infraerrors.BadRequest("REFUND_AMOUNT_EXCEEDED", "refund amount exceeds recharge")
 	}
-	ga := calculateGatewayRefundAmount(o.Amount, o.PayAmount, amt, orderCurrency)
+	ga := calculateGatewayRefundAmount(principal, o.PayAmount, amt, orderCurrency)
+	if ga <= 0 {
+		return nil, nil, infraerrors.BadRequest("INVALID_AMOUNT", "refund amount is below the payment currency minimum")
+	}
 	rr := strings.TrimSpace(reason)
 	if rr == "" && o.RefundRequestReason != nil {
 		rr = *o.RefundRequestReason
@@ -271,29 +287,14 @@ func (s *PaymentService) prepDeduct(ctx context.Context, o *dbent.PaymentOrder, 
 	}
 	u, err := s.userRepo.GetByID(ctx, o.UserID)
 	if err != nil {
-		if !force {
-			return &RefundResult{Success: false, Warning: "cannot fetch user balance, use force", RequireForce: true}
-		}
-		return nil
+		return &RefundResult{Success: false, Warning: "cannot verify refundable paid balance"}
 	}
 	p.DeductionType = payment.DeductionTypeBalance
-	if u.Balance < p.RefundAmount && !force {
-		return &RefundResult{Success: false, Warning: "user balance is insufficient for deduction, use force", RequireForce: true}
+	if refundablePaidBalance(u) < p.RefundAmount && !s.hasAuditLog(ctx, p.OrderID, "REFUND_ROLLBACK_FAILED") {
+		return &RefundResult{Success: false, Warning: "refundable paid balance is insufficient; promotional and unverified credit cannot fund refunds"}
 	}
-	p.BalanceToDeduct = math.Max(0, math.Min(p.RefundAmount, u.Balance))
+	p.BalanceToDeduct = p.RefundAmount
 	return nil
-}
-
-type availableBalanceDeductor interface {
-	DeductAvailableBalance(ctx context.Context, id int64, amount float64) (float64, error)
-}
-
-func (s *PaymentService) deductAvailableBalance(ctx context.Context, userID int64, amount float64) (float64, error) {
-	repo, ok := s.userRepo.(availableBalanceDeductor)
-	if !ok {
-		return 0, errors.New("user repository does not support available balance deduction")
-	}
-	return repo.DeductAvailableBalance(ctx, userID, amount)
 }
 
 // invalidateRefundBalanceCache 退款扣减或归还余额后失效计费缓存，否则网关在缓存 TTL 内仍按旧余额放行。
@@ -316,7 +317,7 @@ func (s *PaymentService) ExecuteRefund(ctx context.Context, p *RefundPlan) (*Ref
 		// Skip balance deduction on retry if previous attempt already deducted
 		// but failed to roll back (REFUND_ROLLBACK_FAILED in audit log).
 		if !s.hasAuditLog(ctx, p.OrderID, "REFUND_ROLLBACK_FAILED") {
-			deducted, err := s.deductAvailableBalance(ctx, p.Order.UserID, p.BalanceToDeduct)
+			deducted, err := s.reserveWalletRefund(ctx, p)
 			if err != nil {
 				s.restoreStatus(ctx, p)
 				return nil, fmt.Errorf("deduction: %w", err)
@@ -325,7 +326,12 @@ func (s *PaymentService) ExecuteRefund(ctx context.Context, p *RefundPlan) (*Ref
 			s.invalidateRefundBalanceCache(ctx, p.Order.UserID)
 		} else {
 			slog.Warn("skipping balance deduction on retry (previous rollback failed)", "orderID", p.OrderID)
-			p.BalanceToDeduct = 0
+			held, err := s.reserveWalletRefund(ctx, p)
+			if err != nil {
+				s.restoreStatus(ctx, p)
+				return nil, err
+			}
+			p.BalanceToDeduct = held
 		}
 	}
 	if p.DeductionType == payment.DeductionTypeSubscription && p.SubDaysToDeduct > 0 && p.SubscriptionID > 0 {
@@ -450,12 +456,17 @@ func (s *PaymentService) QueryAndFinalizeRefund(ctx context.Context, oid int64) 
 	if err != nil {
 		return nil, err
 	}
+	denominator := o.Amount
+	if pendingDetail.WalletAccounting {
+		denominator = paymentOrderAmountWithoutBonus(o)
+	}
+	gatewayAmount := calculateGatewayRefundAmount(denominator, o.PayAmount, o.RefundAmount, PaymentOrderCurrency(o))
 	finishProviderCall := servertiming.ObserveDependency(ctx, "payment")
 	resp, err := queryProvider.QueryRefund(ctx, payment.RefundQueryRequest{
 		TradeNo:     o.PaymentTradeNo,
 		OrderID:     o.OutTradeNo,
 		RefundID:    pendingDetail.RefundID,
-		Amount:      formatGatewayRefundAmount(o.RefundAmount, o),
+		Amount:      formatGatewayRefundAmount(gatewayAmount, o),
 		RequestedAt: pendingDetail.requestedAt,
 	})
 	finishProviderCall()
@@ -537,7 +548,7 @@ func (s *PaymentService) refundFinalizePlan(o *dbent.PaymentOrder) *RefundPlan {
 		OrderID:       o.ID,
 		Order:         o,
 		RefundAmount:  refundAmount,
-		GatewayAmount: calculateGatewayRefundAmount(o.Amount, o.PayAmount, refundAmount, PaymentOrderCurrency(o)),
+		GatewayAmount: calculateGatewayRefundAmount(paymentOrderAmountWithoutBonus(o), o.PayAmount, refundAmount, PaymentOrderCurrency(o)),
 		Reason:        reason,
 		Force:         o.ForceRefund,
 		DeductBalance: true,
@@ -557,7 +568,7 @@ func (s *PaymentService) applyRefundFinalDeduction(ctx context.Context, p *Refun
 		return nil
 	}
 	if p.DeductionType == payment.DeductionTypeBalance && p.BalanceToDeduct > 0 {
-		deducted, err := s.deductAvailableBalance(ctx, p.Order.UserID, p.BalanceToDeduct)
+		deducted, err := s.reserveWalletRefund(ctx, p)
 		if err != nil {
 			return fmt.Errorf("deduction: %w", err)
 		}
@@ -659,7 +670,7 @@ func (s *PaymentService) finalizeRefundFailedTx(ctx context.Context, p *RefundPl
 // returnHeldRefundDeduction 归还进入 REFUND_PENDING 时保留的扣减；ctx 携带事务时随事务提交或回滚。
 func (s *PaymentService) returnHeldRefundDeduction(ctx context.Context, p *RefundPlan) error {
 	if p.DeductionType == payment.DeductionTypeBalance && p.BalanceToDeduct > 0 {
-		if err := s.userRepo.UpdateBalance(ctx, p.Order.UserID, p.BalanceToDeduct); err != nil {
+		if err := s.releaseWalletRefund(ctx, p); err != nil {
 			return fmt.Errorf("return held balance deduction: %w", err)
 		}
 	}
@@ -694,6 +705,7 @@ type refundPendingAuditDetail struct {
 	RefundAmount        float64 `json:"refundAmount"`
 	Reason              string  `json:"reason"`
 	Force               bool    `json:"force"`
+	WalletAccounting    bool    `json:"walletAccounting,omitempty"`
 	DeductionRollbackOK bool    `json:"deductionRollbackOK,omitempty"`
 	DeductionHeld       bool    `json:"deductionHeld,omitempty"`
 	DeductionType       string  `json:"deductionType,omitempty"`
@@ -763,22 +775,30 @@ func (s *PaymentService) handleGwFail(ctx context.Context, p *RefundPlan, gErr e
 }
 
 func (s *PaymentService) markRefundOk(ctx context.Context, p *RefundPlan) (*RefundResult, error) {
-	fs := OrderStatusRefunded
-	if p.RefundAmount < p.Order.Amount {
-		fs = OrderStatusPartiallyRefunded
-	}
-	now := time.Now()
-	_, err := s.entClient.PaymentOrder.UpdateOneID(p.OrderID).SetStatus(fs).SetRefundAmount(p.RefundAmount).SetRefundReason(p.Reason).SetRefundAt(now).SetForceRefund(p.Force).Save(ctx)
+	tx, err := s.entClient.Tx(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("mark refund: %w", err)
+		return nil, err
 	}
-	s.writeAuditLog(ctx, p.OrderID, "REFUND_SUCCESS", "admin", map[string]any{"refundAmount": p.RefundAmount, "reason": p.Reason, "balanceDeducted": p.BalanceToDeduct, "force": p.Force})
-	return &RefundResult{Success: true, BalanceDeducted: p.BalanceToDeduct, SubDaysDeducted: p.SubDaysToDeduct}, nil
+	defer tx.Rollback()
+	txCtx := dbent.NewTxContext(ctx, tx)
+	result, err := s.markRefundOkTx(txCtx, tx.Client(), p)
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func (s *PaymentService) markRefundOkTx(ctx context.Context, client *dbent.Client, p *RefundPlan) (*RefundResult, error) {
+	if p.Order.OrderType == payment.OrderTypeBalance {
+		if _, err := client.ExecContext(ctx, "SELECT wallet_capture_refund($1,$2)", p.Order.UserID, p.OrderID); err != nil {
+			return nil, err
+		}
+	}
 	fs := OrderStatusRefunded
-	if p.RefundAmount < p.Order.Amount {
+	if p.RefundAmount < paymentOrderAmountWithoutBonus(p.Order) {
 		fs = OrderStatusPartiallyRefunded
 	}
 	now := time.Now()
@@ -806,15 +826,16 @@ func (s *PaymentService) markRefundOkTx(ctx context.Context, client *dbent.Clien
 // 订单状态与审计记录同事务写入，确保终态收敛时能读到保留的扣减。
 func (s *PaymentService) markRefundPending(ctx context.Context, p *RefundPlan, resp *payment.RefundResponse) (_ *RefundResult, err error) {
 	detail, err := json.Marshal(refundPendingAuditDetail{
-		RefundID:        refundResponseID(resp),
-		RefundAmount:    p.RefundAmount,
-		Reason:          p.Reason,
-		Force:           p.Force,
-		DeductionHeld:   true,
-		DeductionType:   p.DeductionType,
-		BalanceDeducted: p.BalanceToDeduct,
-		SubDaysDeducted: p.SubDaysToDeduct,
-		SubscriptionID:  p.SubscriptionID,
+		RefundID:         refundResponseID(resp),
+		RefundAmount:     p.RefundAmount,
+		Reason:           p.Reason,
+		Force:            p.Force,
+		DeductionHeld:    true,
+		WalletAccounting: p.Order.OrderType == payment.OrderTypeBalance,
+		DeductionType:    p.DeductionType,
+		BalanceDeducted:  p.BalanceToDeduct,
+		SubDaysDeducted:  p.SubDaysToDeduct,
+		SubscriptionID:   p.SubscriptionID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("marshal refund pending audit: %w", err)
@@ -865,7 +886,7 @@ func refundResponseID(resp *payment.RefundResponse) string {
 
 func (s *PaymentService) RollbackRefund(ctx context.Context, p *RefundPlan, gErr error) bool {
 	if p.DeductionType == payment.DeductionTypeBalance && p.BalanceToDeduct > 0 {
-		if err := s.userRepo.UpdateBalance(ctx, p.Order.UserID, p.BalanceToDeduct); err != nil {
+		if err := s.releaseWalletRefund(ctx, p); err != nil {
 			slog.Error("[CRITICAL] rollback failed", "orderID", p.OrderID, "amount", p.BalanceToDeduct, "error", err)
 			s.writeAuditLog(ctx, p.OrderID, "REFUND_ROLLBACK_FAILED", "admin", map[string]any{"gatewayError": psErrMsg(gErr), "rollbackError": psErrMsg(err), "balanceDeducted": p.BalanceToDeduct})
 			return false

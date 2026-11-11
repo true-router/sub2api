@@ -25,6 +25,9 @@ import (
 // Only validates enabled instances — a disabled instance may be a half-filled
 // draft the admin will complete later.
 func (s *PaymentConfigService) validateProviderConfig(providerKey string, config map[string]string) error {
+	if providerKey == payment.TypeOPCPay {
+		return validateOPCPayConfig(config)
+	}
 	_, err := provider.CreateProvider(providerKey, "_validate_", config)
 	return err
 }
@@ -87,6 +90,9 @@ func (s *PaymentConfigService) decryptAndMaskConfig(providerKey, encrypted strin
 		return nil, nil
 	}
 	masked := make(map[string]string, len(cfg))
+	if providerKey == payment.TypeOPCPay && cfg["apiKey"] != "" {
+		masked["apiKeyConfigured"] = "true"
+	}
 	for k, v := range cfg {
 		if isSensitiveProviderConfigField(providerKey, k) {
 			continue
@@ -116,6 +122,7 @@ var providerSensitiveConfigFields = map[string]map[string]struct{}{
 	payment.TypeWxpay:     {"privatekey": {}, "apiv3key": {}, "publickey": {}},
 	payment.TypeStripe:    {"secretkey": {}, "webhooksecret": {}},
 	payment.TypeAirwallex: {"apikey": {}, "webhooksecret": {}},
+	payment.TypeOPCPay:    {"apikey": {}},
 }
 
 // providerPendingOrderProtectedConfigFields lists config keys that cannot be
@@ -127,6 +134,7 @@ var providerPendingOrderProtectedConfigFields = map[string]map[string]struct{}{
 	payment.TypeAlipay:    {"privatekey": {}, "publickey": {}, "alipaypublickey": {}, "appid": {}},
 	payment.TypeWxpay:     {"privatekey": {}, "apiv3key": {}, "publickey": {}, "appid": {}, "mpappid": {}, "mchid": {}, "publickeyid": {}, "certserial": {}},
 	payment.TypeStripe:    {"secretkey": {}, "webhooksecret": {}, "currency": {}},
+	payment.TypeOPCPay:    {"apikey": {}},
 	payment.TypeAirwallex: {"clientid": {}, "apikey": {}, "webhooksecret": {}, "apibase": {}, "accountid": {}, "currency": {}},
 }
 
@@ -162,6 +170,22 @@ func providerConfigFieldValue(config map[string]string, fieldName string) string
 }
 
 func (s *PaymentConfigService) countPendingOrders(ctx context.Context, providerInstanceID int64) (int, error) {
+	inst, err := s.entClient.PaymentProviderInstance.Get(ctx, providerInstanceID)
+	if err != nil {
+		return 0, err
+	}
+	if inst.ProviderKey == payment.TypeOPCPay {
+		rows, err := s.entClient.QueryContext(ctx, `SELECT COUNT(*) FROM opcpay_operations WHERE provider_instance_id=$1 AND status NOT IN ('COMPLETED','FAILED','CLOSED')`, providerInstanceID)
+		if err != nil {
+			return 0, err
+		}
+		defer rows.Close()
+		var count int
+		if rows.Next() {
+			err = rows.Scan(&count)
+		}
+		return count, err
+	}
 	return s.entClient.PaymentOrder.Query().
 		Where(
 			paymentorder.ProviderInstanceIDEQ(strconv.FormatInt(providerInstanceID, 10)),
@@ -178,11 +202,16 @@ func (s *PaymentConfigService) countPendingOrdersByPlan(ctx context.Context, pla
 }
 
 var validProviderKeys = map[string]bool{
-	payment.TypeEasyPay: true, payment.TypeAlipay: true, payment.TypeWxpay: true, payment.TypeStripe: true, payment.TypeAirwallex: true,
+	payment.TypeEasyPay: true, payment.TypeAlipay: true, payment.TypeWxpay: true, payment.TypeStripe: true, payment.TypeAirwallex: true, payment.TypeOPCPay: true,
 }
 
 func (s *PaymentConfigService) CreateProviderInstance(ctx context.Context, req CreateProviderInstanceRequest) (*dbent.PaymentProviderInstance, error) {
 	typesStr := joinTypes(req.SupportedTypes)
+	if req.ProviderKey == payment.TypeOPCPay {
+		if err := s.validateOPCPayInstance(ctx, 0, typesStr, req.Enabled, req.RefundEnabled, req.AllowUserRefund); err != nil {
+			return nil, err
+		}
+	}
 	if err := validateProviderRequest(req.ProviderKey, req.Name, typesStr); err != nil {
 		return nil, err
 	}
@@ -199,7 +228,7 @@ func (s *PaymentConfigService) CreateProviderInstance(ctx context.Context, req C
 			return nil, err
 		}
 	}
-	enc, err := s.encryptConfig(req.Config)
+	enc, err := s.encodeProviderConfig(req.ProviderKey, req.Config)
 	if err != nil {
 		return nil, err
 	}
@@ -313,6 +342,18 @@ func (s *PaymentConfigService) UpdateProviderInstance(ctx context.Context, id in
 	if req.SupportedTypes != nil {
 		nextSupportedTypes = joinTypes(req.SupportedTypes)
 	}
+	if current.ProviderKey == payment.TypeOPCPay {
+		refund, userRefund := current.RefundEnabled, current.AllowUserRefund
+		if req.RefundEnabled != nil {
+			refund = *req.RefundEnabled
+		}
+		if req.AllowUserRefund != nil {
+			userRefund = *req.AllowUserRefund
+		}
+		if err := s.validateOPCPayInstance(ctx, id, nextSupportedTypes, nextEnabled, refund, userRefund); err != nil {
+			return nil, err
+		}
+	}
 	if err := s.validateVisibleMethodEnablementConflicts(ctx, id, current.ProviderKey, nextSupportedTypes, nextEnabled); err != nil {
 		return nil, err
 	}
@@ -376,7 +417,7 @@ func (s *PaymentConfigService) UpdateProviderInstance(ctx context.Context, id in
 		u.SetName(*req.Name)
 	}
 	if mergedConfig != nil {
-		enc, err := s.encryptConfig(mergedConfig)
+		enc, err := s.encodeProviderConfig(current.ProviderKey, mergedConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -491,17 +532,28 @@ func (s *PaymentConfigService) mergeConfig(ctx context.Context, id int64, newCon
 }
 
 // decryptConfig parses a stored provider config.
-// New records are plaintext JSON; legacy records are AES-256-GCM ciphertext
+// OPCPay records have a versioned encrypted prefix. Other new records are
+// plaintext JSON; legacy records are AES-256-GCM ciphertext
 // ("iv:authTag:ciphertext"). Values that cannot be parsed as either — including
 // legacy ciphertext with no/invalid TOTP_ENCRYPTION_KEY — are treated as empty,
 // letting the admin re-enter the config via the UI to complete the migration.
 //
-// TODO(deprecated-legacy-ciphertext): The AES fallback branch is a transitional
-// shim for pre-plaintext records. Remove it (and the encryptionKey field) after
-// a few releases once all live deployments have re-saved their provider configs.
+// The unprefixed AES fallback is retained for older providers. OPCPay uses
+// the versioned encrypted branch above the JSON/legacy compatibility paths.
 func (s *PaymentConfigService) decryptConfig(stored string) (map[string]string, error) {
 	if stored == "" {
 		return nil, nil
+	}
+	if strings.HasPrefix(stored, opcpayConfigPrefix) {
+		raw, err := payment.Decrypt(strings.TrimPrefix(stored, opcpayConfigPrefix), s.encryptionKey)
+		if err != nil {
+			return nil, fmt.Errorf("无法解密一人付服务商配置")
+		}
+		var cfg map[string]string
+		if json.Unmarshal([]byte(raw), &cfg) != nil {
+			return nil, fmt.Errorf("一人付服务商配置无效")
+		}
+		return cfg, nil
 	}
 	var cfg map[string]string
 	if err := json.Unmarshal([]byte(stored), &cfg); err == nil {

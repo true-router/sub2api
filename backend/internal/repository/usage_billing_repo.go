@@ -133,6 +133,12 @@ func (r *usageBillingRepository) applyBatchImageBalanceHold(
 		return nil, errors.New("usage billing repository db is nil")
 	}
 	cmd.Normalize()
+	// Preserve the original idempotency fingerprint across upgrades, while
+	// applying every hold and settlement at the wallet's persisted scale.
+	effective := *cmd
+	effective.HoldAmount = service.QuantizeUsageBillingAmount(cmd.HoldAmount)
+	effective.ActualAmount = service.QuantizeUsageBillingAmount(cmd.ActualAmount)
+	cmd = &effective
 	if cmd.RequestID == "" {
 		return nil, service.ErrUsageBillingRequestIDRequired
 	}
@@ -278,6 +284,9 @@ func reserveUsageBillingBatchImageBalance(ctx context.Context, tx *sql.Tx, cmd *
 	if cmd.HoldAmount <= 0 {
 		return &service.BatchImageBalanceHoldResult{}, nil
 	}
+	if _, err := tx.ExecContext(ctx, `SELECT wallet_prepare($1,jsonb_build_object('operation',$2::text,'hold_key',$3::text,'actual',$4::numeric))`, cmd.UserID, "reserve_batch", "batch:"+cmd.BatchID, 0); err != nil {
+		return nil, err
+	}
 	var balance, frozen float64
 	err := tx.QueryRowContext(ctx, `
 		UPDATE users
@@ -307,6 +316,9 @@ func captureUsageBillingBatchImageBalance(ctx context.Context, tx *sql.Tx, cmd *
 	}
 	if cmd.ActualAmount-cmd.HoldAmount > 0.00000001 {
 		return nil, service.ErrBatchImageSettlementCostExceedsHold
+	}
+	if _, err := tx.ExecContext(ctx, `SELECT wallet_prepare($1,jsonb_build_object('operation',$2::text,'hold_key',$3::text,'actual',$4::numeric))`, cmd.UserID, "settle_batch", "batch:"+cmd.BatchID, cmd.ActualAmount); err != nil {
+		return nil, err
 	}
 	var balance, frozen float64
 	err := tx.QueryRowContext(ctx, `
@@ -346,6 +358,9 @@ func releaseUsageBillingBatchImageBalance(ctx context.Context, tx *sql.Tx, cmd *
 	if !held {
 		logger.LegacyPrintf("repository.usage_billing", "[BatchImage] release skipped, hold was never reserved: batch=%s", cmd.BatchID)
 		return &service.BatchImageBalanceHoldResult{}, nil
+	}
+	if _, err := tx.ExecContext(ctx, `SELECT wallet_prepare($1,jsonb_build_object('operation',$2::text,'hold_key',$3::text,'actual',$4::numeric))`, cmd.UserID, "settle_batch", "batch:"+cmd.BatchID, 0); err != nil {
+		return nil, err
 	}
 	var balance, frozen float64
 	err := tx.QueryRowContext(ctx, `

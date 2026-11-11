@@ -330,6 +330,7 @@ export default {
     actualPay: '实付金额',
     createOrder: '确认支付',
     methods: {
+      opcpay: '一人付充值卡',
       easypay: '易支付',
       alipay: '支付宝',
       wxpay: '微信支付',

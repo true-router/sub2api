@@ -47,12 +47,19 @@
         </div>
       </div>
 
+      <div v-if="order?.order_type === 'balance'" class="space-y-1 text-caption-1-regular text-text-secondary">
+        <p>{{ t('wallet.refundPrincipal') }}: {{ creditedAmountSymbol }}{{ (order.amount - (order.bonus_amount ?? 0)).toFixed(2) }}</p>
+        <p>{{ t('wallet.refundBonus') }}: {{ creditedAmountSymbol }}{{ (order.bonus_amount ?? 0).toFixed(2) }}</p>
+        <p>{{ t('wallet.refundRule') }}</p>
+      </div>
+
       <!-- Deduct Balance -->
       <div>
         <div class="flex items-center gap-2">
           <input
             id="deduct-balance"
             v-model="form.deduct_balance"
+            :disabled="order?.order_type === 'balance'"
             type="checkbox"
             class="h-4 w-4 rounded border-border-button-hover text-text-accent focus:ring-border-focus-ring"
           />
@@ -65,7 +72,7 @@
         <!-- User Balance Info (when deduct_balance is checked) -->
         <div v-if="form.deduct_balance && userBalance != null" class="mt-3 grid grid-cols-2 gap-3">
           <div class="rounded-lg bg-background-secondary-default p-3 text-body-regular ">
-            <div class="text-text-secondary ">{{ t('payment.admin.userBalance') }}</div>
+            <div class="text-text-secondary ">{{ t('wallet.refundPaidAvailable') }}</div>
             <div class="mt-1 font-semibold text-text-primary ">{{ creditedAmountSymbol }}{{ userBalance.toFixed(2) }}</div>
           </div>
           <div class="rounded-lg bg-background-secondary-default p-3 text-body-regular ">
@@ -93,7 +100,7 @@
 
       <!-- Refund Amount -->
       <div>
-        <label class="input-label">{{ t('payment.admin.refundAmount') }}</label>
+        <label class="input-label">{{ order?.order_type === 'balance' ? t('wallet.refundPrincipalAmount') : t('payment.admin.refundAmount') }}</label>
         <div class="relative">
           <span class="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">{{ creditedAmountSymbol }}</span>
           <input
@@ -210,7 +217,7 @@ const actuallyRefunded = computed(() => {
 
 const maxRefundable = computed(() => {
   if (!props.order) return 0
-  return props.order.amount - actuallyRefunded.value
+  return Math.max(0, props.order.amount - (props.order.bonus_amount ?? 0) - actuallyRefunded.value)
 })
 
 const balanceInsufficient = computed(() => {

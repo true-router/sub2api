@@ -49077,6 +49077,10 @@ type UserMutation struct {
 	role                          *string
 	balance                       *float64
 	addbalance                    *float64
+	bonus_balance                 *float64
+	addbonus_balance              *float64
+	unverified_balance            *float64
+	addunverified_balance         *float64
 	frozen_balance                *float64
 	addfrozen_balance             *float64
 	concurrency                   *int
@@ -49526,6 +49530,118 @@ func (m *UserMutation) AddedBalance() (r float64, exists bool) {
 func (m *UserMutation) ResetBalance() {
 	m.balance = nil
 	m.addbalance = nil
+}
+
+// SetBonusBalance sets the "bonus_balance" field.
+func (m *UserMutation) SetBonusBalance(f float64) {
+	m.bonus_balance = &f
+	m.addbonus_balance = nil
+}
+
+// BonusBalance returns the value of the "bonus_balance" field in the mutation.
+func (m *UserMutation) BonusBalance() (r float64, exists bool) {
+	v := m.bonus_balance
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBonusBalance returns the old "bonus_balance" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldBonusBalance(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBonusBalance is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBonusBalance requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBonusBalance: %w", err)
+	}
+	return oldValue.BonusBalance, nil
+}
+
+// AddBonusBalance adds f to the "bonus_balance" field.
+func (m *UserMutation) AddBonusBalance(f float64) {
+	if m.addbonus_balance != nil {
+		*m.addbonus_balance += f
+	} else {
+		m.addbonus_balance = &f
+	}
+}
+
+// AddedBonusBalance returns the value that was added to the "bonus_balance" field in this mutation.
+func (m *UserMutation) AddedBonusBalance() (r float64, exists bool) {
+	v := m.addbonus_balance
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetBonusBalance resets all changes to the "bonus_balance" field.
+func (m *UserMutation) ResetBonusBalance() {
+	m.bonus_balance = nil
+	m.addbonus_balance = nil
+}
+
+// SetUnverifiedBalance sets the "unverified_balance" field.
+func (m *UserMutation) SetUnverifiedBalance(f float64) {
+	m.unverified_balance = &f
+	m.addunverified_balance = nil
+}
+
+// UnverifiedBalance returns the value of the "unverified_balance" field in the mutation.
+func (m *UserMutation) UnverifiedBalance() (r float64, exists bool) {
+	v := m.unverified_balance
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUnverifiedBalance returns the old "unverified_balance" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldUnverifiedBalance(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUnverifiedBalance is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUnverifiedBalance requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUnverifiedBalance: %w", err)
+	}
+	return oldValue.UnverifiedBalance, nil
+}
+
+// AddUnverifiedBalance adds f to the "unverified_balance" field.
+func (m *UserMutation) AddUnverifiedBalance(f float64) {
+	if m.addunverified_balance != nil {
+		*m.addunverified_balance += f
+	} else {
+		m.addunverified_balance = &f
+	}
+}
+
+// AddedUnverifiedBalance returns the value that was added to the "unverified_balance" field in this mutation.
+func (m *UserMutation) AddedUnverifiedBalance() (r float64, exists bool) {
+	v := m.addunverified_balance
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUnverifiedBalance resets all changes to the "unverified_balance" field.
+func (m *UserMutation) ResetUnverifiedBalance() {
+	m.unverified_balance = nil
+	m.addunverified_balance = nil
 }
 
 // SetFrozenBalance sets the "frozen_balance" field.
@@ -51078,7 +51194,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 25)
+	fields := make([]string, 0, 27)
 	if m.created_at != nil {
 		fields = append(fields, user.FieldCreatedAt)
 	}
@@ -51099,6 +51215,12 @@ func (m *UserMutation) Fields() []string {
 	}
 	if m.balance != nil {
 		fields = append(fields, user.FieldBalance)
+	}
+	if m.bonus_balance != nil {
+		fields = append(fields, user.FieldBonusBalance)
+	}
+	if m.unverified_balance != nil {
+		fields = append(fields, user.FieldUnverifiedBalance)
 	}
 	if m.frozen_balance != nil {
 		fields = append(fields, user.FieldFrozenBalance)
@@ -51176,6 +51298,10 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.Role()
 	case user.FieldBalance:
 		return m.Balance()
+	case user.FieldBonusBalance:
+		return m.BonusBalance()
+	case user.FieldUnverifiedBalance:
+		return m.UnverifiedBalance()
 	case user.FieldFrozenBalance:
 		return m.FrozenBalance()
 	case user.FieldConcurrency:
@@ -51235,6 +51361,10 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldRole(ctx)
 	case user.FieldBalance:
 		return m.OldBalance(ctx)
+	case user.FieldBonusBalance:
+		return m.OldBonusBalance(ctx)
+	case user.FieldUnverifiedBalance:
+		return m.OldUnverifiedBalance(ctx)
 	case user.FieldFrozenBalance:
 		return m.OldFrozenBalance(ctx)
 	case user.FieldConcurrency:
@@ -51328,6 +51458,20 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetBalance(v)
+		return nil
+	case user.FieldBonusBalance:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBonusBalance(v)
+		return nil
+	case user.FieldUnverifiedBalance:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUnverifiedBalance(v)
 		return nil
 	case user.FieldFrozenBalance:
 		v, ok := value.(float64)
@@ -51466,6 +51610,12 @@ func (m *UserMutation) AddedFields() []string {
 	if m.addbalance != nil {
 		fields = append(fields, user.FieldBalance)
 	}
+	if m.addbonus_balance != nil {
+		fields = append(fields, user.FieldBonusBalance)
+	}
+	if m.addunverified_balance != nil {
+		fields = append(fields, user.FieldUnverifiedBalance)
+	}
 	if m.addfrozen_balance != nil {
 		fields = append(fields, user.FieldFrozenBalance)
 	}
@@ -51491,6 +51641,10 @@ func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case user.FieldBalance:
 		return m.AddedBalance()
+	case user.FieldBonusBalance:
+		return m.AddedBonusBalance()
+	case user.FieldUnverifiedBalance:
+		return m.AddedUnverifiedBalance()
 	case user.FieldFrozenBalance:
 		return m.AddedFrozenBalance()
 	case user.FieldConcurrency:
@@ -51516,6 +51670,20 @@ func (m *UserMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddBalance(v)
+		return nil
+	case user.FieldBonusBalance:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddBonusBalance(v)
+		return nil
+	case user.FieldUnverifiedBalance:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUnverifiedBalance(v)
 		return nil
 	case user.FieldFrozenBalance:
 		v, ok := value.(float64)
@@ -51638,6 +51806,12 @@ func (m *UserMutation) ResetField(name string) error {
 		return nil
 	case user.FieldBalance:
 		m.ResetBalance()
+		return nil
+	case user.FieldBonusBalance:
+		m.ResetBonusBalance()
+		return nil
+	case user.FieldUnverifiedBalance:
+		m.ResetUnverifiedBalance()
 		return nil
 	case user.FieldFrozenBalance:
 		m.ResetFrozenBalance()

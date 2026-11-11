@@ -9,6 +9,31 @@ import admin from './admin'
 import misc from './misc'
 
 export default {
+  wallet: {
+    convertToBonus: 'Convert to promotional balance',
+    conversionAmount: 'Conversion amount',
+    conversionReason: 'Conversion reason (required)',
+    conversionRule: 'Total balance stays unchanged. Converted credit cannot be refunded. Only unspent, unfrozen paid credit can be converted.',
+    paidAfterConversion: 'Paid balance after conversion',
+    bonusAfterConversion: 'Promotional balance after conversion',
+    conversionReasonRequired: 'Enter the conversion reason.',
+    conversionInsufficient: 'Available paid balance is insufficient for conversion.',
+
+    creditSource: 'Funding source',
+    paidCreditEvidence: 'Provide payment evidence in notes before crediting paid balance.',
+
+    paidBalance: 'Paid balance',
+    bonusBalance: 'Promotional balance',
+    unverifiedBalance: 'Unverified balance',
+    spendRule: 'Promotional credit is spent first and cannot be refunded.',
+    unverifiedRule: 'Unverified credit can be spent. Funding must be verified before a refund.',
+    refundRule: 'Refunds deduct paid credit and reclaim this order’s unspent promotional credit.',
+    refundPrincipal: 'Order paid credit',
+    refundPaidAvailable: 'Available paid credit',
+    refundPrincipalAmount: 'Refund paid credit (USD)',
+    refundBonus: 'Original promotional credit (not refundable)',
+    adminCreditRule: 'Promotional additions cannot be refunded.',
+  },
   boardui: {
     language: 'Language',
     quickSearch: 'Quick search',

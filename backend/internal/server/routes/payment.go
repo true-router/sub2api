@@ -43,6 +43,10 @@ func RegisterPaymentRoutes(
 	// 面板全局按用户限流
 	authenticated.Use(panelRateLimiter.Global())
 	{
+		authenticated.GET("/opcpay", paymentHandler.OPCPayInfo)
+		authenticated.POST("/opcpay/operations", paymentHandler.OPCPayStart)
+		authenticated.POST("/opcpay/operations/:business_id/resume", paymentHandler.OPCPayResume)
+		authenticated.POST("/opcpay/operations/:business_id/close", paymentHandler.OPCPayClosePurchase)
 		authenticated.GET("/config", paymentHandler.GetPaymentConfig)
 		authenticated.GET("/checkout-info", paymentHandler.GetCheckoutInfo)
 		authenticated.GET("/plans", paymentHandler.GetPlans)

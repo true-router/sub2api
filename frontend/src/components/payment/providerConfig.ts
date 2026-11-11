@@ -42,6 +42,7 @@ export const PROVIDER_SUPPORTED_TYPES: Record<string, string[]> = {
   wxpay: ['wxpay'],
   stripe: ['card', 'alipay', 'wxpay', 'link'],
   airwallex: ['airwallex'],
+  opcpay: ['opcpay'],
 }
 
 /** Available payment modes for EasyPay providers. */
@@ -125,6 +126,10 @@ export const PROVIDER_CALLBACK_PATHS: Record<string, CallbackPaths> = {
 
 /** Per-provider config fields (excludes notifyUrl/returnUrl which are handled separately). */
 export const PROVIDER_CONFIG_FIELDS: Record<string, ConfigFieldDef[]> = {
+  opcpay: [
+    { key: 'apiKey', label: 'API Key', sensitive: true },
+    { key: 'publicOrigin', label: '', sensitive: false, optional: true, clearable: true, hintKey: 'admin.settings.payment.opcpayOriginHint' },
+  ],
   easypay: [
     { key: 'pid', label: 'PID', sensitive: false },
     { key: 'pkey', label: 'PKey', sensitive: true },

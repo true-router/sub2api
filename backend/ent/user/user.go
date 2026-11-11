@@ -29,6 +29,10 @@ const (
 	FieldRole = "role"
 	// FieldBalance holds the string denoting the balance field in the database.
 	FieldBalance = "balance"
+	// FieldBonusBalance holds the string denoting the bonus_balance field in the database.
+	FieldBonusBalance = "bonus_balance"
+	// FieldUnverifiedBalance holds the string denoting the unverified_balance field in the database.
+	FieldUnverifiedBalance = "unverified_balance"
 	// FieldFrozenBalance holds the string denoting the frozen_balance field in the database.
 	FieldFrozenBalance = "frozen_balance"
 	// FieldConcurrency holds the string denoting the concurrency field in the database.
@@ -203,6 +207,8 @@ var Columns = []string{
 	FieldPasswordHash,
 	FieldRole,
 	FieldBalance,
+	FieldBonusBalance,
+	FieldUnverifiedBalance,
 	FieldFrozenBalance,
 	FieldConcurrency,
 	FieldStatus,
@@ -263,6 +269,10 @@ var (
 	RoleValidator func(string) error
 	// DefaultBalance holds the default value on creation for the "balance" field.
 	DefaultBalance float64
+	// DefaultBonusBalance holds the default value on creation for the "bonus_balance" field.
+	DefaultBonusBalance float64
+	// DefaultUnverifiedBalance holds the default value on creation for the "unverified_balance" field.
+	DefaultUnverifiedBalance float64
 	// DefaultFrozenBalance holds the default value on creation for the "frozen_balance" field.
 	DefaultFrozenBalance float64
 	// DefaultConcurrency holds the default value on creation for the "concurrency" field.
@@ -338,6 +348,16 @@ func ByRole(opts ...sql.OrderTermOption) OrderOption {
 // ByBalance orders the results by the balance field.
 func ByBalance(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBalance, opts...).ToFunc()
+}
+
+// ByBonusBalance orders the results by the bonus_balance field.
+func ByBonusBalance(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBonusBalance, opts...).ToFunc()
+}
+
+// ByUnverifiedBalance orders the results by the unverified_balance field.
+func ByUnverifiedBalance(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUnverifiedBalance, opts...).ToFunc()
 }
 
 // ByFrozenBalance orders the results by the frozen_balance field.

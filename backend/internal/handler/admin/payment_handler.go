@@ -5,6 +5,7 @@ import (
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/internal/payment"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
@@ -426,6 +427,9 @@ func (h *PaymentHandler) CreateProvider(c *gin.Context) {
 		return
 	}
 	h.paymentService.RefreshProviders(c.Request.Context())
+	if inst.ProviderKey == payment.TypeOPCPay {
+		inst.Config = ""
+	}
 	response.Created(c, inst)
 }
 
@@ -447,6 +451,9 @@ func (h *PaymentHandler) UpdateProvider(c *gin.Context) {
 		return
 	}
 	h.paymentService.RefreshProviders(c.Request.Context())
+	if inst.ProviderKey == payment.TypeOPCPay {
+		inst.Config = ""
+	}
 	response.Success(c, inst)
 }
 

@@ -12,7 +12,7 @@
         <div>
           <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('dashboard.balance') }}</p>
           <p class="text-xl font-bold text-emerald-600 dark:text-emerald-400">${{ formatBalance(balance) }}</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('common.available') }}</p>
+          <BalanceBreakdown :user="authStore.user" />
         </div>
       </div>
     </div>
@@ -225,6 +225,8 @@
 </template>
 
 <script setup lang="ts">
+import BalanceBreakdown from '@/components/user/BalanceBreakdown.vue'
+import { useAuthStore } from '@/stores/auth'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
@@ -248,6 +250,7 @@ const props = defineProps<{
   platformQuotas?: PlatformQuotaItem[] | null
 }>()
 const { t } = useI18n()
+const authStore = useAuthStore()
 
 const PLATFORM_LABELS: Record<string, string> = {
   anthropic: 'Claude',

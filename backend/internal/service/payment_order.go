@@ -23,6 +23,9 @@ import (
 // --- Order Creation ---
 
 func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest) (*CreateOrderResponse, error) {
+	if req.PaymentType == payment.TypeOPCPay {
+		return nil, infraerrors.BadRequest("OPCPAY_CARD_REQUIRED", "请从充值卡列表选择一人付充值卡")
+	}
 	if req.OrderType == "" {
 		req.OrderType = payment.OrderTypeBalance
 	}

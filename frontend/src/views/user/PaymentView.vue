@@ -1,10 +1,11 @@
 <template>
   <AppLayout>
     <div class="max-w-5xl space-y-4">
-      <div v-if="loading" class="flex items-center justify-center py-20">
+      <OPCPayPanel @availability="opcpayAvailable = $event; opcpayResolved = true" />
+      <div v-if="loading || !opcpayResolved" class="flex items-center justify-center py-20">
         <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
       </div>
-      <template v-else>
+      <template v-else-if="!opcpayAvailable || enabledMethods.length > 0 || checkout.plans.length > 0 || paymentPhase === 'paying'">
         <!-- Tab Switcher (hide during payment and subscription confirm) -->
         <BoardSegmentedControl
           v-if="tabs.length > 1 && paymentPhase === 'select' && !selectedPlan"
@@ -45,6 +46,7 @@
               <p class="text-xs font-medium text-text-tertiary">{{ t('payment.rechargeAccount') }}</p>
               <p class="mt-1 text-base font-semibold text-text-primary">{{ user?.username || '' }}</p>
               <p class="mt-0.5 text-sm font-medium text-green-600 dark:text-green-400">{{ t('payment.currentBalance') }}: {{ user?.balance?.toFixed(2) || '0.00' }}</p>
+              <BalanceBreakdown :user="user" class="mt-2" />
             </div>
             <div v-if="enabledMethods.length === 0" class="card py-16 text-center">
               <p class="text-text-secondary">{{ t('payment.notAvailable') }}</p>
@@ -280,6 +282,8 @@
 </template>
 
 <script setup lang="ts">
+import BalanceBreakdown from '@/components/user/BalanceBreakdown.vue'
+import OPCPayPanel from '@/components/payment/OPCPayPanel.vue'
 import BoardSegmentedControl from '@/components/boardui/SegmentedControl.vue'
 import BoardButton from '@/components/boardui/Button.vue'
 import { ref, computed, onMounted, watch } from 'vue'
@@ -350,6 +354,8 @@ function subscriptionPeakRateLabel(sub: { group?: PeakRateFields | null }): stri
 }
 
 const loading = ref(true)
+const opcpayAvailable = ref(false)
+const opcpayResolved = ref(false)
 const submitting = ref(false)
 const errorMessage = ref('')
 const errorHintMessage = ref('')

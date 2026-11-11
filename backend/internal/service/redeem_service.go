@@ -10,6 +10,7 @@ import (
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
@@ -34,6 +35,7 @@ type redeemRateLimitPolicy uint8
 const (
 	enforceRedeemRateLimit redeemRateLimitPolicy = iota
 	bypassRedeemRateLimit
+	paymentRedeemCredit
 )
 
 type ctxKeySkipRedeemAffiliate struct{}
@@ -400,7 +402,7 @@ func (s *RedeemService) Redeem(ctx context.Context, userID int64, code string) (
 // redeem failure counter. All code validation and transactional updates remain
 // identical to the public redemption path.
 func (s *RedeemService) redeemForPaymentFulfillment(ctx context.Context, userID int64, code string) (*RedeemCode, error) {
-	return s.redeem(ContextSkipRedeemAffiliate(ctx), userID, code, bypassRedeemRateLimit)
+	return s.redeem(ContextSkipRedeemAffiliate(ctx), userID, code, paymentRedeemCredit)
 }
 
 // RedeemForAdminFulfillment is restricted to trusted admin fulfillment.
@@ -496,6 +498,14 @@ func (s *RedeemService) redeem(ctx context.Context, userID int64, code string, r
 			}
 			if err := s.redeemUserRepo.ApplyRedeemBalanceAdjustment(txCtx, userID, amount); err != nil {
 				return nil, fmt.Errorf("update user balance: %w", err)
+			}
+		} else if rateLimitPolicy == paymentRedeemCredit {
+			order, err := tx.Client().PaymentOrder.Query().Where(paymentorder.RechargeCodeEQ(code), paymentorder.UserIDEQ(userID)).Only(txCtx)
+			if err != nil {
+				return nil, fmt.Errorf("resolve payment credit: %w", err)
+			}
+			if _, err := tx.Client().ExecContext(txCtx, "SELECT wallet_credit_payment($1,$2,$3,$4)", userID, amount, paymentOrderAmountWithoutBonus(order), order.ID); err != nil {
+				return nil, fmt.Errorf("credit payment balance: %w", err)
 			}
 		} else if err := s.userRepo.UpdateBalance(txCtx, userID, amount); err != nil {
 			return nil, fmt.Errorf("update user balance: %w", err)
