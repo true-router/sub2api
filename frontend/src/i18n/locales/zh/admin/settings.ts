@@ -61,6 +61,9 @@ export default {
           },
         },
         modelPlaza: {
+          cnyPerCredit: '每站内额度的标准充值价格（人民币）',
+          cnyPerCreditHint: '¥1 获得 1 额度时填 1。填写有效到账额度的标准购买成本；仅用于价格展示，不改变扣费。赠送、手续费和订阅不计入个人实际成本。',
+          exchangeRateHint: '官方价格通过 Frankfurter 公共参考汇率换算。页面显示汇率日期。汇率暂不可用时不展示折扣百分比。',
           title: '模型广场',
           description: '以分组为单位向访客展示可用模型与价格的公开页面。默认关闭。',
           enabled: '启用模型广场',

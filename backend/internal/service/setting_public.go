@@ -512,9 +512,10 @@ func (s *SettingService) GetAvailableChannelsRuntime(ctx context.Context) Availa
 // ModelPlazaRuntime is the lightweight view of the model-plaza feature consumed
 // by the public plaza handler.
 type ModelPlazaRuntime struct {
-	Enabled     bool
-	RequireAuth bool
-	Description string
+	Enabled      bool
+	RequireAuth  bool
+	Description  string
+	CNYPerCredit float64
 }
 
 // GetModelPlazaRuntime reads the model-plaza feature switches directly from the
@@ -525,14 +526,16 @@ func (s *SettingService) GetModelPlazaRuntime(ctx context.Context) ModelPlazaRun
 		SettingKeyModelPlazaEnabled,
 		SettingKeyModelPlazaRequireAuth,
 		SettingKeyModelPlazaDescription,
+		SettingKeyModelPlazaCNYPerCredit,
 	})
 	if err != nil {
 		return ModelPlazaRuntime{Enabled: false}
 	}
 	return ModelPlazaRuntime{
-		Enabled:     vals[SettingKeyModelPlazaEnabled] == "true",
-		RequireAuth: vals[SettingKeyModelPlazaRequireAuth] == "true",
-		Description: vals[SettingKeyModelPlazaDescription],
+		Enabled:      vals[SettingKeyModelPlazaEnabled] == "true",
+		RequireAuth:  vals[SettingKeyModelPlazaRequireAuth] == "true",
+		Description:  vals[SettingKeyModelPlazaDescription],
+		CNYPerCredit: modelPlazaCNYPerCredit(vals[SettingKeyModelPlazaCNYPerCredit]),
 	}
 }
 

@@ -1,195 +1,112 @@
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
+import SegmentedControl from '@/components/boardui/SegmentedControl.vue'
+import SearchField from '@/components/boardui/SearchField.vue'
+import BoardButton from '@/components/boardui/Button.vue'
+import Badge from '@/components/boardui/Badge.vue'
+import Skeleton from '@/components/boardui/Skeleton.vue'
+import PlazaModelCard from './PlazaModelCard.vue'
+import { creditCost, validQuote, type DisplayCurrency } from './plazaPricing'
+import type { ModelPlazaGroup, ModelPlazaResponse, PlazaModel } from '@/api/modelPlaza'
+import { useAuthStore } from '@/stores/auth'
+const props = defineProps<{ response: ModelPlazaResponse | null; loading: boolean; error: boolean; embedded?: boolean }>()
+const { t } = useI18n()
+const auth = useAuthStore()
+const selectedCurrency = ref('CNY')
+const platform = ref('all')
+const group = ref<number | 'all'>('all')
+const search = ref('')
+const quote = computed(() => validQuote(props.response?.exchange_rate) ? props.response!.exchange_rate! : null)
+const cnyPerCredit = computed(() => creditCost(props.response?.cny_per_credit))
+const currency = computed<DisplayCurrency>(() => selectedCurrency.value === 'USD' && quote.value ? 'USD' : 'CNY')
+const currencyItems = computed(() => [{ value: 'CNY', label: t('modelPlaza.compare.cny') }, { value: 'USD', label: t('modelPlaza.compare.usd'), disabled: !quote.value }])
+const groups = computed(() => props.response?.groups ?? [])
+const platforms = computed(() => [...new Set(groups.value.flatMap(g => g.models.map(m => m.platform)))].sort())
+const descriptionHtml = computed(() => DOMPurify.sanitize(marked.parse(props.response?.description?.trim() || '') as string))
+interface ModelEntry { key: string; name: string; platform: string; offers: { group: ModelPlazaGroup; model: PlazaModel }[] }
+const catalog = computed(() => {
+  const byModel = new Map<string, ModelEntry>()
+  const query = search.value.trim().toLowerCase()
+  for (const g of groups.value) {
+    if (group.value !== 'all' && group.value !== g.id) continue
+    for (const m of g.models) {
+      if (platform.value !== 'all' && platform.value !== m.platform) continue
+      if (query && !m.name.toLowerCase().includes(query)) continue
+      const key = `${m.platform}:${m.name}`
+      if (!byModel.has(key)) byModel.set(key, { key, name: m.name, platform: m.platform, offers: [] })
+      byModel.get(key)!.offers.push({ group: g, model: m })
+    }
+  }
+  return [...byModel.values()].sort((a, b) => a.platform.localeCompare(b.platform) || b.name.localeCompare(a.name))
+})
+function reset() { platform.value = 'all'; group.value = 'all'; search.value = '' }
+</script>
+
 <template>
-  <div class="space-y-5">
-    <!-- 页头(独立形态下展示标题;后台形态 AppHeader 已有页面标题) -->
-    <div v-if="!embedded">
-      <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-3xl">{{ t('modelPlaza.title') }}</h1>
-      <p class="mt-1.5 text-sm text-gray-500 dark:text-dark-400">{{ t('modelPlaza.description') }}</p>
-    </div>
-
-    <!-- 全局价格说明(管理员配置,Markdown) -->
-    <div
-      v-if="descriptionHtml"
-      class="plaza-description rounded-2xl border border-gray-100 bg-white px-5 py-4 text-sm shadow-card dark:border-dark-700/50 dark:bg-dark-800/50"
-      v-html="descriptionHtml"
-    ></div>
-
-    <!-- 未登录提示 -->
-    <p
-      v-if="!isAuthenticated"
-      class="flex items-center gap-1.5 text-xs text-gray-400 dark:text-dark-500"
-    >
-      <Icon name="infoCircle" size="xs" class="h-3.5 w-3.5" />
-      {{ t('modelPlaza.anonymousHint') }}
-    </p>
-
-    <!-- 加载/错误/空 -->
-    <div v-if="loading" class="flex min-h-[240px] items-center justify-center">
-      <div class="h-8 w-8 animate-spin rounded-full border-2 border-primary-600/25 border-t-primary-600 dark:border-primary-400/25 dark:border-t-primary-400"></div>
-    </div>
-    <div
-      v-else-if="error"
-      class="rounded-2xl border border-red-200 bg-red-50 px-5 py-8 text-center text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
-    >
-      {{ t('modelPlaza.loadFailed') }}
-    </div>
-    <template v-else>
-      <!-- 筛选区:平台 → 分组 → 倍率 -->
-      <PlazaFilterBar
-        :platforms="platforms"
-        :groups="groupOptions"
-        :rates="rates"
-        :platform="selectedPlatform"
-        :group-id="selectedGroupId"
-        :rate="selectedRate"
-        :search="searchQuery"
-        @update:platform="selectedPlatform = $event"
-        @update:group-id="selectedGroupId = $event"
-        @update:rate="selectedRate = $event"
-        @update:search="searchQuery = $event"
-      />
-
-      <!-- 分组分节的模型清单(默认按生效倍率升序) -->
-      <div v-if="filteredGroups.length > 0" class="space-y-5">
-        <PlazaGroupSection v-for="g in filteredGroups" :key="g.id" :group="g" />
+  <div class="flex min-w-0 flex-col gap-4" data-testid="plaza-catalog">
+    <header class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+      <div class="flex min-w-0 flex-col gap-2">
+        <p class="text-caption-1-medium text-text-accent">{{ t('modelPlaza.compare.eyebrow') }}</p>
+        <h1 class="text-title-1-medium text-text-primary">{{ t('modelPlaza.title') }}</h1>
+        <p class="max-w-2xl text-body-regular text-text-secondary">{{ t('modelPlaza.compare.intro') }}</p>
       </div>
-      <div
-        v-else
-        class="rounded-2xl border border-dashed border-gray-300 px-5 py-12 text-center text-sm text-gray-500 dark:border-dark-600 dark:text-dark-400"
-      >
-        {{ searchActive ? t('modelPlaza.noSearchResult') : t('modelPlaza.empty') }}
+      <SegmentedControl v-model="selectedCurrency" :items="currencyItems" :label="t('modelPlaza.compare.currency')" data-testid="currency-switch" class="self-start" />
+    </header>
+
+    <section class="flex flex-col gap-2 rounded-2xl border border-border-button-default bg-background-primary-default px-4 py-3" :aria-label="t('modelPlaza.compare.basis')">
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <Badge tone="accent">{{ t('modelPlaza.compare.rechargeIncluded') }}</Badge>
+        <span class="text-caption-1-medium tabular-nums text-text-primary">{{ t('modelPlaza.compare.rechargeBasis', { value: cnyPerCredit }) }}</span>
+        <span v-if="quote" class="text-caption-1-regular text-text-secondary">US$1 = ¥{{ quote.usd_to_cny }}<span v-if="quote.stale"> · {{ t('modelPlaza.compare.cached') }}</span></span>
+      </div>
+      <p v-if="!quote" class="text-body-2-regular text-text-warning" role="status">{{ t('modelPlaza.compare.noExchange') }}</p>
+      <details>
+        <summary class="cursor-pointer rounded-md text-caption-1-regular text-text-tertiary outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring">{{ t('modelPlaza.compare.basis') }}</summary>
+        <div class="mt-2 flex flex-col gap-2">
+          <p v-if="quote" class="text-caption-1-regular text-text-secondary">{{ t('modelPlaza.compare.exchange', { rate: quote.usd_to_cny, date: quote.date, source: quote.source }) }}</p>
+          <p class="text-caption-1-regular text-text-tertiary">{{ t('modelPlaza.compare.disclaimer') }}</p>
+          <p v-if="!auth.isAuthenticated" class="text-caption-1-regular text-text-tertiary">{{ t('modelPlaza.anonymousHint') }}</p>
+          <div v-if="descriptionHtml" class="plaza-description text-body-2-regular text-text-secondary" v-html="descriptionHtml" />
+        </div>
+      </details>
+    </section>
+
+    <div v-if="loading" class="flex flex-col gap-4" role="status" :aria-label="t('modelPlaza.loading')"><Skeleton height="256px" class="w-full rounded-3xl" /><Skeleton height="256px" class="w-full rounded-3xl" /></div>
+    <p v-else-if="error" role="alert" class="rounded-3xl border border-border-error-default bg-background-error-subtle p-6 text-body-regular text-text-error-primary">{{ t('modelPlaza.loadFailed') }}</p>
+    <template v-else>
+      <section class="flex flex-col gap-3" :aria-label="t('modelPlaza.compare.filters')">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <SearchField v-model="search" :placeholder="t('modelPlaza.filters.searchPlaceholder')" :clear-label="t('modelPlaza.compare.clearSearch')" class="max-w-md" />
+        <div class="flex flex-wrap items-center gap-2" role="group" :aria-label="t('modelPlaza.filters.platformLabel')">
+          <BoardButton :variant="platform === 'all' ? 'primary' : 'secondary'" size="small" :aria-pressed="platform === 'all'" @click="platform = 'all'">{{ t('modelPlaza.filters.all') }}</BoardButton>
+          <BoardButton v-for="p in platforms" :key="p" :variant="platform === p ? 'primary' : 'secondary'" size="small" :aria-pressed="platform === p" @click="platform = p">{{ p }}</BoardButton>
+        </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2" role="group" :aria-label="t('modelPlaza.filters.groupLabel')">
+          <span class="text-caption-1-medium text-text-tertiary">{{ t('modelPlaza.filters.groupLabel') }}</span>
+          <BoardButton :variant="group === 'all' ? 'secondary' : 'ghost'" size="small" :aria-pressed="group === 'all'" @click="group = 'all'">{{ t('modelPlaza.filters.all') }}</BoardButton>
+          <BoardButton v-for="g in groups" :key="g.id" :variant="group === g.id ? 'secondary' : 'ghost'" size="small" :aria-pressed="group === g.id" @click="group = g.id">{{ g.name }}</BoardButton>
+        </div>
+      </section>
+      <div class="flex items-center justify-between gap-3">
+        <p class="text-body-2-regular text-text-secondary" role="status" aria-live="polite">{{ t('modelPlaza.compare.modelCount', { count: catalog.length }) }}</p>
+        <BoardButton v-if="search || platform !== 'all' || group !== 'all'" variant="ghost" size="small" @click="reset">{{ t('modelPlaza.compare.reset') }}</BoardButton>
+      </div>
+      <div v-if="!catalog.length" class="rounded-3xl border border-border-button-default bg-background-primary-default p-8 text-center text-body-regular text-text-secondary">{{ groups.length ? t('modelPlaza.noSearchResult') : t('modelPlaza.empty') }}</div>
+      <div class="grid min-w-0 items-start gap-5 xl:grid-cols-2" data-testid="model-card-grid">
+        <PlazaModelCard v-for="entry in catalog" :key="entry.key" :name="entry.name" :platform="entry.platform" :offers="entry.offers" :currency="currency" :cny-per-credit="cnyPerCredit" :quote="quote" />
       </div>
     </template>
   </div>
 </template>
 
-<script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { marked } from 'marked'
-import DOMPurify from 'dompurify'
-import Icon from '@/components/icons/Icon.vue'
-import PlazaFilterBar from './PlazaFilterBar.vue'
-import PlazaGroupSection from './PlazaGroupSection.vue'
-import type { ModelPlazaGroup, ModelPlazaResponse } from '@/api/modelPlaza'
-import { useAuthStore } from '@/stores/auth'
-
-const props = defineProps<{
-  response: ModelPlazaResponse | null
-  loading: boolean
-  error?: boolean
-  /** 后台内嵌形态(AppLayout 内):隐藏页头。 */
-  embedded?: boolean
-}>()
-
-const { t } = useI18n()
-const authStore = useAuthStore()
-const isAuthenticated = computed(() => authStore.isAuthenticated)
-
-const selectedPlatform = ref<string>('all')
-const selectedGroupId = ref<number | 'all'>('all')
-const selectedRate = ref<number | 'all'>('all')
-const searchQuery = ref('')
-
-const searchActive = computed(() => searchQuery.value.trim() !== '')
-
-const descriptionHtml = computed(() => {
-  const md = props.response?.description?.trim()
-  if (!md) return ''
-  return DOMPurify.sanitize(marked.parse(md) as string)
-})
-
-/** 生效倍率 = 用户专属倍率 ?? 分组默认倍率。 */
-function effectiveRate(g: ModelPlazaGroup): number {
-  return g.user_rate_multiplier ?? g.rate_multiplier
-}
-
-const platforms = computed(() =>
-  [...new Set((props.response?.groups ?? []).map((g) => g.platform).filter(Boolean))].sort()
-)
-
-const groupOptions = computed(() =>
-  (props.response?.groups ?? []).map((g) => ({
-    id: g.id,
-    name: g.name,
-    platform: g.platform,
-    rate: effectiveRate(g)
-  }))
-)
-
-/** 全量生效倍率;当前组合下不可用的项由 FilterBar 置灰而非隐藏。 */
-const rates = computed(() =>
-  [...new Set((props.response?.groups ?? []).map(effectiveRate))].sort((a, b) => a - b)
-)
-
-/** 数据刷新后选中的倍率可能不复存在,重置为全部。 */
-watch(rates, (list) => {
-  if (selectedRate.value !== 'all' && !list.includes(selectedRate.value)) {
-    selectedRate.value = 'all'
-  }
-})
-
-const filteredGroups = computed(() => {
-  let groups = props.response?.groups ?? []
-  if (selectedPlatform.value !== 'all') {
-    groups = groups.filter((g) => g.platform === selectedPlatform.value)
-  }
-  if (selectedGroupId.value !== 'all') {
-    groups = groups.filter((g) => g.id === selectedGroupId.value)
-  }
-  if (selectedRate.value !== 'all') {
-    groups = groups.filter((g) => effectiveRate(g) === selectedRate.value)
-  }
-  // 模型名搜索:分组内只留命中的模型,整组无命中则隐藏该分组。
-  const q = searchQuery.value.trim().toLowerCase()
-  if (q) {
-    groups = groups
-      .map((g) => ({ ...g, models: g.models.filter((m) => m.name.toLowerCase().includes(q)) }))
-      .filter((g) => g.models.length > 0)
-  }
-  // 专属倍率会改变生效值,不能只依赖后端按默认倍率的排序。
-  return [...groups].sort(
-    (a, b) => effectiveRate(a) - effectiveRate(b) || a.name.localeCompare(b.name)
-  )
-})
-</script>
-
 <style scoped>
-.plaza-description {
-  line-height: 1.7;
-  overflow-wrap: anywhere;
-}
-
-.plaza-description :deep(h1),
-.plaza-description :deep(h2),
-.plaza-description :deep(h3) {
-  @apply mb-2 mt-3 font-semibold text-gray-900 first:mt-0 dark:text-white;
-}
-
-.plaza-description :deep(p) {
-  @apply mb-2 text-gray-700 last:mb-0 dark:text-dark-200;
-}
-
-.plaza-description :deep(a) {
-  @apply text-primary-600 underline underline-offset-4 hover:text-primary-700 dark:text-primary-300;
-}
-
-.plaza-description :deep(ul) {
-  @apply mb-2 list-disc pl-5;
-}
-
-.plaza-description :deep(ol) {
-  @apply mb-2 list-decimal pl-5;
-}
-
-.plaza-description :deep(li) {
-  @apply mb-0.5 text-gray-700 dark:text-dark-200;
-}
-
-.plaza-description :deep(code) {
-  @apply rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs dark:bg-dark-800;
-}
-
-.plaza-description :deep(blockquote) {
-  @apply my-2 border-l-4 border-gray-300 pl-3 text-gray-600 dark:border-dark-600 dark:text-dark-300;
-}
+.plaza-description :deep(a) { @apply text-text-accent underline; }
+.plaza-description :deep(p + p) { @apply mt-3; }
+.plaza-description :deep(ul) { @apply list-disc ps-5; }
+.plaza-description :deep(ol) { @apply list-decimal ps-5; }
+.plaza-description :deep(h1), .plaza-description :deep(h2), .plaza-description :deep(h3) { @apply mb-2 mt-4 text-title-3-semibold text-text-primary; }
 </style>

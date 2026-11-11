@@ -7308,6 +7308,17 @@
               <Toggle v-model="form.model_plaza_require_auth" />
             </div>
 
+            <div v-if="form.model_plaza_enabled" class="grid gap-4 sm:grid-cols-2">
+              <PlazaNumberField
+                :model-value="form.model_plaza_cny_per_credit"
+                :label="t('admin.settings.features.modelPlaza.cnyPerCredit')"
+                :hint="t('admin.settings.features.modelPlaza.cnyPerCreditHint')"
+                :min="0.000001" :max="1000000" :step="0.01"
+                @update:model-value="form.model_plaza_cny_per_credit = Number($event) || 1"
+              />
+              <p class="text-body-regular text-text-secondary">{{ t('admin.settings.features.modelPlaza.exchangeRateHint') }}</p>
+            </div>
+
             <div v-if="form.model_plaza_enabled">
               <label class="text-body-medium text-text-primary ">
                 {{ t('admin.settings.features.modelPlaza.priceDescription') }}
@@ -8927,6 +8938,7 @@
 </template>
 
 <script setup lang="ts">
+import PlazaNumberField from '@/components/boardui/NumberField.vue'
 import BoardPillTabs from '@/components/boardui/PillTabs.vue'
 import BoardScrollFade from '@/components/boardui/ScrollFade.vue'
 import BoardTable from '@/components/boardui/Table.vue'
@@ -9982,6 +9994,7 @@ const form = reactive<SettingsForm>({
   model_plaza_enabled: false,
   model_plaza_require_auth: false,
   model_plaza_description: '',
+  model_plaza_cny_per_credit: 1,
   // Plugin management menu visibility; plugin runtime is unaffected.
   plugin_management_enabled: false,
   // Affiliate (邀请返利) feature switch
@@ -11717,6 +11730,7 @@ async function saveSettings() {
       model_plaza_enabled: form.model_plaza_enabled,
       model_plaza_require_auth: form.model_plaza_require_auth,
       model_plaza_description: form.model_plaza_description,
+      model_plaza_cny_per_credit: form.model_plaza_cny_per_credit,
       plugin_management_enabled: form.plugin_management_enabled,
       // Affiliate (邀请返利) feature switch
       affiliate_enabled: form.affiliate_enabled,

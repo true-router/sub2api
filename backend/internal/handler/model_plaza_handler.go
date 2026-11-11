@@ -21,6 +21,7 @@ type ModelPlazaHandler struct {
 	plazaService   *service.ModelPlazaService
 	apiKeyService  *service.APIKeyService
 	settingService *service.SettingService
+	exchangeRate   *service.ModelPlazaExchangeRateService
 }
 
 // NewModelPlazaHandler 创建模型广场 handler。
@@ -33,6 +34,7 @@ func NewModelPlazaHandler(
 		plazaService:   plazaService,
 		apiKeyService:  apiKeyService,
 		settingService: settingService,
+		exchangeRate:   service.NewModelPlazaExchangeRateService(),
 	}
 }
 
@@ -102,8 +104,10 @@ type modelPlazaGroup struct {
 
 // modelPlazaResponse 广场页响应。
 type modelPlazaResponse struct {
-	Description string            `json:"description"`
-	Groups      []modelPlazaGroup `json:"groups"`
+	Description  string                          `json:"description"`
+	Groups       []modelPlazaGroup               `json:"groups"`
+	CNYPerCredit float64                         `json:"cny_per_credit"`
+	ExchangeRate *service.ModelPlazaExchangeRate `json:"exchange_rate"`
 }
 
 // Get 返回模型广场数据。
@@ -157,8 +161,10 @@ func (h *ModelPlazaHandler) Get(c *gin.Context) {
 	c.Writer.Header().Add("Vary", "Accept-Language")
 	out := toLocalizedModelPlazaGroups(visible, userRates, c.GetHeader("Accept-Language"))
 	response.Success(c, modelPlazaResponse{
-		Description: rt.Description,
-		Groups:      out,
+		Description:  rt.Description,
+		Groups:       out,
+		CNYPerCredit: rt.CNYPerCredit,
+		ExchangeRate: h.exchangeRate.Get(c.Request.Context()),
 	})
 }
 

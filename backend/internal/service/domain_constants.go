@@ -557,6 +557,9 @@ const (
 	// the Model Plaza page (global pricing notes, exchange rate, promotions, ...).
 	SettingKeyModelPlazaDescription = "model_plaza_description"
 
+	// SettingKeyModelPlazaCNYPerCredit is the standard recharge cost per balance credit.
+	SettingKeyModelPlazaCNYPerCredit = "model_plaza_cny_per_credit"
+
 	// SettingKeyPluginManagementEnabled controls sidebar visibility only; it does
 	// not stop or otherwise change already loaded plugin runtimes.
 	SettingKeyPluginManagementEnabled = "plugin_management_enabled"

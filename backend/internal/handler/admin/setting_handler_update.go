@@ -354,9 +354,10 @@ type UpdateSettingsRequest struct {
 	SubscriptionEnabled *bool `json:"subscription_enabled"`
 
 	// Model Plaza feature switches + description
-	ModelPlazaEnabled     *bool   `json:"model_plaza_enabled"`
-	ModelPlazaRequireAuth *bool   `json:"model_plaza_require_auth"`
-	ModelPlazaDescription *string `json:"model_plaza_description"`
+	ModelPlazaEnabled      *bool    `json:"model_plaza_enabled"`
+	ModelPlazaRequireAuth  *bool    `json:"model_plaza_require_auth"`
+	ModelPlazaDescription  *string  `json:"model_plaza_description"`
+	ModelPlazaCNYPerCredit *float64 `json:"model_plaza_cny_per_credit" binding:"omitempty,gt=0,lte=1000000"`
 
 	// Plugin management menu visibility switch; plugin runtime is unaffected.
 	PluginManagementEnabled *bool `json:"plugin_management_enabled"`
@@ -1996,6 +1997,12 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.ModelPlazaRequireAuth
 		}(),
+		ModelPlazaCNYPerCredit: func() float64 {
+			if req.ModelPlazaCNYPerCredit != nil {
+				return *req.ModelPlazaCNYPerCredit
+			}
+			return previousSettings.ModelPlazaCNYPerCredit
+		}(),
 		ModelPlazaDescription: func() string {
 			if req.ModelPlazaDescription != nil {
 				return *req.ModelPlazaDescription
@@ -2447,6 +2454,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		ModelPlazaEnabled:       updatedSettings.ModelPlazaEnabled,
 		ModelPlazaRequireAuth:   updatedSettings.ModelPlazaRequireAuth,
 		ModelPlazaDescription:   updatedSettings.ModelPlazaDescription,
+		ModelPlazaCNYPerCredit:  updatedSettings.ModelPlazaCNYPerCredit,
 		PluginManagementEnabled: updatedSettings.PluginManagementEnabled,
 
 		AffiliateEnabled: updatedSettings.AffiliateEnabled,

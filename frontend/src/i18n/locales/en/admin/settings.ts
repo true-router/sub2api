@@ -61,6 +61,9 @@ export default {
           },
         },
         modelPlaza: {
+          cnyPerCredit: 'Standard recharge cost per credit (CNY)',
+          cnyPerCreditHint: 'Enter 1 when CNY 1 buys 1 credit. Use the standard purchase cost per credited unit. Display only; billing is unchanged. Bonuses, fees and subscriptions can change personal costs.',
+          exchangeRateHint: 'Official prices use the public Frankfurter reference rate. The quote date is displayed. Savings are hidden when no usable quote is available.',
           title: 'Model Plaza',
           description: 'A public page showcasing available models and pricing by group. Disabled by default.',
           enabled: 'Enable Model Plaza',

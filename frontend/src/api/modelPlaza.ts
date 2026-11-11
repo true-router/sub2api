@@ -82,7 +82,17 @@ export interface ModelPlazaGroup {
   models: PlazaModel[]
 }
 
+export interface PlazaExchangeRate {
+  usd_to_cny: number
+  date: string
+  source: string
+  stale: boolean
+}
+
 export interface ModelPlazaResponse {
+  /** Standard CNY recharge cost per balance credit, not a market exchange rate. */
+  cny_per_credit?: number
+  exchange_rate?: PlazaExchangeRate | null
   /** 管理员配置的全局价格说明（Markdown）。 */
   description: string
   groups: ModelPlazaGroup[]
