@@ -420,19 +420,16 @@
 
           <template #cell-balance="{ value, row }">
             <div class="flex items-center gap-2">
-              <div class="group relative">
-                <button
-                  class="font-medium text-text-primary underline decoration-dashed decoration-text-disabled underline-offset-4 transition-colors hover:text-text-accent "
-                  @click="handleBalanceHistory(row)"
-                >
-                  ${{ value.toFixed(2) }}
-                </button>
-                <!-- Instant tooltip -->
-                <div class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded bg-background-overlay px-2 py-1 text-caption-1-regular text-text-white opacity-0 shadow-lg transition-opacity duration-75 group-hover:opacity-100 ">
-                  {{ t('admin.users.balanceHistoryTip') }}
-                  <div class="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-dark-600"></div>
-                </div>
-              </div>
+              <HelpTooltip :content="t('admin.users.balanceHistoryTip')" width-class="w-max">
+                <template #trigger>
+                  <button
+                    class="font-medium text-text-primary underline decoration-dashed decoration-text-disabled underline-offset-4 transition-colors hover:text-text-accent"
+                    @click="handleBalanceHistory(row)"
+                  >
+                    ${{ value.toFixed(2) }}
+                  </button>
+                </template>
+              </HelpTooltip>
               <button
                 @click.stop="handleDeposit(row)"
                 class="rounded px-2 py-0.5 text-caption-1-medium text-text-success transition-colors hover:bg-background-success-subtle "
@@ -786,6 +783,7 @@
 
 <script setup lang="ts">
 import BalanceBreakdown from '@/components/user/BalanceBreakdown.vue'
+import HelpTooltip from '@/components/common/HelpTooltip.vue'
 import BoardDrawer from '@/components/boardui/Drawer.vue'
 import BoardButton from '@/components/boardui/Button.vue'
 import BoardSearchField from '@/components/boardui/SearchField.vue'
