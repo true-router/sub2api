@@ -9,6 +9,7 @@ const scenarios = {
   layout: ['boardui-layout', 'admin-layout'],
   account: ['boardui-account', 'account-boardui'],
   table: ['boardui-table', 'boardui-table'],
+  login: ['boardui-login', 'boardui-login'],
   settings: ['preview-settings', 'preview-settings']
 }
 const name = process.argv[2] || 'components'

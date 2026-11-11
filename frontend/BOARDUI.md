@@ -56,6 +56,8 @@ The first visual-only pass was insufficient. The following ports now provide rea
 
 | BoardUI registry component | Vue implementation | Live adoption and behavior |
 | --- | --- | --- |
+| [AuthCard](https://www.boardui.com/r/auth-card.json) | `components/boardui/AuthCard.vue` | Login form composition, page heading, form fields, and registration footer |
+| [Social button](https://www.boardui.com/r/social-button.json) | `components/boardui/SocialButton.vue` | Existing OAuth entry buttons; outlined style preserves provider artwork and start events |
 | [Button](https://www.boardui.com/r/button.json) / icon button | `components/boardui/Button.vue` | 379 management actions across 79 modules; variants, sizes, loading, disabled, form types, icons, merged caller classes |
 | [Input](https://www.boardui.com/r/input.json) | `components/boardui/Input.vue` | Shared Input adapter and user creation; unique labels, hints, error associations, password reveal, prefix/suffix |
 | [Search field](https://www.boardui.com/r/search-field.json) | `components/boardui/SearchField.vue` | User search and shared SearchInput; clear action, Escape, submit, loading |
@@ -97,3 +99,10 @@ node e2e/check-preview.mjs account
 The account preview runs on port 13032 and uses an isolated in-memory fixture. Sign in with `admin` / `admin`. The short credentials are enabled only in this local preview. The acceptance script checks account routes, role boundaries, and form and navigation interactions. It writes screenshots and `checks.json` to `output/account-boardui/`. It does not submit payments or change account credentials.
 
 Table acceptance: with the account preview running, run `node e2e/check-preview.mjs table`. The script checks native markup, compact cells, server sort requests, selection, pagination, sticky geometry, standalone tables, and mobile cards. Artifacts are in `output/boardui-table/`.
+
+
+## Login page
+
+The login route uses `LoginLayout.vue` and the Vue AuthCard port. The page has a brand header, a theme action, a centered 400px card, labelled inputs, inline errors, and conditional authentication options below the password form. Existing CAPTCHA, OAuth, passkey, agreement, and second-factor handlers keep ownership of authentication. Other authentication routes keep their existing layout.
+
+With the account preview running, run `node e2e/check-preview.mjs login`. Artifacts are in `output/boardui-login/`. This fixture scenario verifies local credentials, password visibility, error handling, requested-route navigation, theme switching, and narrow-screen overflow. It does not establish real provider, CAPTCHA, or authenticator integration.

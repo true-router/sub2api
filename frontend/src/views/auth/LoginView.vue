@@ -1,82 +1,59 @@
 <template>
-  <AuthLayout>
-    <div class="space-y-6">
-      <!-- Title -->
-      <div class="text-center">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
-          {{ t('auth.welcomeBack') }}
-        </h2>
-        <p class="mt-2 text-sm text-gray-500 dark:text-dark-400">
-          {{ t('auth.signInToAccount') }}
-        </p>
-      </div>
-      <!-- Login Form -->
-      <form @submit.prevent="handleLogin" class="space-y-5">
-        <!-- Email Input -->
-        <div>
-          <label for="email" class="input-label">
-            {{ t(accountPreview ? 'auth.previewAccountLabel' : 'auth.emailLabel') }}
-          </label>
-          <div class="relative">
-            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
-              <Icon name="mail" size="md" class="text-gray-400 dark:text-dark-500" />
-            </div>
-            <input
-              id="email"
-              v-model="formData.email"
-              :type="accountPreview ? 'text' : 'email'"
-              required
-              autofocus
-              :autocomplete="accountPreview ? 'username' : 'email'"
-              :disabled="authActionDisabled"
-              class="input pl-11"
-              :class="{ 'input-error': errors.email }"
-              :placeholder="accountPreview ? 'admin' : t('auth.emailPlaceholder')"
-            />
-          </div>
+  <LoginLayout>
+    <BoardAuthCard :title="t('auth.welcomeBack')" :description="t('auth.signInToAccount')">
+      <form @submit.prevent="handleLogin" class="flex flex-col gap-4">
+        <BoardInput
+          id="email"
+          v-model="formData.email"
+          name="email"
+          :label="t(accountPreview ? 'auth.previewAccountLabel' : 'auth.emailLabel')"
+          :type="accountPreview ? 'text' : 'email'"
+          :autocomplete="accountPreview ? 'username' : 'email'"
+          :placeholder="accountPreview ? 'admin' : t('auth.emailPlaceholder')"
+          :disabled="authActionDisabled"
+          :error="errors.email"
+          class="[&_input]:py-2.5"
+          autofocus
+          required
+        />
+
+        <div class="flex flex-col gap-2">
+          <BoardInput
+            id="password"
+            v-model="formData.password"
+            name="password"
+            :label="t('auth.passwordLabel')"
+            :type="showPassword ? 'text' : 'password'"
+            autocomplete="current-password"
+            :placeholder="t('auth.passwordPlaceholder')"
+            :disabled="authActionDisabled"
+            :error="errors.password"
+            class="[&_input]:py-2.5"
+            required
+          >
+            <template #suffix>
+              <BoardButton
+                type="button"
+                variant="ghost"
+                size="xs"
+                icon-only
+                :disabled="authActionDisabled"
+                :aria-label="t(showPassword ? 'auth.hidePassword' : 'auth.showPassword')"
+                :aria-pressed="showPassword"
+                @click="showPassword = !showPassword"
+              ><Icon :name="showPassword ? 'eyeOff' : 'eye'" size="sm" /></BoardButton>
+            </template>
+          </BoardInput>
+          <router-link
+            v-if="passwordResetEnabled && !backendModeEnabled"
+            to="/forgot-password"
+            class="self-end rounded text-body-medium text-text-accent outline-none hover:underline focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+          >{{ t('auth.forgotPassword') }}</router-link>
         </div>
 
-        <!-- Password Input -->
-        <div>
-          <label for="password" class="input-label">
-            {{ t('auth.passwordLabel') }}
-          </label>
-          <div class="relative">
-            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
-              <Icon name="lock" size="md" class="text-gray-400 dark:text-dark-500" />
-            </div>
-            <input
-              id="password"
-              v-model="formData.password"
-              :type="showPassword ? 'text' : 'password'"
-              required
-              autocomplete="current-password"
-              :disabled="authActionDisabled"
-              class="input pl-11 pr-11"
-              :class="{ 'input-error': errors.password }"
-              :placeholder="t('auth.passwordPlaceholder')"
-            />
-            <button
-              type="button"
-              @click="showPassword = !showPassword"
-              :disabled="authActionDisabled"
-              class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-dark-300"
-            >
-              <Icon v-if="showPassword" name="eyeOff" size="md" />
-              <Icon v-else name="eye" size="md" />
-            </button>
-          </div>
-          <div class="mt-1 flex items-center justify-between">
-            <span></span>
-            <router-link
-              v-if="passwordResetEnabled && !backendModeEnabled"
-              to="/forgot-password"
-              class="text-sm font-medium text-primary-600 transition-colors hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
-            >
-              {{ t('auth.forgotPassword') }}
-            </router-link>
-          </div>
-        </div>
+        <p v-if="errorMessage" role="alert" class="rounded-[10px] border border-border-error-default bg-background-error-subtle p-3 text-body-regular text-text-error-primary">
+          {{ errorMessage }}
+        </p>
 
         <!-- Turnstile Widget -->
         <div v-if="captchaEnabled">
@@ -97,35 +74,14 @@
           />
         </div>
 
-        <!-- Submit Button -->
-        <button
+        <BoardButton
           type="submit"
           :disabled="authActionDisabled || (turnstileEnabled && !turnstileToken)"
-          class="btn btn-primary w-full"
+          :loading="isLoading"
+          class="h-10 w-full"
         >
-          <svg
-            v-if="isLoading"
-            class="-ml-1 mr-2 h-4 w-4 animate-spin text-white"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              class="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              stroke-width="4"
-            ></circle>
-            <path
-              class="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-          </svg>
-          <Icon v-else name="login" size="md" class="mr-2" />
           {{ isLoading ? t('auth.signingIn') : t('auth.signIn') }}
-        </button>
+        </BoardButton>
 
         <LoginAgreementPrompt
           v-if="loginAgreementEnabled"
@@ -141,23 +97,25 @@
 
         <div v-if="showPasskeyLogin || showOAuthLogin" class="space-y-3 pt-1">
           <div class="flex items-center gap-3">
-            <div class="h-px flex-1 bg-gray-200 dark:bg-dark-700"></div>
-            <span class="text-xs text-gray-500 dark:text-dark-400">
+            <div class="h-px flex-1 bg-separator-border"></div>
+            <span class="text-caption-1-regular text-text-tertiary">
               {{ t('auth.oauthOrContinue') }}
             </span>
-            <div class="h-px flex-1 bg-gray-200 dark:bg-dark-700"></div>
+            <div class="h-px flex-1 bg-separator-border"></div>
           </div>
 
-          <button
+          <BoardButton
             v-if="showPasskeyLogin"
             type="button"
-            class="btn btn-secondary w-full"
+            variant="secondary"
+            class="h-10 w-full"
             :disabled="authActionDisabled"
+            :loading="passkeyLoading"
             @click="handlePasskeyLogin"
           >
             <Icon name="key" size="md" class="mr-2" />
             {{ passkeyLoading ? t('auth.passkeySigningIn') : t('auth.passkeySignIn') }}
-          </button>
+          </BoardButton>
 
           <EmailOAuthButtons
             :disabled="authActionDisabled"
@@ -194,21 +152,21 @@
           />
         </div>
       </form>
-    </div>
 
     <!-- Footer -->
     <template v-if="!backendModeEnabled && publicSettingsLoaded && registrationEnabled" #footer>
-      <p class="text-gray-500 dark:text-dark-400">
+      <p class="text-text-secondary">
         {{ t('auth.dontHaveAccount') }}
         <router-link
           to="/register"
-          class="font-medium text-primary-600 transition-colors hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
+          class="rounded text-body-medium text-text-accent outline-none hover:underline focus-visible:ring-2 focus-visible:ring-border-focus-ring"
         >
           {{ t('auth.signUp') }}
         </router-link>
       </p>
     </template>
-  </AuthLayout>
+    </BoardAuthCard>
+  </LoginLayout>
 
   <!-- 2FA Modal -->
   <TotpLoginModal
@@ -225,7 +183,10 @@
 import { computed, ref, reactive, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { AuthLayout } from '@/components/layout'
+import LoginLayout from '@/components/layout/LoginLayout.vue'
+import BoardAuthCard from '@/components/boardui/AuthCard.vue'
+import BoardInput from '@/components/boardui/Input.vue'
+import BoardButton from '@/components/boardui/Button.vue'
 import LinuxDoOAuthSection from '@/components/auth/LinuxDoOAuthSection.vue'
 import DingTalkOAuthSection from '@/components/auth/DingTalkOAuthSection.vue'
 import OidcOAuthSection from '@/components/auth/OidcOAuthSection.vue'
