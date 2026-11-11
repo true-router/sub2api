@@ -28,7 +28,10 @@
         <VersionBadge v-if="!isWorkspace" :version="siteVersion" />
         <span v-else class="text-caption-1-regular text-text-secondary">{{ t('boardui.workspace') }}</span>
       </div>
-      <BoardButton v-if="isWorkspace" data-testid="sidebar-collapse" variant="ghost" size="small" icon-only class="shrink-0" :aria-label="sidebarCollapsed ? t('nav.expand') : t('nav.collapse')" @click="mobileOpen ? closeMobile() : toggleSidebar()"><Icon :name="mobileOpen ? 'x' : 'menu'" size="md" /></BoardButton>
+      <div v-if="isWorkspace" :class="cx('flex shrink-0 items-center gap-1', sidebarCollapsed && 'flex-col')">
+        <AnnouncementBell v-if="authStore.user" data-testid="sidebar-announcements" />
+        <BoardButton data-testid="sidebar-collapse" variant="ghost" size="small" icon-only class="shrink-0" :aria-label="sidebarCollapsed ? t('nav.expand') : t('nav.collapse')" @click="mobileOpen ? closeMobile() : toggleSidebar()"><Icon :name="mobileOpen ? 'x' : 'menu'" size="md" /></BoardButton>
+      </div>
     </div>
 
     <div v-if="isWorkspace" class="sidebar-search px-3 pt-2">
@@ -230,6 +233,8 @@ import AppHeader from './AppHeader.vue'
 import { useI18n } from 'vue-i18n'
 import { useAdminSettingsStore, useAppStore, useAuthStore, useOnboardingStore } from '@/stores'
 import VersionBadge from '@/components/common/VersionBadge.vue'
+import AnnouncementBell from '@/components/common/AnnouncementBell.vue'
+import { cx } from '@/utils/cx'
 import Icon from '@/components/icons/Icon.vue'
 import { sanitizeSvg } from '@/utils/sanitize'
 import { sanitizeUrl } from '@/utils/url'

@@ -406,7 +406,7 @@
 
 :root[data-admin-ui='boardui'] .sidebar.w-64 { width: 280px; }
 :root[data-admin-ui='boardui'] .sidebar-header { @apply h-20 gap-3 border-0 px-4; }
-:root[data-admin-ui='boardui'] .sidebar-header-collapsed { justify-content: center; padding-inline: 12px; gap: 0; }
+:root[data-admin-ui='boardui'] .sidebar-header.sidebar-header-collapsed { height: auto; justify-content: center; padding: 8px 12px; gap: 0; }
 :root[data-admin-ui='boardui'] .sidebar-link-collapsed { justify-content: center; padding-inline: 0; gap: 0; }
 :root[data-admin-ui='boardui'] .sidebar-bottom { @apply border-0 p-3; }
 :root[data-admin-ui='boardui'] .sidebar-section { @apply mb-4; }

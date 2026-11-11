@@ -7,7 +7,6 @@ import { resolveRouteMetaKeys } from '@/router/title'
 import { resolveSiteBillingMode } from '@/utils/siteBillingMode'
 import BoardBreadcrumb from '@/components/boardui/Breadcrumb.vue'
 import BoardButton from '@/components/boardui/Button.vue'
-import AnnouncementBell from '@/components/common/AnnouncementBell.vue'
 import Icon from '@/components/icons/Icon.vue'
 
 const route = useRoute()
@@ -44,7 +43,6 @@ const description = computed(() => keys.value.descriptionKey ? t(keys.value.desc
         <h1 class="text-title-1-semibold text-text-primary">{{ title }}</h1>
         <p v-if="description" class="mt-1 text-body-regular text-text-secondary">{{ description }}</p>
       </div>
-      <div class="flex shrink-0 items-center gap-2"><AnnouncementBell /></div>
     </div>
   </section>
 </template>
