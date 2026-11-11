@@ -55,15 +55,15 @@ async function accept(value: OPCPayOperation) {
   if (value.kind === 'purchase' && value.status === 'READY') {
     link.value = safeURL(value.result?.purchase_url)
     qrImage.value = link.value ? await QRCode.toDataURL(link.value, { width: 224, margin: 2 }) : ''
-    message.value = `购买入口已生成。完成支付宝购买后，点击“确认充值”，将核销 ${value.amount} 积分并增加 ${value.credit_usd} USD 余额。`
+    message.value = `付款完成后确认充值，到账 ${value.credit_usd} USD。`
   } else if (value.status === 'COMPLETED') {
-    message.value = `充值完成。已核销 ${value.amount} 积分，增加 ${value.credit_usd} USD 余额。`
+    message.value = `充值成功，已到账 ${value.credit_usd} USD。`
     clearAction(); link.value = ''; qrImage.value = ''
     await auth.refreshUser()
   } else if (value.status === 'FAILED' || value.status === 'CLOSED') {
-    message.value = value.kind === 'purchase' ? '购买入口已结束，可重新选择充值卡。' : '核销失败，未增加余额。'
+    message.value = value.kind === 'purchase' ? '本次充值已取消，可重新发起支付。' : '验证失败，请重试。'
     clearAction(); link.value = ''; qrImage.value = ''
-  } else message.value = '充值结果尚未确认。请恢复原操作，不要重复购买。'
+  } else message.value = '充值结果确认中，请稍后重试。'
   await refresh()
 }
 async function run(phase: 'purchase' | 'consume') {
@@ -75,6 +75,9 @@ async function run(phase: 'purchase' | 'consume') {
     saveAction({ ...current, phase })
     await accept((await opcpayAPI.start(phase, current.id, current.sku)).data)
   } catch (e) {
+    if (phase === 'consume' && (e as { reason?: string }).reason === 'OPCPAY_PAYMENT_UNVERIFIED' && action.value) {
+      saveAction({ ...action.value, phase: 'purchase' })
+    }
     error.value = (e as { message?: string }).message || '请求未确认，请恢复原操作。'
     await refresh()
   } finally { busy.value = false }
@@ -119,7 +122,9 @@ onMounted(async () => {
     } catch { error.value = '本地操作记录无效，请联系管理员检查业务编号。' }
   }
   await refresh()
+  const recoveringConfirmation = action.value?.phase === 'consume'
   if (unresolved.value) await restore()
+  if (recoveringConfirmation && action.value?.phase === 'purchase') await restore()
 })
 </script>
 
@@ -130,29 +135,22 @@ onMounted(async () => {
       <div class="flex items-start gap-3">
         <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-b from-background-accent-default to-background-accent-hover text-text-white shadow-sm"><Icon name="creditCard" size="md" /></span>
         <div class="space-y-1">
-          <h2 id="opcpay-title" class="text-title-3-semibold text-text-primary">一人付充值卡</h2>
-          <p class="text-body-regular text-text-secondary">选择充值卡，通过支付宝购买。每 1 积分可兑换 1 USD 余额。</p>
+          <h2 id="opcpay-title" class="text-title-3-semibold text-text-primary">支付宝充值</h2>
+          <p class="text-body-regular text-text-secondary">选择充值额度，使用支付宝付款。</p>
         </div>
       </div>
       <BoardButton variant="secondary" size="small" :loading="loading" :disabled="busy" @click="refresh">
         <template #leading><Icon name="refresh" size="sm" /></template>
-        刷新充值卡和权益
+        刷新充值选项
       </BoardButton>
     </div>
-    <p v-if="loading" role="status" class="text-body-regular text-text-secondary">正在读取充值卡…</p>
+    <p v-if="loading" role="status" class="text-body-regular text-text-secondary">正在加载充值选项…</p>
     <p v-if="error" role="alert" class="rounded-2xl bg-background-error-subtle px-4 py-3 text-body-regular text-text-error-primary">{{ error }}</p>
     <template v-if="info?.enabled">
-      <p v-if="!available" class="text-body-regular text-text-secondary">一人付尚未开放充值卡购买。</p>
+      <p v-if="!available" class="text-body-regular text-text-secondary">支付宝充值暂不可用，请稍后重试。</p>
       <template v-else>
-        <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-background-secondary-default px-4 py-3">
-          <div class="flex items-center gap-2">
-            <span class="text-body-regular text-text-secondary">账号</span>
-            <BoardBadge tone="neutral">{{ info.provider_name }}</BoardBadge>
-          </div>
-          <p class="text-body-regular text-text-secondary">可用积分 <span class="ml-1 text-title-3-semibold tabular-nums text-text-primary">{{ info.access?.remaining ?? '—' }}</span></p>
-        </div>
-        <p v-if="!cards.length" class="text-body-regular text-text-secondary">当前没有可用的积分充值卡。请管理员检查一人付套餐配置。</p>
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" role="group" aria-label="可选充值卡">
+        <p v-if="!cards.length" class="text-body-regular text-text-secondary">当前没有可用的充值选项，请稍后重试。</p>
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" role="group" aria-label="可选充值额度">
           <button
             v-for="card in cards"
             :key="card.sku_id"
@@ -168,13 +166,12 @@ onMounted(async () => {
             @click="selectedSku = card.sku_id"
           >
             <div class="flex items-center justify-between gap-2">
-              <span class="truncate text-body-medium text-text-secondary">{{ card.display_name }}</span>
+              <span class="truncate text-body-medium text-text-secondary">支付金额</span>
               <span :class="['flex h-5 w-5 shrink-0 items-center justify-center rounded-full border', selectedSku === card.sku_id ? 'border-transparent bg-background-accent-default text-text-white' : 'border-border-button-default text-transparent']"><Icon name="check" size="xs" /></span>
             </div>
             <p class="text-display-4-medium tabular-nums text-text-primary"><span class="mr-1 text-body-medium text-text-tertiary">{{ card.currency }}</span>{{ card.price }}</p>
             <div class="mt-auto flex flex-wrap gap-2">
-              <BoardBadge tone="accent">{{ card.quota_amount }} 积分</BoardBadge>
-              <BoardBadge tone="success">可充值 {{ card.quota_amount }} USD</BoardBadge>
+              <BoardBadge tone="success">到账 {{ card.quota_amount }} USD</BoardBadge>
             </div>
           </button>
         </div>
@@ -182,31 +179,34 @@ onMounted(async () => {
           <template #leading><img :src="alipayIcon" alt="" aria-hidden="true" class="h-5 w-5" /></template>
           支付宝购买 · {{ selectedCard.currency }} {{ selectedCard.price }}
         </BoardButton>
+        <BoardButton v-if="unresolved && !modalOpen" variant="secondary" :loading="busy" @click="restore">
+          {{ action?.phase === 'consume' ? '查询充值结果' : '继续支付' }}
+        </BoardButton>
       </template>
     </template>
   </section>
-  <BaseDialog :show="modalOpen" title="支付宝购买" :description="selectedCard ? `${selectedCard.display_name} · ${selectedCard.currency} ${selectedCard.price}` : undefined" width="narrow" @close="closeModal" @after-leave="onModalClosed">
+  <BaseDialog :show="modalOpen" title="支付宝充值" :description="selectedCard ? `支付 ${selectedCard.currency} ${selectedCard.price} · 到账 ${operation?.credit_usd ?? selectedCard.quota_amount} USD` : undefined" width="narrow" @close="closeModal" @after-leave="onModalClosed">
     <div class="flex flex-col items-center gap-4 text-center" data-testid="opcpay-modal">
       <template v-if="canConfirm">
         <template v-if="isMobile">
           <span class="flex h-16 w-16 items-center justify-center rounded-2xl bg-background-secondary-default"><img :src="alipayIcon" alt="" aria-hidden="true" class="h-10 w-10" /></span>
-          <p class="text-body-regular text-text-secondary">是否打开支付宝完成支付？支付完成后返回本页，点击“我已购买，确认充值”。</p>
+          <p class="text-body-regular text-text-secondary">打开支付宝完成付款后，返回本页点击“我已支付，确认充值”。</p>
           <a v-if="link" :href="link" target="_blank" rel="noopener noreferrer" class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-background-accent-default to-background-accent-hover text-body-semibold text-text-white shadow-sm"><img :src="alipayIcon" alt="" aria-hidden="true" class="h-5 w-5" />打开支付宝支付</a>
         </template>
         <template v-else>
           <div class="rounded-2xl border border-border-button-default bg-white p-2">
             <img v-if="qrImage" :src="qrImage" alt="支付宝购买入口二维码" width="224" height="224" class="h-56 w-56" />
           </div>
-          <p class="text-body-regular text-text-secondary">请使用手机支付宝扫码完成购买。支付完成后，点击“我已购买，确认充值”。</p>
+          <p class="text-body-regular text-text-secondary">请使用支付宝扫码付款。付款后点击“我已支付，确认充值”。</p>
         </template>
-        <p class="text-caption-1-regular text-text-tertiary">将核销 {{ operation?.amount }} 积分，增加 {{ operation?.credit_usd }} USD 余额。</p>
+        <p class="text-caption-1-regular text-text-tertiary">付款完成并确认后，到账 {{ operation?.credit_usd }} USD。</p>
       </template>
       <p v-else-if="message" role="status" class="text-body-regular text-text-secondary">{{ message }}</p>
       <p v-if="error" role="alert" class="w-full rounded-2xl bg-background-error-subtle px-4 py-3 text-body-regular text-text-error-primary">{{ error }}</p>
-      <p v-if="operation" class="break-all text-caption-1-medium text-text-tertiary">业务编号：{{ operation.business_id }}</p>
+      <p v-if="operation" class="break-all text-caption-1-medium text-text-tertiary">充值编号：{{ operation.business_id }}</p>
     </div>
     <template #footer>
-      <BoardButton v-if="canConfirm" :loading="busy" :disabled="!modalOpen" @click="run('consume')">我已购买，确认充值</BoardButton>
+      <BoardButton v-if="canConfirm" :loading="busy" :disabled="!modalOpen" @click="run('consume')">我已支付，确认充值</BoardButton>
       <BoardButton v-else variant="secondary" @click="closeModal">关闭</BoardButton>
     </template>
   </BaseDialog>

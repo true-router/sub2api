@@ -56,10 +56,10 @@ try {
     const decoded = await decode()
     scans.push({ scenario: name, decoded, expected: purchaseURL, upstream_qr_address: purchaseQR })
     check(name + ': one scan resolves to the payment entry', decoded === purchaseURL)
-    check(name + ': showing a QR does not report successful credit', !(await page.evaluate(() => document.body.innerText.includes('充值完成。'))))
+    check(name + ': showing a QR does not report successful credit', !(await page.evaluate(() => /充值完成|充值成功/.test(document.body.innerText))))
     if (name === 'QR image address') {
       await page.screenshot({ path: output + '/desktop.png' })
-      const business = await page.evaluate(() => document.querySelector('[data-testid="opcpay-modal"]').textContent.match(/业务编号：([^\s]+)/)[1])
+      const business = await page.evaluate(() => document.querySelector('[data-testid="opcpay-modal"]').textContent.match(/(?:业务|充值)编号：([^\s]+)/)[1])
       await page.reload()
       const restored = await decode()
       check('Resumed operation keeps the same direct payment entry', restored === purchaseURL)

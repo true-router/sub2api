@@ -2,10 +2,12 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 )
 
@@ -47,7 +49,11 @@ func (h *PaymentHandler) OPCPayStart(c *gin.Context) {
 	c.Header("Cache-Control", "private, no-store")
 	result, err := h.paymentService.OPCPay().Start(c.Request.Context(), subject.UserID, body.Kind, body.Action, body.SKU)
 	if err != nil {
-		response.Error(c, 409, err.Error())
+		if errors.Is(err, service.ErrOPCPayPaymentUnverified) {
+			response.ErrorFrom(c, err)
+		} else {
+			response.Error(c, 409, err.Error())
+		}
 		return
 	}
 	response.Success(c, result)

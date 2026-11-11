@@ -101,6 +101,7 @@ func main() {
 	providerConfigured := true
 	quantity := true
 	allow := true
+	includeDecision := true
 	opened := true
 	lose := false
 	mismatch := false
@@ -136,7 +137,11 @@ func main() {
 			if !allow {
 				decision = "PURCHASE_REQUIRED"
 			}
-			send(map[string]any{"decision": decision, "access_granted": allow, "requires_consumption": quantity, "quota_unit": "POINT", "remaining": 50})
+			access := map[string]any{"access_granted": allow, "requires_consumption": quantity, "quota_unit": "POINT", "remaining": 50}
+			if includeDecision {
+				access["decision"] = decision
+			}
+			send(access)
 		case "/purchase":
 			if (body["sku_id"] != "actual-fixture-sku" && body["sku_id"] != "large-fixture-sku") || body["callback_url"] != "https://app.example.test/purchase" {
 				panic("purchase parameters changed")
@@ -335,6 +340,21 @@ func main() {
 	mu.Unlock()
 	status, _ = start("consume", "noquota_00000001")
 	check(status == 409 && deductions == 1, "额度不足时拒绝核销")
+	unpaidAction := "unpaid_purchase_0001"
+	status, unpaidPurchase := start("purchase", unpaidAction)
+	unpaidID := data(unpaidPurchase)["business_id"].(string)
+	check(status == 200, "未付款场景创建原购买入口")
+	status, unverified := request("one", "POST", "/operations", map[string]any{"kind": "consume", "action_id": unpaidAction, "sku_id": "actual-fixture-sku"})
+	check(status == 409 && unverified["reason"] == "OPCPAY_PAYMENT_UNVERIFIED" && unverified["message"] == "验证失败，请重试", "未付款确认返回明确的可重试验证失败")
+	var unpaidConsumes int
+	must(db.QueryRow(`SELECT COUNT(*) FROM opcpay_operations WHERE user_id=1 AND kind='consume' AND action_id=$1`, unpaidAction).Scan(&unpaidConsumes))
+	check(unpaidConsumes == 0 && balance() == 1 && deductions == 1, "验证失败不创建核销、不扣款且不增加余额")
+	status, _ = request("one", "POST", "/operations/"+unpaidID+"/close", nil)
+	check(status == 200, "验证失败后可以关闭原购买入口")
+	status, retryPurchase := start("purchase", "unpaid_retry_00001")
+	check(status == 200 && data(retryPurchase)["business_id"] != unpaidID, "关闭后可以创建新的支付入口")
+	status, _ = request("one", "POST", "/operations/"+data(retryPurchase)["business_id"].(string)+"/close", nil)
+	check(status == 200, "重新发起的支付入口也可以取消")
 	mu.Lock()
 	allow = true
 	opened = false
@@ -417,6 +437,13 @@ func main() {
 	check(status == 409 && calls == beforeDisabled, "后台停用后禁止创建购买入口")
 	status, _ = request("one", "PUT", providerPath, map[string]any{"enabled": true})
 	check(status == 200, "后台重新启用立即生效")
+	mu.Lock()
+	includeDecision = false
+	mu.Unlock()
+	beforeOptionalDecision := balance()
+	beforeOptionalDeductions := deductions
+	status, optionalDecision := start("consume", "optional_decision_01")
+	check(status == 200 && data(optionalDecision)["status"] == "COMPLETED" && balance() == beforeOptionalDecision+1 && deductions == beforeOptionalDeductions+1, "额度响应省略买断决策字段时仍可正常充值")
 	auditSvc.Stop()
 	var auditRows, leaks int
 	must(db.QueryRow(`SELECT COUNT(*),COUNT(*) FILTER(WHERE request_body LIKE '%synthetic-key%') FROM audit_logs`).Scan(&auditRows, &leaks))

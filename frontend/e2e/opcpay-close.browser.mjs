@@ -55,7 +55,7 @@ if (!probe.emptyFrames) {
     await page.waitForFunction(() => !document.querySelector('.modal-footer button').disabled)
   }
   await openPurchase()
-  const originalCode = await page.evaluate(() => document.querySelector('[data-testid="opcpay-modal"]').textContent.match(/业务编号：([^\s]+)/)[1])
+  const originalCode = await page.evaluate(() => document.querySelector('[data-testid="opcpay-modal"]').textContent.match(/(?:业务|充值)编号：([^\s]+)/)[1])
   await page.fetch('/api/v1/payment/opcpay/__fixture', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ failClose: true }) })
   await page.click('.modal-header button[aria-label="关闭"]')
   await page.waitForSelector('.modal-body [role="alert"]')

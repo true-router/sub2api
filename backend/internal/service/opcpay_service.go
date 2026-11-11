@@ -9,6 +9,7 @@ import (
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/internal/opcpay"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"math"
 	"net/url"
 	"regexp"
@@ -16,6 +17,9 @@ import (
 )
 
 var opcpayAction = regexp.MustCompile(`^[a-zA-Z0-9_-]{16,80}$`)
+
+// This rejection occurs before a consumption operation is persisted or submitted.
+var ErrOPCPayPaymentUnverified = infraerrors.Conflict("OPCPAY_PAYMENT_UNVERIFIED", "验证失败，请重试")
 
 type OPCPayService struct {
 	DB     *dbent.Client
@@ -212,8 +216,8 @@ func (s *OPCPayService) Start(ctx context.Context, userID int64, kind, action, s
 		if err = pay.Call(ctx, "/access", map[string]any{"user_id": strconv.FormatInt(userID, 10), "amount": o.Amount}, access); err != nil {
 			return nil, err
 		}
-		if access.Decision != "ALLOW" || !access.Granted || !access.RequiresConsumption || access.Unit != "POINT" || access.Remaining < o.Amount {
-			return nil, errors.New("积分不足，请先使用支付宝购买所选充值卡，再确认充值")
+		if (access.Decision != "" && access.Decision != "ALLOW") || !access.Granted || !access.RequiresConsumption || access.Unit != "POINT" || access.Remaining < o.Amount {
+			return nil, ErrOPCPayPaymentUnverified
 		}
 		o.Reason = "sub2api balance credit"
 	}
