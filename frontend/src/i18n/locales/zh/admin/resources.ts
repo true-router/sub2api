@@ -267,6 +267,12 @@ export default {
       subscription: '订阅',
       invitation: '邀请码',
       invitationHint: '邀请码用于限制用户注册，使用后自动标记为已使用。',
+      typeDesc: {
+        balance: '为账户充入余额（美元）',
+        concurrency: '增加账户并发请求数',
+        subscription: '开通指定分组的订阅',
+        invitation: '用于限制用户注册'
+      },
       allTypes: '全部类型',
       allStatus: '全部状态',
       unused: '未使用',

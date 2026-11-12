@@ -251,6 +251,12 @@ export default {
       subscription: 'Subscription',
       invitation: 'Invitation',
       invitationHint: 'Invitation codes are used to restrict user registration. They are automatically marked as used after use.',
+      typeDesc: {
+        balance: 'Add balance (USD) to an account',
+        concurrency: 'Increase concurrent request limit',
+        subscription: 'Grant a subscription for a group',
+        invitation: 'Restrict user registration'
+      },
       unused: 'Unused',
       used: 'Used',
       columns: {
