@@ -10,6 +10,8 @@ Available `balance` remains the value used for API access checks. It equals sign
 
 Consumption spends promotional grants in insertion order, then unverified credit, then paid credit. Consumption, adjustments and refund reservations serialize on the user row. Grants retain their originating payment order where applicable.
 
+The user-default setting `default_balance` and per-source signup balance settings grant promotional credit in USD. They do not create paid credit. Zero disables the signup gift. Changes apply to future registrations only. The user repository reloads the inserted row and copies the trigger-maintained balance fields into the created user, so the first registration response reports the same sources as subsequent user reads.
+
 Payment fulfillment records principal as `amount - bonus_amount` and promotional credit as `bonus_amount`. This also covers discounted payments, whose unpaid credit portion is already stored in `bonus_amount`. OPCPay credits verified redeemed payment value as paid credit; its transaction still claims each operation once.
 
 Refund inputs use paid credit units (USD), not total credited units or gateway currency. The maximum is the original order's paid credit. Gateway money is calculated using the original paid credit as denominator and the original payment currency precision. Balance refunds always deduct paid credit. Administrative `force` and disabling deductions cannot make promotional or unverified credit refundable.
@@ -65,3 +67,5 @@ backend/tools/wallet-e2e/run.sh
 The script creates a disposable PostgreSQL 18 container, builds the Ent schema, applies the accounting migration and runs real fulfillment/refund handlers, repositories and provider adapters against local HTTP payment fixtures. It exercises migration of historical frozen credit, gift-first billing, order-specific reclamation, failed refunds, pending refund recovery through a fresh service instance, replay handling, concurrent consumption/refunds, vouchers and explicit historical reconciliation. It removes the database container on exit.
 
 The receipt is written to `.planning/2026-11-11-balance-sources/artifacts/wallet-e2e.json`. It contains scenario balances and SHA-256 hashes of the accounting sources. It does not contain payment credentials or real user data. The fixture uses synthetic identity and local payment responses. It does not establish live-provider, production-migration or browser acceptance.
+
+Signup acceptance calls the real registration HTTP handler with a default gift of 5 USD and with gifts disabled. It asserts the first response reports zero paid credit, the expected promotional credit, and no unverified credit. It checks subsequent persisted balances and consumes part of the signup gift through the billing repository. No external identity provider or refresh-token cache is used in this fixture.

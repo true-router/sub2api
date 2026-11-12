@@ -1546,6 +1546,11 @@ func applyUserEntityToService(dst *service.User, src *dbent.User) {
 		return
 	}
 	dst.ID = src.ID
+	// Return the database's accounting result in the initial signup response.
+	dst.Balance = src.Balance
+	dst.BonusBalance = src.BonusBalance
+	dst.UnverifiedBalance = src.UnverifiedBalance
+	dst.FrozenBalance = src.FrozenBalance
 	dst.SignupSource = src.SignupSource
 	dst.LastLoginAt = src.LastLoginAt
 	dst.LastActiveAt = src.LastActiveAt

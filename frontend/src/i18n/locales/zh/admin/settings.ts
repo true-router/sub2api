@@ -443,8 +443,8 @@ export default {
       defaults: {
         title: '用户默认设置',
         description: '新用户的默认值',
-        defaultBalance: '默认余额',
-        defaultBalanceHint: '新用户的初始余额',
+        defaultBalance: '默认赠送余额（USD）',
+        defaultBalanceHint: '新用户注册时获得的赠送余额。优先用于消费，不可退款。设为 0 则不赠送。仅影响新用户。',
         affiliateRebateRate: '邀请返利比例',
         affiliateRebateRateHint: '充值后返给邀请人的比例（0-100%，例如填写 10 表示返利 10%）',
         defaultConcurrency: '默认并发数',
@@ -1265,7 +1265,7 @@ export default {
       },
       authSourceDefaults: {
         title: '认证来源默认值',
-        description: '按注册来源配置新用户默认余额、并发、订阅与授权策略。',
+        description: '按注册来源配置新用户默认赠送余额、并发、订阅与授权策略。赠送余额不可退款。',
         requireEmailLabel: '第三方注册强制补充邮箱',
         requireEmailHint: '启用后，Linux DO、OIDC、微信注册缺少邮箱时必须先补充邮箱地址。',
         enabledHint: '以下默认值会在该来源注册新用户时发放；首次绑定时授权仅作用于已有账号绑定该来源。',

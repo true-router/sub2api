@@ -25,6 +25,8 @@ import (
 	entsql "entgo.io/ent/dialect/sql"
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	_ "github.com/Wei-Shaw/sub2api/ent/runtime"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/handler"
 	adminhandler "github.com/Wei-Shaw/sub2api/internal/handler/admin"
 	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
@@ -162,6 +164,17 @@ func main() {
 	bill := repository.NewUsageBillingRepository(client, db)
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
+	authConfig := &config.Config{}
+	authConfig.JWT.Secret = strings.Repeat("signup-fixture", 4)
+	authConfig.JWT.ExpireHour = 1
+	authConfig.Default.UserConcurrency = 5
+	settingsRepo := repository.NewSettingRepository(client)
+	must(settingsRepo.Set(ctx, service.SettingKeyRegistrationEnabled, "true"))
+	must(settingsRepo.Set(ctx, service.SettingKeyDefaultBalance, "5"))
+	settings := service.NewSettingService(settingsRepo, authConfig)
+	auth := service.NewAuthService(client, users, nil, nil, authConfig, settings, nil, nil, nil, nil, nil, nil, nil)
+	authHandler := handler.NewAuthHandler(authConfig, auth, nil, settings, nil, nil, nil, nil)
+	r.POST("/auth/register", authHandler.Register)
 	adminSvc := service.NewAdminService(nil, users, nil, nil, nil, nil, repository.NewRedeemCodeRepository(client), nil, nil, nil, nil, nil, nil, client, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	userHandler := adminhandler.NewUserHandler(adminSvc, nil, nil, nil, nil, nil, nil)
 	r.POST("/admin/users/:id/balance", userHandler.UpdateBalance)
@@ -231,6 +244,22 @@ func main() {
 	spend := func(uid int64, id string, amount float64) {
 		_, err := bill.Apply(ctx, &service.UsageBillingCommand{RequestID: id, APIKeyID: uid, UserID: uid, BalanceCost: amount})
 		must(err)
+	}
+	// Check the first registration response, before a subsequent database read
+	// can hide a missing refresh of trigger-maintained accounting fields.
+	for _, amount := range []float64{5, 0} {
+		must(settingsRepo.Set(ctx, service.SettingKeyDefaultBalance, strconv.FormatFloat(amount, 'f', -1, 64)))
+		out := request("POST", "/auth/register", map[string]any{"email": fmt.Sprintf("registered-%g@wallet.invalid", amount), "password": "WalletFixture123!"})
+		check(out["http_status"] == float64(200), fmt.Sprint(out))
+		data := out["data"].(map[string]any)
+		user := data["user"].(map[string]any)
+		check(user["balance"] == amount && user["bonus_balance"] == amount && user["paid_balance"] == float64(0) && user["unverified_balance"] == float64(0), fmt.Sprint("registration response misclassifies signup credit: ", user))
+		uid := int64(user["id"].(float64))
+		expect(fmt.Sprintf("registration response and persisted signup gift %g", amount), uid, amount, 0, amount, 0)
+		if amount > 0 {
+			spend(uid, "signup-gift-spend", 2)
+			expect("signup gift remains promotional after consumption", uid, 3, 0, 3, 0)
+		}
 	}
 	expect("legacy preserved", legacy.ID, 60, 0, 0, 60)
 	_, err = bill.ReleaseBatchImageBalance(ctx, &service.BatchImageBalanceHoldCommand{RequestID: service.BatchImageReleaseRequestID("legacy-batch"), APIKeyID: legacy.ID, UserID: legacy.ID, BatchID: "legacy-batch", HoldAmount: 40})
@@ -545,7 +574,7 @@ func main() {
 	must(db.QueryRow(`SELECT COUNT(*) FROM users u WHERE bonus_balance<>(SELECT COALESCE(SUM(remaining),0) FROM wallet_grants g WHERE g.user_id=u.id AND source='bonus') OR unverified_balance<>(SELECT COALESCE(SUM(remaining),0) FROM wallet_grants g WHERE g.user_id=u.id AND source='unverified')`).Scan(&mismatch))
 	check(mismatch == 0, "grant summary mismatch")
 	sources := map[string]string{}
-	for _, name := range []string{"migrations/253_wallet_balance_sources.sql", "migrations/254_wallet_paid_to_bonus.sql", "../frontend/src/components/admin/user/UserBalanceModal.vue", "../frontend/src/api/admin/users.ts", "../frontend/src/views/admin/UsersView.vue", "internal/service/payment_wallet.go", "internal/service/payment_refund.go", "internal/service/redeem_service.go", "internal/repository/usage_billing_repo.go", "internal/service/admin_user.go", "internal/service/user_service.go", "internal/repository/user_repo.go", "internal/handler/admin/user_handler.go", "tools/wallet-e2e/main.go"} {
+	for _, name := range []string{"migrations/253_wallet_balance_sources.sql", "migrations/254_wallet_paid_to_bonus.sql", "../frontend/src/components/admin/user/UserBalanceModal.vue", "../frontend/src/api/admin/users.ts", "../frontend/src/views/admin/UsersView.vue", "internal/service/payment_wallet.go", "internal/service/payment_refund.go", "internal/service/redeem_service.go", "internal/repository/usage_billing_repo.go", "internal/service/admin_user.go", "internal/service/user_service.go", "internal/repository/user_repo.go", "internal/handler/admin/user_handler.go", "internal/service/auth_service.go", "internal/handler/auth_handler.go", "internal/handler/dto/mappers.go", "../frontend/src/i18n/locales/zh/admin/settings.ts", "../frontend/src/i18n/locales/en/admin/settings.ts", "tools/wallet-e2e/main.go"} {
 		raw, err := os.ReadFile(name)
 		must(err)
 		sum := sha256.Sum256(raw)

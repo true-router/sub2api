@@ -446,8 +446,8 @@ export default {
       defaults: {
         title: 'Default User Settings',
         description: 'Default values for new users',
-        defaultBalance: 'Default Balance',
-        defaultBalanceHint: 'Initial balance for new users',
+        defaultBalance: 'Default Promotional Balance (USD)',
+        defaultBalanceHint: 'Promotional credit granted at signup. Spent first and non-refundable. Set to 0 to disable. Applies only to new users.',
         affiliateRebateRate: 'Affiliate Rebate Rate',
         affiliateRebateRateHint:
           'Rebate percentage credited to inviter after recharge (0-100%, e.g. 10 means 10%)',
@@ -1271,7 +1271,7 @@ export default {
       },
       authSourceDefaults: {
         title: 'Auth Source Defaults',
-        description: 'Configure per-source default balance, concurrency, subscriptions, and grant rules.',
+        description: 'Configure per-source default promotional balance, concurrency, subscriptions, and grant rules. Promotional credit is non-refundable.',
         requireEmailLabel: 'Require email on third-party signup',
         requireEmailHint: 'When enabled, Linux DO, OIDC, and WeChat signups must provide an email before account creation.',
         enabledHint: 'These defaults apply when a new user registers through this source. Grant on first bind only applies when an existing user binds this source.',
