@@ -94,10 +94,11 @@
     class="table-wrapper"
     :class="{
       'actions-expanded': actionsExpanded,
-      'is-scrollable': isScrollable
+      'is-scrollable': isScrollable,
+      'flex flex-col': isEmpty
     }"
   >
-    <BoardTable :size="size" :aria-busy="loading" class="min-w-max">
+    <BoardTable :size="size" :aria-busy="loading" class="min-w-max shrink-0">
       <thead class="table-header">
         <tr>
           <th
@@ -169,29 +170,8 @@
           </td>
         </tr>
 
-        <!-- Empty state -->
-        <tr v-else-if="!data || data.length === 0">
-          <td
-            :colspan="tableColumnCount"
-            class="py-12 text-center text-text-secondary"
-          >
-            <slot name="empty">
-              <div class="flex flex-col items-center">
-                <Icon
-                  name="inbox"
-                  size="xl"
-                  class="mb-4 h-12 w-12 text-text-tertiary "
-                />
-                <p class="text-title-3-medium text-text-primary ">
-                  {{ t('empty.noData') }}
-                </p>
-              </div>
-            </slot>
-          </td>
-        </tr>
-
         <!-- Data rows: windowed when large, fully rendered when small (shared row/cell template) -->
-        <template v-else>
+        <template v-else-if="!isEmpty">
           <tr v-if="virtualPaddingTop > 0" aria-hidden="true">
             <td :colspan="tableColumnCount"
                 :style="{ height: virtualPaddingTop + 'px', padding: 0, border: 'none' }">
@@ -247,6 +227,25 @@
         </template>
       </tbody>
     </BoardTable>
+
+    <!-- Empty state: outside the table so it fills and centers in the remaining height -->
+    <div
+      v-if="isEmpty"
+      class="flex flex-1 items-center justify-center py-12 text-center text-text-secondary"
+    >
+      <slot name="empty">
+        <div class="flex flex-col items-center">
+          <Icon
+            name="inbox"
+            size="xl"
+            class="mb-4 h-12 w-12 text-text-tertiary "
+          />
+          <p class="text-title-3-medium text-text-primary ">
+            {{ t('empty.noData') }}
+          </p>
+        </div>
+      </slot>
+    </div>
   </div>
 </template>
 
@@ -704,6 +703,7 @@ const sortedData = computed(() => {
     .map(item => item.row)
 })
 
+const isEmpty = computed(() => !props.loading && (!props.data || props.data.length === 0))
 const tableColumnCount = computed(() => props.columns.length + (props.selectable ? 1 : 0))
 const selectedKeySet = computed(() => new Set(props.selectedKeys))
 const visibleRowKeys = computed(() =>

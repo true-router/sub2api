@@ -54,6 +54,7 @@ type fixture struct {
 
 	ctx                                  context.Context
 	dir, binary, origin, postgres, redis string
+	inputBinary                          string
 	db                                   *sql.DB
 	process                              *exec.Cmd
 	processDone                          chan error
@@ -162,8 +163,18 @@ func (f *fixture) bootstrap() error {
 		return err
 	}
 	f.binary = filepath.Join(f.dir, "server")
-	if _, err = run("go", "build", "-o", f.binary, "./cmd/server"); err != nil {
-		return err
+	if f.inputBinary != "" {
+		data, readErr := os.ReadFile(f.inputBinary)
+		if readErr != nil {
+			return readErr
+		}
+		if err = os.WriteFile(f.binary, data, 0700); err != nil {
+			return err
+		}
+	} else {
+		if _, err = run("go", "build", "-o", f.binary, "./cmd/server"); err != nil {
+			return err
+		}
 	}
 	id := fmt.Sprintf("sub2api-production-billing-%d", os.Getpid())
 	f.postgres = id + "-postgres"
@@ -870,10 +881,11 @@ func (f *fixture) close() error {
 }
 func main() {
 	output := flag.String("output", "../.local/production-billing-e2e/receipt.json", "JSON acceptance receipt path, relative to backend")
+	binary := flag.String("binary", "", "Verify this fixed server binary instead of rebuilding source")
 	flag.Parse()
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
-	f := &fixture{ctx: ctx}
+	f := &fixture{ctx: ctx, inputBinary: *binary}
 	err := f.bootstrap()
 	if err == nil {
 		err = f.scenario()

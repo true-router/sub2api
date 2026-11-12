@@ -7,6 +7,7 @@ import (
 	_ "embed"
 	"errors"
 	"flag"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/observability"
 	"log"
 	"net/http"
 	"os"
@@ -132,6 +133,8 @@ func runSetupServer() {
 }
 
 func runMainServer() {
+	shutdownTelemetry := observability.Setup(Version)
+	defer shutdownTelemetry()
 	cfg, err := config.LoadForBootstrap()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)

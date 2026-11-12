@@ -285,7 +285,14 @@
           <form @submit.prevent="handleGenerateCodes" class="space-y-4">
             <div>
               <label class="input-label">{{ t('admin.redeem.codeType') }}</label>
-              <Select v-model="generateForm.type" :options="typeOptions" />
+              <SegmentedControl
+                v-model="generateForm.type"
+                :items="typeOptions"
+                :label="t('admin.redeem.codeType')"
+              />
+              <p class="mt-2 text-body-regular text-text-secondary">
+                {{ t('admin.redeem.typeDesc.' + generateForm.type) }}
+              </p>
             </div>
             <!-- 余额/并发类型：显示数值输入 -->
             <div v-if="generateForm.type !== 'subscription' && generateForm.type !== 'invitation'">
@@ -304,12 +311,6 @@
                 required
                 class="input"
               />
-            </div>
-            <!-- 邀请码类型：显示提示信息 -->
-            <div v-if="generateForm.type === 'invitation'" class="rounded-lg bg-background-info-subtle p-3 ">
-              <p class="text-body-regular text-text-info ">
-                {{ t('admin.redeem.invitationHint') }}
-              </p>
             </div>
             <!-- 订阅类型：显示分组选择和有效天数 -->
             <template v-if="generateForm.type === 'subscription'">
@@ -639,6 +640,7 @@ import DataTable from '@/components/common/DataTable.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import Select from '@/components/common/Select.vue'
+import SegmentedControl from '@/components/boardui/SegmentedControl.vue'
 import GroupBadge from '@/components/common/GroupBadge.vue'
 import GroupOptionItem from '@/components/common/GroupOptionItem.vue'
 import Icon from '@/components/icons/Icon.vue'
@@ -740,7 +742,7 @@ const columns = computed<Column[]>(() => [
   { key: 'actions', label: t('admin.redeem.columns.actions') }
 ])
 
-const typeOptions = computed(() => [
+const typeOptions = computed<{ value: RedeemCodeType; label: string }[]>(() => [
   { value: 'balance', label: t('admin.redeem.balance') },
   { value: 'concurrency', label: t('admin.redeem.concurrency') },
   { value: 'subscription', label: t('admin.redeem.subscription') },

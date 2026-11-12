@@ -133,6 +133,7 @@ deploy/docker-compose.override.yml
 .gocache/
 vite.config.js
 docs/*
+!docs/posthog-observability.md
 !docs/agent-resource-safety.md
 !docs/moego-json-batching.md
 !docs/admin-api-keys.md
@@ -166,3 +167,9 @@ issues/
 .vite/
 # 本地闭源插件开发目录及构建产物不进入 Sub2API 仓库
 /plugins/
+
+# tag 发布资格与通知脚本，以及操作文档
+!.github/scripts/
+!.github/scripts/qualify-rollout.py
+!.github/scripts/notify-rollout.py
+!docs/tag-rollout.md

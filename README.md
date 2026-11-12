@@ -964,3 +964,7 @@ Copyright (c) 2026 Wesley Liddick
 **If you find this project useful, please give it a star!**
 
 </div>
+
+## tag 自动发布
+
+部署契约、验收边界与配置见 [tag 发布接入](docs/tag-rollout.md)。生产默认关闭。

@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/observability"
 	"io"
 	"log/slog"
 	"net"
@@ -312,7 +313,9 @@ func doUpstreamRequest(client *http.Client, req *http.Request, drainTimeouts ...
 		drainTimeout = drainTimeouts[0]
 	}
 	ctx, cancel := pkghttputil.NewUpstreamAttemptContext(req.Context(), drainTimeout)
-	resp, err := servertiming.Do(client, req.WithContext(ctx))
+	instrumented := *client
+	instrumented.Transport = observability.WrapTransport(client.Transport)
+	resp, err := servertiming.Do(&instrumented, req.WithContext(ctx))
 	if err != nil {
 		cancel()
 		return resp, err

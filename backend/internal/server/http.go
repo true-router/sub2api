@@ -11,6 +11,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/handler"
 	pkghttputil "github.com/Wei-Shaw/sub2api/internal/pkg/httputil"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/rollout"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/websearch"
 	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -50,6 +51,7 @@ func ProvideRouter(
 
 	r := gin.New()
 	r.Use(middleware2.Recovery())
+	r.Use(rollout.FromEnvironment(handlers.Gateway.PendingUsageRecords))
 	configureTrustedProxies(r, cfg.Server)
 
 	// Wire up websearch Manager builder so it initializes on startup and rebuilds on config save.
