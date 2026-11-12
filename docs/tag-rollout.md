@@ -18,4 +18,4 @@ Gin 中间件统计请求，流式响应保留到结束。升级连接保留到 
 
 CI 发送通知后查询服务器任务状态。只有 completed 才标记 DEPLOYED。通知成功仅表示入队。失败、排空等待或查询超时不能作为发布完成。
 
-完整宿主机配置、初次接入、生产锁和恢复步骤见同一项目 vm2api 仓库的 `docs/operations/tag-rollout.md`。本轮未执行托管 CI 或生产部署。
+部署器已迁入 [true-router/deployer](https://github.com/true-router/deployer)。完整宿主机配置、生产锁、固定 Compose 和恢复步骤见该仓库的 `docs/operations.md`。业务身份迁移接口仍由 vm2api 提供。整组发布与独立账号、slot 的要求不变。本轮未执行托管 CI 或生产部署。
