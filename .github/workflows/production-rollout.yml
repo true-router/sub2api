@@ -1,0 +1,82 @@
+name: Qualify and queue production rollout
+on:
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: production-rollout
+  cancel-in-progress: false
+jobs:
+  qualify:
+    if: vars.ROLLOUT_ENABLED == 'true' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && startsWith(github.event.workflow_run.head_branch, 'v') && github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: production
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.4'
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Resolve and extract fixed application
+        env:
+          RELEASE_TAG: ${{ github.event.workflow_run.head_branch }}
+          RELEASE_OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          image="ghcr.io/${RELEASE_OWNER,,}/sub2api:${RELEASE_TAG#v}-amd64"
+          docker pull "$image"
+          docker image inspect "$image" > /tmp/rollout-image.json
+          python3 - <<'PY'
+          import json,os
+          image=json.load(open('/tmp/rollout-image.json'))[0]
+          prefix='ghcr.io/'+os.environ['RELEASE_OWNER'].lower()+'/sub2api@sha256:'
+          ref=next(r for r in image['RepoDigests'] if r.startswith(prefix))
+          with open(os.environ['GITHUB_ENV'],'a') as f:f.write('ROLLOUT_IMAGE='+ref+'\n')
+          PY
+          container=$(docker create "$image")
+          trap 'docker rm -f "$container" >/dev/null' EXIT
+          docker cp "$container:/app/sub2api" /tmp/rollout-sub2api
+          chmod 700 /tmp/rollout-sub2api
+      - name: Verify exact application and drain middleware
+        run: |
+          set -euo pipefail
+          mkdir -p rollout-evidence/billing rollout-evidence/drain
+          cd backend
+          go run ./tools/production-billing-e2e --binary /tmp/rollout-sub2api --output "$GITHUB_WORKSPACE/rollout-evidence/billing/summary.json"
+          go build -trimpath -o /tmp/rollout-drain ./e2e/rollout
+          node e2e/rollout/check.mjs /tmp/rollout-drain "$GITHUB_WORKSPACE/rollout-evidence/drain"
+      - name: Bind qualification and queue deployment
+        env:
+          ROLLOUT_COMPONENT: sub2api
+          ROLLOUT_EVIDENCE: rollout-evidence
+          ROLLOUT_QUALIFICATION: rollout-qualification.json
+          ROLLOUT_ENDPOINT: ${{ vars.ROLLOUT_ENDPOINT }}
+          ROLLOUT_NOTIFICATION_SECRET: ${{ secrets.ROLLOUT_NOTIFICATION_SECRET }}
+        run: |
+          python3 .github/scripts/qualify-rollout.py
+          python3 .github/scripts/notify-rollout.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: production-rollout-${{ github.event.workflow_run.head_sha }}
+          path: |
+            rollout-evidence/
+            rollout-qualification.json
+            rollout-notification.json
+          if-no-files-found: ignore
