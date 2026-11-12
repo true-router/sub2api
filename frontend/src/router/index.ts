@@ -188,6 +188,18 @@ const routes: RouteRecordRaw[] = [
 
   // ==================== User Routes ====================
   {
+    path: '/account/model-plaza',
+    name: 'AccountModelPlaza',
+    component: () => import('@/views/ModelPlazaView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      workspace: 'account',
+      title: 'Model Plaza',
+      titleKey: 'modelPlaza.title'
+    }
+  },
+  {
     path: '/',
     redirect: '/home'
   },
@@ -853,22 +865,9 @@ router.beforeEach(async (to, _from, next) => {
     }
   }
 
-  // If route doesn't require auth, allow access
-  if (!requiresAuth) {
-    // If already authenticated and trying to access login/register, redirect to appropriate dashboard
-    if (authStore.isAuthenticated && (to.path === '/login' || to.path === '/register')) {
-      // In backend mode, non-admin users should NOT be redirected away from login
-      // (they are blocked from all protected routes, so redirecting would cause a loop)
-      if (appStore.backendModeEnabled && !authStore.isAdmin) {
-        next()
-        return
-      }
-      // Admin users go to admin dashboard, regular users go to user dashboard
-      next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
-      return
-    }
-    // Model Plaza:公开路由但受「启用开关 + 可选强制登录」双重控制(后端同口径 fail-closed)
-    if (to.path === '/model-plaza') {
+  if (!requiresAuth || authStore.isAuthenticated) {
+    // Public and console catalogs share the feature switch and access policy.
+    if (to.path === '/model-plaza' || to.path === '/account/model-plaza') {
       if (!appStore.publicSettingsLoaded) {
         try {
           await appStore.fetchPublicSettings()
@@ -897,6 +896,22 @@ router.beforeEach(async (to, _from, next) => {
         next('/login')
         return
       }
+    }
+  }
+
+  // If route doesn't require auth, allow access
+  if (!requiresAuth) {
+    // If already authenticated and trying to access login/register, redirect to appropriate dashboard
+    if (authStore.isAuthenticated && (to.path === '/login' || to.path === '/register')) {
+      // In backend mode, non-admin users should NOT be redirected away from login
+      // (they are blocked from all protected routes, so redirecting would cause a loop)
+      if (appStore.backendModeEnabled && !authStore.isAdmin) {
+        next()
+        return
+      }
+      // Admin users go to admin dashboard, regular users go to user dashboard
+      next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
+      return
     }
     // Backend mode: block public pages for unauthenticated users (except login, key-usage, setup)
     if (appStore.backendModeEnabled && !authStore.isAuthenticated) {

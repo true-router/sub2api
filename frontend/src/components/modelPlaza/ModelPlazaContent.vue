@@ -50,7 +50,7 @@ function reset() { platform.value = 'all'; group.value = 'all'; search.value = '
     <header class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
       <div class="flex min-w-0 flex-col gap-2">
         <p class="text-caption-1-medium text-text-accent">{{ t('modelPlaza.compare.eyebrow') }}</p>
-        <h1 class="text-title-1-medium text-text-primary">{{ t('modelPlaza.title') }}</h1>
+        <h1 v-if="!embedded" class="text-title-1-medium text-text-primary">{{ t('modelPlaza.title') }}</h1>
         <p class="max-w-2xl text-body-regular text-text-secondary">{{ t('modelPlaza.compare.intro') }}</p>
       </div>
       <SegmentedControl v-model="selectedCurrency" :items="currencyItems" :label="t('modelPlaza.compare.currency')" data-testid="currency-switch" class="self-start" />
