@@ -25,11 +25,11 @@ func FromEnvironment(pending ...func() uint64) gin.HandlerFunc {
 	if file == "" {
 		return func(c *gin.Context) { c.Next() }
 	}
-	stat, err := os.Lstat(file)
+	stat, err := os.Lstat(file) // #nosec G703 -- 文件路径仅来自受信任的部署环境变量；下方校验普通文件与私有权限。
 	if err != nil || !stat.Mode().IsRegular() || stat.Mode().Perm()&0077 != 0 {
 		panic("private rollout token file required")
 	}
-	raw, err := os.ReadFile(file)
+	raw, err := os.ReadFile(file) // #nosec G703 -- 读取已校验的部署令牌文件，不接受 HTTP 请求提供的路径。
 	token := strings.TrimSpace(string(raw))
 	instance := os.Getenv("TRUEROUTER_INSTANCE_ID")
 	if err != nil || len(token) < 32 || instance == "" {
