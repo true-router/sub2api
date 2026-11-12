@@ -259,6 +259,33 @@
           <span class="text-body-regular text-text-secondary ">{{ formatDateTime(value) }}</span>
         </template>
 
+        <template #cell-session_id="{ row }">
+          <div v-if="row.session_id" class="flex max-w-64 items-center gap-1">
+            <BoardButton
+              data-testid="usage-session-link"
+              variant="ghost"
+              size="xs"
+              class="min-w-0 shrink text-text-accent"
+              :title="`${t('admin.usage.viewSession')}: ${row.session_id}`"
+              @click="$emit('sessionClick', row.session_id, row.user_id, row.user?.email)"
+            >
+              <span class="truncate font-mono">{{ row.session_id }}</span>
+            </BoardButton>
+            <BoardButton
+              data-testid="usage-session-copy"
+              variant="ghost"
+              size="xs"
+              icon-only
+              :aria-label="t('admin.usage.copySessionId')"
+              :title="copiedRequestId === row.session_id ? t('keys.copied') : t('admin.usage.copySessionId')"
+              @click="copyIdentifier(row.session_id, t('admin.usage.sessionIdCopied'))"
+            >
+              <Icon :name="copiedRequestId === row.session_id ? 'check' : 'copy'" size="sm" />
+            </BoardButton>
+          </div>
+          <span v-else data-testid="usage-session-missing" class="text-caption-1-regular text-text-tertiary">{{ t('admin.usage.sessionIdMissing') }}</span>
+        </template>
+
         <template #cell-request_id="{ row }">
           <div v-if="row.request_id" class="flex max-w-[160px] items-center gap-1.5">
             <span class="truncate font-mono text-caption-1-regular text-text-secondary " :title="row.request_id">
@@ -592,6 +619,7 @@ function accountBilled(row: { total_cost?: number | null; account_stats_cost?: n
 }
 
 
+import BoardButton from '@/components/boardui/Button.vue'
 import DataTable from '@/components/common/DataTable.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import IpGeoCell from '@/components/common/IpGeoCell.vue'
@@ -623,6 +651,7 @@ const props = withDefaults(defineProps<Props>(), {
   flat: false
 })
 const emit = defineEmits<{
+  sessionClick: [sessionID: string, userID: number, email?: string]
   userClick: [userID: number, email?: string]
   sort: [key: string, order: 'asc' | 'desc']
   ipGeoBatchFailed: []

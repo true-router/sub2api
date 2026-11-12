@@ -81,6 +81,8 @@ export interface CreateUsageCleanupTaskRequest {
 }
 
 export interface AdminUsageQueryParams extends UsageQueryParams {
+  // Applies to usage detail and export, independently of dashboard aggregates.
+  session_id?: string
   user_id?: number
   exact_total?: boolean
   billing_mode?: string

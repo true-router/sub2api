@@ -78,6 +78,30 @@
           </div>
         </div>
 
+        <!-- Session detail filter -->
+        <div v-if="mode === 'usage'" class="w-full sm:w-72">
+          <BoardInput
+            v-model="filters.session_id"
+            data-testid="usage-session-filter"
+            :label="t('admin.usage.sessionId')"
+            :placeholder="t('admin.usage.sessionIdPlaceholder')"
+            :hint="t('admin.usage.sessionFilterHint')"
+            :maxlength="255"
+            @change="emitChange"
+            @enter="emitChange"
+          >
+            <template v-if="filters.session_id" #suffix>
+              <BoardButton
+                data-testid="usage-session-clear"
+                variant="ghost"
+                size="xs"
+                :aria-label="t('admin.usage.clearSessionFilter')"
+                @click="filters.session_id = undefined; emitChange()"
+              >✕</BoardButton>
+            </template>
+          </BoardInput>
+        </div>
+
         <!-- Model Filter -->
         <div class="w-full sm:w-auto sm:min-w-[220px]">
           <label class="input-label">{{ t('usage.model') }}</label>
@@ -181,15 +205,15 @@
         <BoardButton type="button" @click="$emit('refresh')" variant="secondary" size="medium">
           {{ t('common.refresh') }}
         </BoardButton>
-        <BoardButton type="button" @click="$emit('reset')" variant="secondary" size="medium">
+        <BoardButton data-testid="usage-reset" type="button" @click="$emit('reset')" variant="secondary" size="medium">
           {{ t('common.reset') }}
         </BoardButton>
         <slot name="after-reset" />
         <template v-if="mode === 'usage'">
-          <BoardButton type="button" @click="$emit('cleanup')" variant="danger" size="medium">
+          <BoardButton data-testid="usage-cleanup" type="button" @click="$emit('cleanup')" :disabled="Boolean(filters.session_id?.trim())" :title="filters.session_id?.trim() ? t('admin.usage.sessionCleanupDisabled') : undefined" variant="danger" size="medium">
             {{ t('admin.usage.cleanup.button') }}
           </BoardButton>
-          <BoardButton type="button" @click="$emit('export')" :disabled="exporting" variant="primary" size="medium">
+          <BoardButton data-testid="usage-export" type="button" @click="$emit('export')" :disabled="exporting" variant="primary" size="medium">
             {{ t('usage.exportExcel') }}
           </BoardButton>
         </template>
@@ -200,6 +224,7 @@
 
 <script setup lang="ts">
 import BoardButton from '@/components/boardui/Button.vue'
+import BoardInput from '@/components/boardui/Input.vue'
 import { ref, onMounted, onUnmounted, toRef, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminAPI } from '@/api/admin'
