@@ -78,7 +78,7 @@ func main() {
 	_, err = db.Exec(string(auditSchema))
 	must(err)
 	// Payment credits now share the wallet accounting migration.
-	for _, name := range []string{"071_add_usage_billing_dedup.sql", "073_add_usage_billing_dedup_archive.sql", "253_wallet_balance_sources.sql"} {
+	for _, name := range []string{"071_add_usage_billing_dedup.sql", "073_add_usage_billing_dedup_archive.sql", "131_affiliate_rebate_hardening.sql", "253_wallet_balance_sources.sql"} {
 		data, err := os.ReadFile("migrations/" + name)
 		must(err)
 		_, err = db.Exec(string(data))
@@ -209,6 +209,9 @@ func main() {
 		admin.PUT("/providers/:id", adminH.UpdateProvider)
 		admin.DELETE("/providers/:id", adminH.DeleteProvider)
 		admin.PUT("/config", adminH.UpdateConfig)
+		adminSvc := service.NewAdminService(nil, nil, nil, nil, nil, nil, repository.NewRedeemCodeRepository(client), nil, nil, nil, nil, nil, nil, client, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		userH := adminhandler.NewUserHandler(adminSvc, nil, nil, nil, nil, nil, nil)
+		admin.GET("/users/:id/balance-history", userH.GetBalanceHistory)
 		router.GET("/payment/opcpay", h.OPCPayInfo)
 		router.POST("/payment/opcpay/operations", h.OPCPayStart)
 		router.POST("/payment/opcpay/operations/:business_id/resume", h.OPCPayResume)
@@ -444,11 +447,20 @@ func main() {
 	beforeOptionalDeductions := deductions
 	status, optionalDecision := start("consume", "optional_decision_01")
 	check(status == 200 && data(optionalDecision)["status"] == "COMPLETED" && balance() == beforeOptionalDecision+1 && deductions == beforeOptionalDeductions+1, "额度响应省略买断决策字段时仍可正常充值")
+	beforeHistoryCalls, beforeHistoryDeductions := calls, deductions
+	historyReceipt := verifyBalanceHistory(db, request, check)
+	check(calls == beforeHistoryCalls && deductions == beforeHistoryDeductions, "历史记录查询不调用上游或再次核销")
 	auditSvc.Stop()
 	var auditRows, leaks int
 	must(db.QueryRow(`SELECT COUNT(*),COUNT(*) FILTER(WHERE request_body LIKE '%synthetic-key%') FROM audit_logs`).Scan(&auditRows, &leaks))
 	check(auditRows > 0 && leaks == 0, "真实审计中间件不记录 API Key 明文")
 	sources := map[string]string{}
+	for _, path := range []string{"migrations/131_affiliate_rebate_hardening.sql", "internal/service/domain_constants.go", "internal/handler/admin/user_handler.go", "internal/service/admin_user.go", "internal/service/admin_user_opcpay.go", "tools/opcpay-e2e/balance_history.go", "../frontend/src/api/admin/users.ts", "../frontend/src/components/admin/user/UserBalanceHistoryModal.vue", "../frontend/src/i18n/locales/zh/admin/overview.ts", "../frontend/src/i18n/locales/en/admin/overview.ts", "../frontend/src/i18n/locales/zh/dashboard.ts", "../frontend/src/i18n/locales/en/dashboard.ts"} {
+		raw, err := os.ReadFile(path)
+		must(err)
+		hash := sha256.Sum256(raw)
+		sources[path] = hex.EncodeToString(hash[:])
+	}
 	for _, path := range []string{"migrations/251_opcpay_operations.sql", "migrations/252_opcpay_provider_binding.sql", "internal/payment/crypto.go", "internal/service/payment_order.go", "internal/opcpay/client.go", "internal/service/opcpay_provider_config.go", "internal/service/payment_config_providers.go", "../frontend/src/components/payment/providerConfig.ts", "../frontend/src/components/payment/PaymentProviderDialog.vue", "../frontend/src/views/admin/SettingsView.vue", "internal/service/opcpay_service.go", "internal/handler/opcpay_handler.go", "internal/server/routes/payment.go", "tools/opcpay-e2e/main.go", "../frontend/src/components/payment/OPCPayPanel.vue", "../frontend/src/api/opcpay.ts", "../frontend/src/views/user/PaymentView.vue", "../frontend/e2e/opcpay.browser.mjs", "../frontend/e2e/opcpay-preview.mjs", "../frontend/e2e/opcpay.mjs"} {
 		raw, err := os.ReadFile(path)
 		must(err)
@@ -464,6 +476,7 @@ func main() {
 	}
 	hash := sha256.Sum256(migration)
 	report := map[string]any{"mode": "simulated-provider-real-postgresql-http", "source_sha256": sources, "passed": len(checks), "failed": 0, "checks": checks, "migration_sha256": hex.EncodeToString(hash[:]), "balance_usd": balance(), "provider_consumptions": deductions, "provider_requests": calls, "real_payments": false, "real_jwt_login": false, "os_process_restart": false, "api_base": opcpay.BaseURL}
+	report["balance_history"] = historyReceipt
 	raw, _ := json.MarshalIndent(report, "", "  ")
 	out := os.Getenv("OPCPAY_E2E_REPORT")
 	if out == "" {

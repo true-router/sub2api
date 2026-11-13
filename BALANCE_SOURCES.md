@@ -26,6 +26,8 @@ Migration `253_wallet_balance_sources.sql` owns the PostgreSQL accounting functi
 
 `wallet_grants` tracks spendable promotional and unverified credit. `wallet_holds` persists source allocations for batch and refund reservations. `wallet_journal` records balance mutations and manual source reconciliation. User-row locking precedes grant and reservation locks.
 
+The admin balance history combines redeem-code records, affiliate transfers and completed OPCPay consumption records. OPCPay entries use the `opcpay_balance` type and the business ID as their code. Their numeric redeem-code ID is zero because they are read-only history projections; clients identify history rows by type and code together. `used_at` is the atomic delivery timestamp, while `created_at` remains the operation creation time. The cumulative recharge summary adds completed OPCPay credits to the existing positive balance/admin-balance redeem-code sum, regardless of pagination or type filter. Purchase entries and undelivered consumption records are excluded. Existing completed operations appear without backfilling records or changing balances. Run `backend/tools/opcpay-e2e/run.sh` to verify this behavior through real HTTP handlers and disposable PostgreSQL; the receipt at `output/opcpay-e2e/checks.json` includes response snapshots and source hashes.
+
 Do not update source columns or grant records directly. Do not remove this accounting trigger while application balance writers remain active.
 
 ## Convert paid credit to promotional credit
