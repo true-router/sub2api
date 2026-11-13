@@ -19,6 +19,8 @@ const check = (name, ok) => { checks.push({ name, result: ok ? 'PASS' : 'FAIL' }
 let result = 'FAIL'
 try {
   for (let i = 0; i < 100; i++) { try { if ((await fetch(base + '/health')).ok) break } catch {} await new Promise(r => setTimeout(r, 30)) }
+  const health = await fetch(base + '/health')
+  check('entrypoint_identity_not_cached', health.headers.get('x-truerouter-instance') === 'isolated-sub-old' && health.headers.get('cache-control') === 'no-store')
   await fetch(base + '/billing')
   const stream = await fetch(base + '/slow'); const reader = stream.body.getReader(); const first = await reader.read()
   check('stream_started', Buffer.from(first.value).toString().includes('started'))

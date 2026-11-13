@@ -53,7 +53,11 @@ func (d *Controller) snapshot() gin.H {
 }
 
 func (d *Controller) middleware(c *gin.Context) {
+	c.Header("X-TrueRouter-Instance", d.instance)
 	p := c.Request.URL.Path
+	if p == "/health" || strings.HasPrefix(p, "/_rollout/") {
+		c.Header("Cache-Control", "no-store")
+	}
 	if strings.HasPrefix(p, "/_rollout/") {
 		if subtle.ConstantTimeCompare([]byte(c.GetHeader("Authorization")), []byte("Bearer "+d.token)) != 1 {
 			c.AbortWithStatusJSON(401, gin.H{"error": "unauthorized"})
