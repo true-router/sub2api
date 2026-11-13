@@ -316,8 +316,16 @@ New purchases save the server-fetched catalog price and currency before opening
 the purchase entry. Consumption copies this purchase snapshot, including when
 the catalog changes later. Credited USD remains separate from the purchase
 currency and price. The provider snapshot records `payment_amount_source=catalog`.
-The UI labels this amount as `Catalog price`. This is the merchant's offered
-price, not independent proof of settlement.
+For OPCPay, this project records the purchase-time price and currency as the
+payment amount once balance delivery completes. This is an explicit channel
+accounting convention because the provider does not return settlement amounts.
+The UI labels it as the paid amount. Never substitute credited USD for CNY or
+read a newer catalog price when reconstructing an earlier order.
+
+An owner-confirmed historical payment may be reconciled from the original bill.
+Record `payment_amount_source=owner_confirmed`, currency, amount and an audit log.
+Set `pay_amount_known=true` so existing revenue and average calculations include
+the correction. Preserve wallet entries, credited USD and delivery timestamps.
 
 Historical operations and standalone consumption without a purchase snapshot
 have no known payment amount. They use `pay_amount=0` only as a storage
@@ -372,3 +380,18 @@ The harness removes its database container and writes
 `output/opcpay-e2e/checks.json`, including assertions, source hashes and sample API
 responses. This does not verify real merchant payments, production deployment,
 JWT login, or browser appearance.
+
+After the HTTP harness completes, render the actual statistic cards with its
+responses:
+
+```sh
+node frontend/e2e/opcpay-orders.render.mjs
+```
+
+This checks Chinese and English monetary statistics, visible empty-state text,
+reconciled averages, and legitimate zero amounts. It uses the existing Vue server
+renderer, not a browser or a mocked statistic card. The HTTP harness separately
+checks that a CNY 68 payment and USD 100 credit remain distinct. The rendered HTML
+are saved under `output/opcpay-order-render/`. The source-bound receipt is
+`output/opcpay-order-render/summary.json`.
+These card checks do not verify browser layout or interactive order tables.

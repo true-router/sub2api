@@ -11,6 +11,9 @@
           <p v-for="[currency, amount] in sortedAmounts(stats.today_amount)" :key="currency" class="text-title-2-bold text-text-primary ">
             {{ formatMoney(currency, amount) }}
           </p>
+          <p v-if="Object.keys(stats.today_amount).length === 0" class="text-body-regular text-text-secondary">
+            {{ t('payment.admin.noData') }}
+          </p>
           <p class="text-caption-1-regular text-text-secondary ">
             {{ stats.today_count }} {{ t('payment.admin.orders') }}
           </p>
@@ -28,6 +31,9 @@
           <p class="text-caption-1-medium text-text-secondary ">{{ t('payment.admin.totalRevenue') }}</p>
           <p v-for="[currency, amount] in sortedAmounts(stats.total_amount)" :key="currency" class="text-title-2-bold text-text-primary ">
             {{ formatMoney(currency, amount) }}
+          </p>
+          <p v-if="Object.keys(stats.total_amount).length === 0" class="text-body-regular text-text-secondary">
+            {{ t('payment.admin.noData') }}
           </p>
           <p class="text-caption-1-regular text-text-secondary ">
             {{ stats.total_count }} {{ t('payment.admin.orders') }}
@@ -59,6 +65,9 @@
           <p class="text-caption-1-medium text-text-secondary ">{{ t('payment.admin.avgAmount') }}</p>
           <p v-for="[currency, amount] in sortedAmounts(stats.avg_amount)" :key="currency" class="text-title-2-bold text-text-primary ">
             {{ formatMoney(currency, amount) }}
+          </p>
+          <p v-if="Object.keys(stats.avg_amount).length === 0" class="text-body-regular text-text-secondary">
+            {{ t('payment.admin.noData') }}
           </p>
         </div>
       </div>

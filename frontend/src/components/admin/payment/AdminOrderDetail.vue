@@ -26,7 +26,7 @@
           <p class="text-body-medium text-text-primary ">{{ paymentAmountSymbol }}{{ feeAmount.toFixed(2) }}</p>
         </div>
         <div>
-          <p class="text-caption-1-regular text-text-secondary ">{{ t(order.payment_type === 'opcpay' && order.pay_amount_known !== false ? 'payment.orders.catalogAmount' : 'payment.orders.payAmount') }}</p>
+          <p class="text-caption-1-regular text-text-secondary ">{{ t('payment.orders.payAmount') }}</p>
           <p class="text-body-medium text-text-primary ">{{ order.pay_amount_known === false ? t('common.unknown') : paymentAmountSymbol + order.pay_amount.toFixed(2) }}</p>
         </div>
         <div v-if="(order.bonus_amount ?? 0) > 0">

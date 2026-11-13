@@ -53,7 +53,7 @@
 
       <template #cell-pay_amount="{ value, row }">
         <div class="text-body-regular">
-          <span class="font-medium text-text-primary ">{{ row.pay_amount_known === false ? t('common.unknown') : paymentAmountSymbol(row) + value.toFixed(2) }}<template v-if="row.payment_type === 'opcpay' && row.pay_amount_known !== false"> ({{ t('payment.orders.catalogAmount') }})</template></span>
+          <span class="font-medium text-text-primary ">{{ row.pay_amount_known === false ? t('common.unknown') : paymentAmountSymbol(row) + value.toFixed(2) }}</span>
           <span v-if="row.fee_rate > 0" class="ml-1 text-caption-1-regular text-text-tertiary" :title="t('payment.orders.fee') + ': ' + row.fee_rate + '%'">
             ({{ row.fee_rate }}%)
           </span>

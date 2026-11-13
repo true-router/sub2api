@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"time"
 )
 
 // Uses real handlers and wallet transactions. The merchant alone is simulated.
@@ -72,6 +73,18 @@ func verifyOrders(db *sql.DB, request func(string, string, string, any) (int, ma
 	dashboard := get("one", "/admin/payment/dashboard?days=1")
 	check(dashboard["total_count"] == float64(6), "dashboard counts all completed current OPCPay orders")
 	check(dashboard["total_amount"].(map[string]any)["CNY"] == 9.9 && dashboard["avg_amount"].(map[string]any)["CNY"] == 9.9, "dashboard totals and averages exclude unknown payment amounts")
+	// Reconciliation changes payment money, never the already delivered USD.
+	beforeCorrection := walletState(db)
+	_, err = db.Exec(`UPDATE payment_orders SET pay_amount=68,
+provider_snapshot=provider_snapshot||'{"currency":"CNY","pay_amount_known":true,"payment_amount_source":"owner_confirmed"}'::jsonb
+WHERE out_trade_no='history-credit-100'`)
+	must(err)
+	corrected := get("one", "/admin/payment/orders?keyword=history-credit-100")["items"].([]any)[0].(map[string]any)
+	check(corrected["amount"] == float64(100) && corrected["pay_amount"] == float64(68) && corrected["currency"] == "CNY" && corrected["pay_amount_known"] == true, "reconciled actual CNY payment stays separate from credited USD")
+	historyDays := max(365, int(time.Since(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)).Hours()/24)+2)
+	correctedStats := get("one", fmt.Sprintf("/admin/payment/dashboard?days=%d", historyDays))
+	check(correctedStats["total_amount"].(map[string]any)["CNY"] == 77.9 && correctedStats["avg_amount"].(map[string]any)["CNY"] == 38.95, "reconciled actual payment restores dashboard revenue and average")
+	check(walletState(db) == beforeCorrection, "payment amount reconciliation leaves delivered funds and operation records unchanged")
 	// A database failure must never deliver funds without the matching order.
 	_, err = db.Exec(`CREATE FUNCTION reject_opcpay_order() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'simulated order failure'; END; $$;
 CREATE TRIGGER reject_opcpay_order BEFORE INSERT ON payment_orders FOR EACH ROW EXECUTE FUNCTION reject_opcpay_order()`)
@@ -101,7 +114,7 @@ CREATE TRIGGER reject_opcpay_order BEFORE INSERT ON payment_orders FOR EACH ROW 
 	must(db.QueryRow(`SELECT balance FROM users WHERE id=1`).Scan(&balanceAfter))
 	must(db.QueryRow(`SELECT COUNT(*) FROM payment_orders WHERE out_trade_no=$1`, businessID).Scan(&mismatches))
 	check(balanceAfter == balanceBefore+20 && mismatches == 1, "concurrent recovery delivers funds and its order exactly once after insertion failure")
-	return map[string]any{"current_orders": list, "historical_orders": historical, "card_order": detail, "dashboard": dashboard}
+	return map[string]any{"current_orders": list, "historical_orders": historical, "card_order": detail, "dashboard": dashboard, "corrected_order": corrected, "corrected_dashboard": correctedStats}
 }
 
 func walletState(db *sql.DB) string {

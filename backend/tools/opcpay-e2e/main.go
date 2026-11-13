@@ -434,6 +434,8 @@ func main() {
 	check(status == 200 && data(bad)["status"] == "COMPLETED" && balance() == 4 && deductions == 4, "恢复原编号的有效确认")
 	status, _ = request("one", "POST", "/operations/"+data(purchase)["business_id"].(string)+"/close", nil)
 	check(status == 200, "允许结束未核销的购买入口")
+	status, unknownPaymentDashboard := request("one", "GET", "/admin/payment/dashboard?days=1", nil)
+	check(status == 200, "dashboard is readable while delivered payments have no known monetary amount")
 	status, cardPurchase := start("purchase", "card_purchase_001")
 	check(status == 200 && data(cardPurchase)["amount"] == float64(10) && data(cardPurchase)["credit_usd"] == float64(10), "所选充值卡数量由服务端套餐确定")
 	mu.Lock()
@@ -479,7 +481,7 @@ func main() {
 		hash := sha256.Sum256(raw)
 		sources[path] = hex.EncodeToString(hash[:])
 	}
-	for _, path := range []string{"internal/handler/payment_handler.go", "internal/handler/admin/payment_handler.go", "internal/service/payment_refund.go", "../frontend/src/components/payment/OrderTable.vue", "../frontend/src/components/admin/payment/AdminOrderTable.vue", "../frontend/src/components/admin/payment/AdminOrderDetail.vue", "../frontend/src/views/admin/orders/AdminOrdersView.vue", "../frontend/src/views/user/UserOrdersView.vue", "../frontend/src/types/payment.ts", "../frontend/src/i18n/locales/zh/misc.ts", "../frontend/src/i18n/locales/en/misc.ts", "../docs/PAYMENT.md"} {
+	for _, path := range []string{"internal/handler/payment_handler.go", "internal/handler/admin/payment_handler.go", "internal/service/payment_refund.go", "../frontend/src/components/payment/OrderTable.vue", "../frontend/src/components/admin/payment/AdminOrderTable.vue", "../frontend/src/components/admin/payment/AdminOrderDetail.vue", "../frontend/src/views/admin/orders/AdminOrdersView.vue", "../frontend/src/views/user/UserOrdersView.vue", "../frontend/src/types/payment.ts", "../frontend/src/i18n/locales/zh/misc.ts", "../frontend/src/i18n/locales/en/misc.ts", "../docs/PAYMENT.md", "../frontend/src/components/admin/payment/OrderStatsCards.vue", "../frontend/e2e/opcpay-orders.render.mjs"} {
 		raw, err := os.ReadFile(path)
 		must(err)
 		hash := sha256.Sum256(raw)
@@ -496,6 +498,7 @@ func main() {
 	report := map[string]any{"mode": "simulated-provider-real-postgresql-http", "source_sha256": sources, "passed": len(checks), "failed": 0, "checks": checks, "migration_sha256": hex.EncodeToString(hash[:]), "balance_usd": balance(), "provider_consumptions": deductions, "provider_requests": calls, "real_payments": false, "real_jwt_login": false, "os_process_restart": false, "api_base": opcpay.BaseURL}
 	report["balance_history"] = historyReceipt
 	report["orders"] = ordersReceipt
+	report["unknown_payment_dashboard"] = data(unknownPaymentDashboard)
 	raw, _ := json.MarshalIndent(report, "", "  ")
 	out := os.Getenv("OPCPAY_E2E_REPORT")
 	if out == "" {
