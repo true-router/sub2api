@@ -197,6 +197,9 @@ func (s *PaymentService) validateRefundRequest(ctx context.Context, oid, uid int
 	if o.Status != OrderStatusCompleted {
 		return nil, infraerrors.BadRequest("INVALID_STATUS", "only completed orders can request refund")
 	}
+	if o.PaymentType == payment.TypeOPCPay {
+		return nil, infraerrors.Forbidden("REFUND_DISABLED", "OPCPay refunds are not supported")
+	}
 	// Check provider instance allows user refund
 	inst, err := s.getRefundOrderProviderInstance(ctx, o)
 	if err != nil || inst == nil {
@@ -212,6 +215,9 @@ func (s *PaymentService) PrepareRefund(ctx context.Context, oid int64, amt float
 	o, err := s.entClient.PaymentOrder.Get(ctx, oid)
 	if err != nil {
 		return nil, nil, infraerrors.NotFound("NOT_FOUND", "order not found")
+	}
+	if o.PaymentType == payment.TypeOPCPay {
+		return nil, nil, infraerrors.Forbidden("REFUND_DISABLED", "OPCPay refunds are not supported")
 	}
 	// REFUND_PENDING 只能通过 QueryAndFinalizeRefund 收敛：重新发起会重复扣减并向网关重复退款。
 	ok := []string{OrderStatusCompleted, OrderStatusRefundRequested, OrderStatusRefundFailed}

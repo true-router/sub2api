@@ -78,7 +78,7 @@ func main() {
 	_, err = db.Exec(string(auditSchema))
 	must(err)
 	// Payment credits now share the wallet accounting migration.
-	for _, name := range []string{"071_add_usage_billing_dedup.sql", "073_add_usage_billing_dedup_archive.sql", "131_affiliate_rebate_hardening.sql", "253_wallet_balance_sources.sql"} {
+	for _, name := range []string{"071_add_usage_billing_dedup.sql", "073_add_usage_billing_dedup_archive.sql", "131_affiliate_rebate_hardening.sql", "253_wallet_balance_sources.sql", "255_opcpay_payment_orders.sql"} {
 		data, err := os.ReadFile("migrations/" + name)
 		must(err)
 		_, err = db.Exec(string(data))
@@ -100,6 +100,7 @@ func main() {
 	deductions := 0
 	providerConfigured := true
 	quantity := true
+	cardPrice := "9.90"
 	allow := true
 	includeDecision := true
 	opened := true
@@ -131,7 +132,7 @@ func main() {
 				mode = "ONE_TIME"
 				unit = ""
 			}
-			send(map[string]any{"capability_status": "ENABLED", "billing_mode": mode, "quota_unit": unit, "charging_options": []map[string]any{{"sku_id": "actual-fixture-sku", "display_name": "10 积分充值卡", "price": "9.90", "currency": "CNY", "billing_mode": "QUANTITY", "quota_unit": "POINT", "quota_amount": 10}, {"sku_id": "large-fixture-sku", "display_name": "20 积分充值卡", "price": "18.80", "currency": "CNY", "billing_mode": "QUANTITY", "quota_unit": "POINT", "quota_amount": 20}, {"sku_id": "count-fixture", "display_name": "次数套餐", "billing_mode": "QUANTITY", "quota_unit": "COUNT", "quota_amount": 10, "price": "1.00", "currency": "CNY"}}})
+			send(map[string]any{"capability_status": "ENABLED", "billing_mode": mode, "quota_unit": unit, "charging_options": []map[string]any{{"sku_id": "actual-fixture-sku", "display_name": "10 积分充值卡", "price": cardPrice, "currency": "CNY", "billing_mode": "QUANTITY", "quota_unit": "POINT", "quota_amount": 10}, {"sku_id": "large-fixture-sku", "display_name": "20 积分充值卡", "price": "18.80", "currency": "CNY", "billing_mode": "QUANTITY", "quota_unit": "POINT", "quota_amount": 20}, {"sku_id": "count-fixture", "display_name": "次数套餐", "billing_mode": "QUANTITY", "quota_unit": "COUNT", "quota_amount": 10, "price": "1.00", "currency": "CNY"}}})
 		case "/access":
 			decision := "ALLOW"
 			if !allow {
@@ -204,6 +205,13 @@ func main() {
 			}
 		})
 		admin.Use(gin.HandlerFunc(middleware.NewAuditLogMiddleware(auditSvc)))
+		admin.GET("/orders", adminH.ListOrders)
+		admin.GET("/orders/:id", adminH.GetOrderDetail)
+		admin.GET("/dashboard", adminH.GetDashboard)
+		admin.POST("/orders/:id/refund", adminH.ProcessRefund)
+		router.GET("/payment/orders/my", h.GetMyOrders)
+		router.GET("/payment/orders/:id", h.GetOrder)
+		router.POST("/payment/orders/:id/refund", h.RequestRefund)
 		admin.GET("/providers", adminH.ListProviders)
 		admin.POST("/providers", adminH.CreateProvider)
 		admin.PUT("/providers/:id", adminH.UpdateProvider)
@@ -223,7 +231,7 @@ func main() {
 	request := func(session, method, path string, body any) (int, map[string]any) {
 		data, _ := json.Marshal(body)
 		fullPath := "/payment/opcpay" + path
-		if strings.HasPrefix(path, "/admin/") {
+		if strings.HasPrefix(path, "/admin/") || strings.HasPrefix(path, "/payment/") {
 			fullPath = path
 		}
 		req, _ := http.NewRequest(method, api.URL+fullPath, bytes.NewReader(data))
@@ -428,6 +436,9 @@ func main() {
 	check(status == 200, "允许结束未核销的购买入口")
 	status, cardPurchase := start("purchase", "card_purchase_001")
 	check(status == 200 && data(cardPurchase)["amount"] == float64(10) && data(cardPurchase)["credit_usd"] == float64(10), "所选充值卡数量由服务端套餐确定")
+	mu.Lock()
+	cardPrice = "99.90"
+	mu.Unlock()
 	status, cardCredit := request("one", "POST", "/operations", map[string]any{"kind": "consume", "action_id": "card_purchase_001", "sku_id": "actual-fixture-sku"})
 	check(status == 200 && data(cardCredit)["status"] == "COMPLETED" && balance() == 14 && deductions == 5, "按所选充值卡核销 10 积分并充值 10 USD")
 	status, _ = request("one", "POST", "/operations", map[string]any{"kind": "consume", "action_id": "card_purchase_001", "sku_id": "actual-fixture-sku"})
@@ -450,6 +461,7 @@ func main() {
 	beforeHistoryCalls, beforeHistoryDeductions := calls, deductions
 	historyReceipt := verifyBalanceHistory(db, request, check)
 	check(calls == beforeHistoryCalls && deductions == beforeHistoryDeductions, "历史记录查询不调用上游或再次核销")
+	ordersReceipt := verifyOrders(db, request, check)
 	auditSvc.Stop()
 	var auditRows, leaks int
 	must(db.QueryRow(`SELECT COUNT(*),COUNT(*) FILTER(WHERE request_body LIKE '%synthetic-key%') FROM audit_logs`).Scan(&auditRows, &leaks))
@@ -461,7 +473,13 @@ func main() {
 		hash := sha256.Sum256(raw)
 		sources[path] = hex.EncodeToString(hash[:])
 	}
-	for _, path := range []string{"migrations/251_opcpay_operations.sql", "migrations/252_opcpay_provider_binding.sql", "internal/payment/crypto.go", "internal/service/payment_order.go", "internal/opcpay/client.go", "internal/service/opcpay_provider_config.go", "internal/service/payment_config_providers.go", "../frontend/src/components/payment/providerConfig.ts", "../frontend/src/components/payment/PaymentProviderDialog.vue", "../frontend/src/views/admin/SettingsView.vue", "internal/service/opcpay_service.go", "internal/handler/opcpay_handler.go", "internal/server/routes/payment.go", "tools/opcpay-e2e/main.go", "../frontend/src/components/payment/OPCPayPanel.vue", "../frontend/src/api/opcpay.ts", "../frontend/src/views/user/PaymentView.vue", "../frontend/e2e/opcpay.browser.mjs", "../frontend/e2e/opcpay-preview.mjs", "../frontend/e2e/opcpay.mjs"} {
+	for _, path := range []string{"migrations/255_opcpay_payment_orders.sql", "tools/opcpay-e2e/orders.go", "internal/service/payment_currency.go", "internal/service/payment_stats.go", "migrations/251_opcpay_operations.sql", "migrations/252_opcpay_provider_binding.sql", "internal/payment/crypto.go", "internal/service/payment_order.go", "internal/opcpay/client.go", "internal/service/opcpay_provider_config.go", "internal/service/payment_config_providers.go", "../frontend/src/components/payment/providerConfig.ts", "../frontend/src/components/payment/PaymentProviderDialog.vue", "../frontend/src/views/admin/SettingsView.vue", "internal/service/opcpay_service.go", "internal/handler/opcpay_handler.go", "internal/server/routes/payment.go", "tools/opcpay-e2e/main.go", "../frontend/src/components/payment/OPCPayPanel.vue", "../frontend/src/api/opcpay.ts", "../frontend/src/views/user/PaymentView.vue", "../frontend/e2e/opcpay.browser.mjs", "../frontend/e2e/opcpay-preview.mjs", "../frontend/e2e/opcpay.mjs"} {
+		raw, err := os.ReadFile(path)
+		must(err)
+		hash := sha256.Sum256(raw)
+		sources[path] = hex.EncodeToString(hash[:])
+	}
+	for _, path := range []string{"internal/handler/payment_handler.go", "internal/handler/admin/payment_handler.go", "internal/service/payment_refund.go", "../frontend/src/components/payment/OrderTable.vue", "../frontend/src/components/admin/payment/AdminOrderTable.vue", "../frontend/src/components/admin/payment/AdminOrderDetail.vue", "../frontend/src/views/admin/orders/AdminOrdersView.vue", "../frontend/src/views/user/UserOrdersView.vue", "../frontend/src/types/payment.ts", "../frontend/src/i18n/locales/zh/misc.ts", "../frontend/src/i18n/locales/en/misc.ts", "../docs/PAYMENT.md"} {
 		raw, err := os.ReadFile(path)
 		must(err)
 		hash := sha256.Sum256(raw)
@@ -477,6 +495,7 @@ func main() {
 	hash := sha256.Sum256(migration)
 	report := map[string]any{"mode": "simulated-provider-real-postgresql-http", "source_sha256": sources, "passed": len(checks), "failed": 0, "checks": checks, "migration_sha256": hex.EncodeToString(hash[:]), "balance_usd": balance(), "provider_consumptions": deductions, "provider_requests": calls, "real_payments": false, "real_jwt_login": false, "os_process_restart": false, "api_base": opcpay.BaseURL}
 	report["balance_history"] = historyReceipt
+	report["orders"] = ordersReceipt
 	raw, _ := json.MarshalIndent(report, "", "  ")
 	out := os.Getenv("OPCPAY_E2E_REPORT")
 	if out == "" {

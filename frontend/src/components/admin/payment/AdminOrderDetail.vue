@@ -19,15 +19,15 @@
         </div>
         <div>
           <p class="text-caption-1-regular text-text-secondary ">{{ t('payment.orders.baseAmount') }}</p>
-          <p class="text-body-medium text-text-primary ">{{ paymentAmountSymbol }}{{ baseAmount.toFixed(2) }}</p>
+          <p class="text-body-medium text-text-primary ">{{ order.pay_amount_known === false ? t('common.unknown') : paymentAmountSymbol + baseAmount.toFixed(2) }}</p>
         </div>
         <div v-if="order.fee_rate > 0">
           <p class="text-caption-1-regular text-text-secondary ">{{ t('payment.orders.fee') }} ({{ order.fee_rate }}%)</p>
           <p class="text-body-medium text-text-primary ">{{ paymentAmountSymbol }}{{ feeAmount.toFixed(2) }}</p>
         </div>
         <div>
-          <p class="text-caption-1-regular text-text-secondary ">{{ t('payment.orders.payAmount') }}</p>
-          <p class="text-body-medium text-text-primary ">{{ paymentAmountSymbol }}{{ order.pay_amount.toFixed(2) }}</p>
+          <p class="text-caption-1-regular text-text-secondary ">{{ t(order.payment_type === 'opcpay' && order.pay_amount_known !== false ? 'payment.orders.catalogAmount' : 'payment.orders.payAmount') }}</p>
+          <p class="text-body-medium text-text-primary ">{{ order.pay_amount_known === false ? t('common.unknown') : paymentAmountSymbol + order.pay_amount.toFixed(2) }}</p>
         </div>
         <div v-if="(order.bonus_amount ?? 0) > 0">
           <p class="text-caption-1-regular text-text-secondary ">{{ t('payment.orders.bonusAmount') }}</p>
@@ -161,7 +161,7 @@ const emit = defineEmits<{
 }>()
 
 function canRefund(order: PaymentOrder): boolean {
-  return canRefundStatus(order.status)
+  return order.payment_type !== 'opcpay' && canRefundStatus(order.status)
 }
 
 function formatDateTime(dateStr: string): string {

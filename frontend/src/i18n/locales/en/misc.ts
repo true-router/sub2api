@@ -364,6 +364,7 @@ export default {
       orderNo: 'Order No.',
       amount: 'Amount',
       payAmount: 'Paid',
+      catalogAmount: 'Catalog price',
       creditedAmount: 'Credited Amount',
       bonusAmount: 'Bonus',
       bonusIncluded: 'incl. bonus {amount}',

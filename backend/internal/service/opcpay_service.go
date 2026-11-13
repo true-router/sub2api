@@ -10,10 +10,12 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/opcpay"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/shopspring/decimal"
 	"math"
 	"net/url"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 var opcpayAction = regexp.MustCompile(`^[a-zA-Z0-9_-]{16,80}$`)
@@ -45,20 +47,22 @@ type OPCPayInfo struct {
 	origin       string
 }
 type OPCPayOperation struct {
-	ID         string         `json:"business_id"`
-	UserID     int64          `json:"-"`
-	ProviderID int64          `json:"provider_id"`
-	KeyHash    string         `json:"-"`
-	Action     string         `json:"action_id"`
-	Kind       string         `json:"kind"`
-	SKU        string         `json:"sku_id"`
-	Callback   string         `json:"-"`
-	Amount     float64        `json:"amount"`
-	Unit       string         `json:"quota_unit"`
-	Credit     float64        `json:"credit_usd"`
-	Reason     string         `json:"-"`
-	Status     string         `json:"status"`
-	Result     *opcpay.Result `json:"result,omitempty"`
+	ID               string         `json:"business_id"`
+	UserID           int64          `json:"-"`
+	ProviderID       int64          `json:"provider_id"`
+	KeyHash          string         `json:"-"`
+	Action           string         `json:"action_id"`
+	Kind             string         `json:"kind"`
+	SKU              string         `json:"sku_id"`
+	Callback         string         `json:"-"`
+	Amount           float64        `json:"amount"`
+	Unit             string         `json:"quota_unit"`
+	Credit           float64        `json:"credit_usd"`
+	Reason           string         `json:"-"`
+	Status           string         `json:"status"`
+	PurchasePrice    string         `json:"-"`
+	PurchaseCurrency string         `json:"-"`
+	Result           *opcpay.Result `json:"result,omitempty"`
 }
 
 func (s *OPCPayService) enabled(ctx context.Context) bool {
@@ -136,7 +140,7 @@ func opcpayKeyHash(key string) string {
 }
 func (s *OPCPayService) find(ctx context.Context, userID int64, where string, args ...any) (*OPCPayOperation, error) {
 	args = append([]any{userID}, args...)
-	rows, err := s.DB.QueryContext(ctx, `SELECT business_id,user_id,COALESCE(provider_instance_id,0),provider_key_hash,action_id,kind,sku_id,callback_url,amount,quota_unit,credit_usd,reason,status FROM opcpay_operations WHERE user_id=$1 AND `+where+` ORDER BY CASE WHEN kind='consume' THEN 0 ELSE 1 END,created_at DESC LIMIT 1`, args...)
+	rows, err := s.DB.QueryContext(ctx, `SELECT business_id,user_id,COALESCE(provider_instance_id,0),provider_key_hash,action_id,kind,sku_id,callback_url,amount,quota_unit,credit_usd,reason,status,COALESCE(purchase_price::text,''),purchase_currency FROM opcpay_operations WHERE user_id=$1 AND `+where+` ORDER BY CASE WHEN kind='consume' THEN 0 ELSE 1 END,created_at DESC LIMIT 1`, args...)
 	if err != nil {
 		return nil, errors.New("无法读取一人付操作")
 	}
@@ -145,7 +149,7 @@ func (s *OPCPayService) find(ctx context.Context, userID int64, where string, ar
 		return nil, rows.Err()
 	}
 	o := &OPCPayOperation{}
-	if err = rows.Scan(&o.ID, &o.UserID, &o.ProviderID, &o.KeyHash, &o.Action, &o.Kind, &o.SKU, &o.Callback, &o.Amount, &o.Unit, &o.Credit, &o.Reason, &o.Status); err != nil {
+	if err = rows.Scan(&o.ID, &o.UserID, &o.ProviderID, &o.KeyHash, &o.Action, &o.Kind, &o.SKU, &o.Callback, &o.Amount, &o.Unit, &o.Credit, &o.Reason, &o.Status, &o.PurchasePrice, &o.PurchaseCurrency); err != nil {
 		return nil, errors.New("无法读取一人付操作")
 	}
 	return o, nil
@@ -181,6 +185,13 @@ func (s *OPCPayService) Start(ctx context.Context, userID int64, kind, action, s
 			if card.SKU == sku {
 				o.Amount = card.Quantity
 				o.Credit = card.Quantity
+				price, err := decimal.NewFromString(card.Price)
+				currency, currencyErr := payment.NormalizePaymentCurrency(card.Currency)
+				if err != nil || currencyErr != nil || strings.TrimSpace(card.Currency) == "" || !price.IsPositive() || !price.Equal(price.Round(2)) || price.GreaterThanOrEqual(decimal.New(1, 18)) {
+					return nil, errors.New("充值卡价格无效，请联系管理员")
+				}
+				o.PurchasePrice = price.StringFixed(2)
+				o.PurchaseCurrency = currency
 				found = true
 			}
 		}
@@ -207,6 +218,8 @@ func (s *OPCPayService) Start(ctx context.Context, userID int64, kind, action, s
 			}
 			o.Amount = purchase.Amount
 			o.Credit = purchase.Credit
+			o.PurchasePrice = purchase.PurchasePrice
+			o.PurchaseCurrency = purchase.PurchaseCurrency
 		}
 		_, pay, _, err := s.Config.opcpayProvider(ctx, o.ProviderID)
 		if err != nil || pay == nil {
@@ -226,7 +239,7 @@ func (s *OPCPayService) Start(ctx context.Context, userID int64, kind, action, s
 		return nil, errors.New("无法生成业务编号")
 	}
 	o.ID = "sub2_opc_" + hex.EncodeToString(random)
-	_, err = s.DB.ExecContext(ctx, `INSERT INTO opcpay_operations(business_id,user_id,provider_instance_id,provider_key_hash,action_id,kind,sku_id,callback_url,amount,quota_unit,credit_usd,reason) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) ON CONFLICT DO NOTHING`, o.ID, o.UserID, o.ProviderID, o.KeyHash, o.Action, o.Kind, o.SKU, o.Callback, o.Amount, o.Unit, o.Credit, o.Reason)
+	_, err = s.DB.ExecContext(ctx, `INSERT INTO opcpay_operations(business_id,user_id,provider_instance_id,provider_key_hash,action_id,kind,sku_id,callback_url,amount,quota_unit,credit_usd,reason,purchase_price,purchase_currency) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NULLIF($13,'')::numeric,$14) ON CONFLICT DO NOTHING`, o.ID, o.UserID, o.ProviderID, o.KeyHash, o.Action, o.Kind, o.SKU, o.Callback, o.Amount, o.Unit, o.Credit, o.Reason, o.PurchasePrice, o.PurchaseCurrency)
 	if err != nil {
 		return nil, errors.New("无法保存一人付操作")
 	}
@@ -356,7 +369,7 @@ func (s *OPCPayService) credit(ctx context.Context, o *OPCPayOperation) error {
 		return errors.New("核销待交付，请恢复原操作")
 	}
 	if n == 1 {
-		res, err = tx.ExecContext(ctx, `SELECT wallet_credit_payment($2,$1,$1,NULL)`, o.Credit, o.UserID)
+		res, err = tx.ExecContext(ctx, `SELECT wallet_credit_payment($2,$1,$1,opcpay_record_order($3))`, o.Credit, o.UserID, o.ID)
 		if err != nil {
 			return errors.New("核销待交付，请恢复原操作")
 		}

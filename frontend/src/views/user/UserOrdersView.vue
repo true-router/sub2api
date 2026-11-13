@@ -175,7 +175,7 @@ async function confirmRefund() {
 }
 
 function canRequestRefund(order: PaymentOrder): boolean {
-  if (order.status !== 'COMPLETED') return false
+  if (order.payment_type === 'opcpay' || order.status !== 'COMPLETED') return false
   if (!order.provider_instance_id) return false
   return refundEligibleProviders.value.has(order.provider_instance_id)
 }

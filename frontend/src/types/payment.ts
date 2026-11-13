@@ -99,6 +99,8 @@ export interface PaymentOrder {
   user_id: number
   amount: number
   pay_amount: number
+  /** False when the historical OPCPay payment quote was not recorded. */
+  pay_amount_known?: boolean
   currency?: string
   fee_rate: number
   /** 充值赠送额度（USD），已计入 amount */

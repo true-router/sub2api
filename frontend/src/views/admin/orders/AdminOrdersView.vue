@@ -49,7 +49,7 @@
               <Icon name="refresh" size="sm" :class="refundQueryingIds.has(row.id) ? 'animate-spin' : ''" />
               {{ t('payment.admin.queryRefundStatus') }}
             </button>
-            <button v-else-if="row.status === 'COMPLETED' || row.status === 'PARTIALLY_REFUNDED'" @click="openRefundDialog(row)" class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-caption-1-medium text-text-error-primary hover:bg-background-error-subtle ">
+            <button v-else-if="row.payment_type !== 'opcpay' && (row.status === 'COMPLETED' || row.status === 'PARTIALLY_REFUNDED')" @click="openRefundDialog(row)" class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-caption-1-medium text-text-error-primary hover:bg-background-error-subtle ">
               <Icon name="dollar" size="sm" />
               {{ t('payment.admin.refund') }}
             </button>
@@ -67,7 +67,7 @@
           <div><p class="text-caption-1-regular text-text-secondary ">{{ t('payment.orders.orderNo') }}</p><p class="text-body-medium text-text-primary ">{{ selectedOrder.out_trade_no }}</p></div>
           <div><p class="text-caption-1-regular text-text-secondary ">{{ t('payment.orders.status') }}</p><OrderStatusBadge :status="selectedOrder.status" /></div>
           <div><p class="text-caption-1-regular text-text-secondary ">{{ t('payment.orders.amount') }}</p><p class="text-body-medium text-text-primary ">{{ creditedAmountSymbol }}{{ selectedOrder.amount.toFixed(2) }}</p></div>
-          <div><p class="text-caption-1-regular text-text-secondary ">{{ t('payment.orders.payAmount') }}</p><p class="text-body-medium text-text-primary ">{{ paymentAmountSymbol(selectedOrder) }}{{ selectedOrder.pay_amount.toFixed(2) }}</p></div>
+          <div><p class="text-caption-1-regular text-text-secondary ">{{ t(selectedOrder.payment_type === 'opcpay' && selectedOrder.pay_amount_known !== false ? 'payment.orders.catalogAmount' : 'payment.orders.payAmount') }}</p><p class="text-body-medium text-text-primary ">{{ selectedOrder.pay_amount_known === false ? t('common.unknown') : paymentAmountSymbol(selectedOrder) + selectedOrder.pay_amount.toFixed(2) }}</p></div>
           <div><p class="text-caption-1-regular text-text-secondary ">{{ t('payment.orders.paymentMethod') }}</p><p class="text-body-regular text-text-primary ">{{ t('payment.methods.' + selectedOrder.payment_type, selectedOrder.payment_type) }}</p></div>
           <div><p class="text-caption-1-regular text-text-secondary ">{{ t('payment.admin.feeRate') }}</p><p class="text-body-regular text-text-primary ">{{ selectedOrder.fee_rate }}%</p></div>
           <div><p class="text-caption-1-regular text-text-secondary ">{{ t('payment.orders.createdAt') }}</p><p class="text-body-regular text-text-primary ">{{ formatDateTime(selectedOrder.created_at) }}</p></div>
@@ -210,6 +210,7 @@ const paymentTypeFilterOptions = computed(() => [
   { value: 'wxpay', label: t('payment.methods.wxpay') },
   { value: 'stripe', label: t('payment.methods.stripe') },
   { value: 'airwallex', label: t('payment.methods.airwallex') },
+  { value: 'opcpay', label: t('payment.methods.opcpay') },
 ])
 
 const orderTypeFilterOptions = computed(() => [

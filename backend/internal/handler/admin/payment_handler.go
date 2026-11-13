@@ -125,6 +125,7 @@ type AdminPaymentOrderResult struct {
 	UserNotes           *string    `json:"user_notes,omitempty"`
 	Amount              float64    `json:"amount"`
 	PayAmount           float64    `json:"pay_amount"`
+	PayAmountKnown      bool       `json:"pay_amount_known"`
 	FeeRate             float64    `json:"fee_rate"`
 	BonusAmount         float64    `json:"bonus_amount"`
 	Currency            string     `json:"currency"`
@@ -183,6 +184,7 @@ func sanitizeAdminPaymentOrderForResponse(order *dbent.PaymentOrder) *AdminPayme
 		UserNotes:           order.UserNotes,
 		Amount:              order.Amount,
 		PayAmount:           order.PayAmount,
+		PayAmountKnown:      service.PaymentOrderPayAmountKnown(order),
 		FeeRate:             order.FeeRate,
 		BonusAmount:         order.BonusAmount,
 		Currency:            service.PaymentOrderCurrency(order),

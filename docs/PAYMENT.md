@@ -285,3 +285,90 @@ If you previously used [Sub2ApiPay](https://github.com/touwaeriol/sub2apipay) as
 4. Decommission the Sub2ApiPay service
 
 > **Note**: Historical order data from Sub2ApiPay will not be automatically migrated. Keep Sub2ApiPay running for a while to access historical records.
+
+---
+
+## OPCPay Orders
+
+### Delivery contract
+
+A completed OPCPay consumption creates one `COMPLETED` balance order in
+`payment_orders`. Its `out_trade_no` is the original consumption business ID.
+The order stores the credited USD amount, user, provider binding and delivery
+timestamp. Admin order lists, order details, user order history and the payment
+dashboard use this existing table.
+
+`opcpay_record_order` runs inside the same transaction as wallet delivery.
+`wallet_credit_payment` receives the resulting order ID, so new wallet journal
+entries link to the order. A failed order insert or wallet update rolls back
+both the completed operation state and the order. Recovery retains the original
+confirmed consumption and never submits a new consumption ID. The external-ID
+unique index prevents duplicate orders on replay or concurrent recovery.
+
+A purchase entry, browser return, failed verification, or unknown consumption
+does not create a completed order. The order records delivered balance; it is
+not a separate merchant settlement receipt. OPCPay refunds remain unsupported
+in both admin and user APIs.
+
+### Amounts
+
+New purchases save the server-fetched catalog price and currency before opening
+the purchase entry. Consumption copies this purchase snapshot, including when
+the catalog changes later. Credited USD remains separate from the purchase
+currency and price. The provider snapshot records `payment_amount_source=catalog`.
+The UI labels this amount as `Catalog price`. This is the merchant's offered
+price, not independent proof of settlement.
+
+Historical operations and standalone consumption without a purchase snapshot
+have no known payment amount. They use `pay_amount=0` only as a storage
+placeholder, `pay_amount_known=false`, and an empty response currency. The UI
+shows `Unknown`, not a zero-price purchase. Such orders count toward order counts,
+but do not enter revenue totals, averages or monetary leaderboards.
+
+### Historical migration
+
+Migration `255_opcpay_payment_orders.sql` adds quote columns and backfills only
+`kind=consume AND status=COMPLETED`. It preserves operation creation and delivery
+times. Both `paid_at` and `completed_at` use the known delivery time because the
+original merchant payment time was not recorded.
+
+The migration never calls the provider or writes wallet balances, wallet journal
+entries, or operation timestamps. It does not guess historical prices from the
+current catalog. It does not link historical wallet journal rows by matching
+amounts and timestamps, because these are not unique payment identities.
+
+Deploy the additive migration and matching application together. During the
+first blue/green upgrade, the previous application can still complete deliveries
+without writing orders after the candidate has applied the migration. After the
+previous application is fully drained, reconcile any missing completed deliveries:
+
+```sql
+SELECT opcpay_record_order(o.business_id)
+FROM opcpay_operations o
+WHERE o.kind = 'consume' AND o.status = 'COMPLETED'
+  AND NOT EXISTS (SELECT 1 FROM payment_orders p WHERE p.out_trade_no = o.business_id)
+ORDER BY o.business_id;
+```
+
+This reconciliation only creates orders. It must not call wallet_credit_payment
+or resume consumption. On application rollback, preserve the additive migration
+and all recorded orders. Do not restore balances or replay credits.
+
+### Verification
+
+Run from the repository root:
+
+```sh
+sh backend/tools/opcpay-e2e/run.sh
+```
+
+The harness creates disposable PostgreSQL, runs real HTTP payment/admin handlers
+and wallet transactions, and simulates only the merchant. It covers original
+payment recovery, order visibility, ownership, filters, pagination, price snapshots,
+refund rejection, insertion failure, concurrent recovery and historical backfill
+replay without wallet mutations.
+
+The harness removes its database container and writes
+`output/opcpay-e2e/checks.json`, including assertions, source hashes and sample API
+responses. This does not verify real merchant payments, production deployment,
+JWT login, or browser appearance.
