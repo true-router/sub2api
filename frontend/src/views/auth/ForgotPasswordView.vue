@@ -1,70 +1,57 @@
 <template>
-  <AuthLayout>
-    <div class="space-y-6">
-      <!-- Title -->
-      <div class="text-center">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
-          {{ t('auth.forgotPasswordTitle') }}
-        </h2>
-        <p class="mt-2 text-sm text-gray-500 dark:text-dark-400">
-          {{ t('auth.forgotPasswordHint') }}
-        </p>
-      </div>
-
+  <LoginLayout>
+    <BoardAuthCard
+      :title="t(isSubmitted ? 'auth.resetEmailSent' : 'auth.forgotPasswordTitle')"
+      :description="isSubmitted ? undefined : t('auth.forgotPasswordHint')"
+    >
       <!-- Success State -->
-      <div v-if="isSubmitted" class="space-y-6">
-        <div class="rounded-xl border border-green-200 bg-green-50 p-6 dark:border-green-800/50 dark:bg-green-900/20">
-          <div class="flex flex-col items-center gap-4 text-center">
-            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-800/50">
-              <Icon name="checkCircle" size="lg" class="text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <h3 class="text-lg font-semibold text-green-800 dark:text-green-200">
-                {{ t('auth.resetEmailSent') }}
-              </h3>
-              <p class="mt-2 text-sm text-green-700 dark:text-green-300">
-                {{ t('auth.resetEmailSentHint') }}
-              </p>
-            </div>
+      <div v-if="isSubmitted" class="flex flex-col gap-4" data-testid="forgot-password-success">
+        <div
+          role="status"
+          class="flex items-start gap-3 rounded-[10px] border border-text-success/30 bg-background-success-subtle p-3"
+        >
+          <Icon name="checkCircle" size="md" class="mt-0.5 shrink-0 text-text-success" />
+          <div class="flex min-w-0 flex-col gap-1">
+            <p class="break-all text-body-medium text-text-primary">{{ formData.email }}</p>
+            <p class="text-body-regular text-text-secondary">{{ t('auth.resetEmailSentHint') }}</p>
           </div>
         </div>
 
-        <div class="text-center">
-          <router-link
-            to="/login"
-            class="inline-flex items-center gap-2 font-medium text-primary-600 transition-colors hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
-          >
-            <Icon name="arrowLeft" size="sm" />
-            {{ t('auth.backToLogin') }}
-          </router-link>
-        </div>
+        <router-link
+          to="/login"
+          class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-[10px] border border-border-button-default bg-background-primary-default px-3 text-body-medium text-text-primary shadow-sm outline-none transition-colors hover:border-border-button-hover hover:bg-background-primary-hover focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+        >
+          <Icon name="arrowLeft" size="sm" />
+          {{ t('auth.backToLogin') }}
+        </router-link>
       </div>
 
       <!-- Form State -->
-      <form v-else @submit.prevent="handleSubmit" class="space-y-5">
-        <!-- Email Input -->
-        <div>
-          <label for="email" class="input-label">
-            {{ t('auth.emailLabel') }}
-          </label>
-          <div class="relative">
-            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
-              <Icon name="mail" size="md" class="text-gray-400 dark:text-dark-500" />
-            </div>
-            <input
-              id="email"
-              v-model="formData.email"
-              type="email"
-              required
-              autofocus
-              autocomplete="email"
-              :disabled="isLoading"
-              class="input pl-11"
-              :class="{ 'input-error': errors.email }"
-              :placeholder="t('auth.emailPlaceholder')"
-            />
-          </div>
-        </div>
+      <form v-else @submit.prevent="handleSubmit" class="flex flex-col gap-4">
+        <BoardInput
+          id="email"
+          v-model="formData.email"
+          name="email"
+          type="email"
+          :label="t('auth.emailLabel')"
+          autocomplete="email"
+          :placeholder="t('auth.emailPlaceholder')"
+          :disabled="isLoading"
+          :error="errors.email"
+          class="[&_input]:py-2.5"
+          autofocus
+          required
+        >
+          <template #prefix><Icon name="mail" size="sm" /></template>
+        </BoardInput>
+
+        <p
+          v-if="errorMessage"
+          role="alert"
+          class="rounded-[10px] border border-border-error-default bg-background-error-subtle p-3 text-body-regular text-text-error-primary"
+        >
+          {{ errorMessage }}
+        </p>
 
         <!-- Turnstile Widget -->
         <div v-if="captchaEnabled">
@@ -85,57 +72,39 @@
           />
         </div>
 
-        <!-- Submit Button -->
-        <button
+        <BoardButton
           type="submit"
           :disabled="isLoading || (turnstileEnabled && !turnstileToken)"
-          class="btn btn-primary w-full"
+          :loading="isLoading"
+          class="h-10 w-full"
         >
-          <svg
-            v-if="isLoading"
-            class="-ml-1 mr-2 h-4 w-4 animate-spin text-white"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              class="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              stroke-width="4"
-            ></circle>
-            <path
-              class="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-          </svg>
-          <Icon v-else name="mail" size="md" class="mr-2" />
           {{ isLoading ? t('auth.sendingResetLink') : t('auth.sendResetLink') }}
-        </button>
+        </BoardButton>
       </form>
-    </div>
 
-    <!-- Footer -->
-    <template #footer>
-      <p class="text-gray-500 dark:text-dark-400">
-        {{ t('auth.rememberedPassword') }}
-        <router-link
-          to="/login"
-          class="font-medium text-primary-600 transition-colors hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
-        >
-          {{ t('auth.signIn') }}
-        </router-link>
-      </p>
-    </template>
-  </AuthLayout>
+      <!-- Footer -->
+      <template v-if="!isSubmitted" #footer>
+        <p class="text-text-secondary">
+          {{ t('auth.rememberedPassword') }}
+          <router-link
+            to="/login"
+            class="rounded text-body-medium text-text-accent outline-none hover:underline focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+          >
+            {{ t('auth.signIn') }}
+          </router-link>
+        </p>
+      </template>
+    </BoardAuthCard>
+  </LoginLayout>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, reactive, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { AuthLayout } from '@/components/layout'
+import LoginLayout from '@/components/layout/LoginLayout.vue'
+import BoardAuthCard from '@/components/boardui/AuthCard.vue'
+import BoardInput from '@/components/boardui/Input.vue'
+import BoardButton from '@/components/boardui/Button.vue'
 import Icon from '@/components/icons/Icon.vue'
 import TurnstileWidget from '@/components/CaptchaChallenge.vue'
 import { useAppStore } from '@/stores'
@@ -331,16 +300,3 @@ async function handleSubmit(): Promise<void> {
   }
 }
 </script>
-
-<style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: all 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
-}
-</style>

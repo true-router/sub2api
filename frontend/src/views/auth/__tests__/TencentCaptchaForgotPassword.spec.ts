@@ -47,7 +47,7 @@ function mountForgotPassword() {
   return mount(ForgotPasswordView, {
     global: {
       stubs: {
-        AuthLayout: { template: '<div><slot /><slot name="footer" /></div>' },
+        LoginLayout: { template: '<div><slot /></div>' },
         Icon: true,
         RouterLink: true,
         TurnstileWidget: CaptchaChallengeStub
