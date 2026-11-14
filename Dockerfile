@@ -84,11 +84,11 @@ COPY backend/ ./
 COPY --from=frontend-builder /app/backend/internal/web/dist ./internal/web/dist
 
 # Build the binary (BuildType=release for CI builds, embed frontend)
-# Version precedence: build arg VERSION > exact git tag > cmd/server/VERSION
+# Version precedence: cmd/server/FORK_VERSION; an explicit VERSION must match
 RUN --mount=type=cache,id=sub2api-gomod,target=/go/pkg/mod \
     --mount=type=cache,id=sub2api-gobuild,target=/root/.cache/go-build \
-    VERSION_VALUE="${VERSION}" && \
-    if [ -z "${VERSION_VALUE}" ]; then VERSION_VALUE="$(./scripts/resolve-version.sh)"; fi && \
+    VERSION_VALUE="$(./scripts/resolve-version.sh)" && \
+    if [ -n "${VERSION}" ] && [ "${VERSION}" != "${VERSION_VALUE}" ]; then echo 'VERSION must match FORK_VERSION' >&2; exit 1; fi && \
     DATE_VALUE="${DATE:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}" && \
     CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build \
     -tags embed \
@@ -110,7 +110,7 @@ FROM ${ALPINE_IMAGE}
 # Labels
 LABEL maintainer="Wei-Shaw <github.com/Wei-Shaw>"
 LABEL description="Sub2API - AI API Gateway Platform"
-LABEL org.opencontainers.image.source="https://github.com/Wei-Shaw/sub2api"
+LABEL org.opencontainers.image.source="https://github.com/true-router/sub2api"
 
 # Install runtime dependencies
 RUN apk add --no-cache \

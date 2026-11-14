@@ -16,8 +16,8 @@ import yaml
 
 FULL_CONFIG = Path('.goreleaser.yaml')
 SIMPLE_CONFIG = Path('.goreleaser.simple.yaml')
-VERSION_FILE = Path('backend/cmd/server/VERSION')
-VERSION_RE = re.compile(r'\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?')
+VERSION_FILE = Path('backend/cmd/server/FORK_VERSION')
+VERSION_RE = re.compile(r'(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?')
 
 
 def config(simple=False):
@@ -52,20 +52,18 @@ def sha256(path):
 
 def plan(args):
     sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
-    if args.dry_run:
-        version = VERSION_FILE.read_text().strip()
-        tag = 'v' + version
-    else:
-        tag = args.ref
-        version = tag.removeprefix('v')
-        if not tag.startswith('v') or not VERSION_RE.fullmatch(version):
-            raise ValueError('publishing requires a v-prefixed release version tag')
+    version = VERSION_FILE.read_text().strip()
+    if not VERSION_RE.fullmatch(version):
+        raise ValueError('invalid FORK_VERSION')
+    tag = 'tr-v' + version if args.dry_run else args.ref
+    if not tag.startswith('tr-v') or not VERSION_RE.fullmatch(tag.removeprefix('tr-v')):
+        raise ValueError('release tag does not match required tr-v-prefixed version tag')
+    if tag != 'tr-v' + version:
+        raise ValueError('release tag must match FORK_VERSION')
+    if not args.dry_run:
         tagged_sha = subprocess.check_output(['git', 'rev-parse', '--verify', f'refs/tags/{tag}^{{commit}}'], text=True).strip()
         if sha != tagged_sha:
             raise ValueError('checkout does not match the selected release tag')
-    if not VERSION_RE.fullmatch(version):
-        raise ValueError('invalid VERSION')
-    VERSION_FILE.write_text(version + '\n')
     result = {'sha': sha, 'tag': tag, 'version': version,
               'owner_lower': os.environ.get('GITHUB_REPOSITORY_OWNER', '').lower(),
               'simple': str(args.simple).lower(), 'dry_run': str(args.dry_run).lower(),
@@ -154,6 +152,32 @@ def contexts(args):
         shutil.copytree('backend/resources', dest / 'backend/resources', dirs_exist_ok=True)
 
 
+def publication(args):
+    """Prepare verified assets and notes for the real fork tag without publishing."""
+    verify(args)
+    tag = 'tr-v' + args.version
+    output = Path(args.output)
+    output.mkdir(parents=True, exist_ok=True)
+    directory = Path(args.input)
+    assets = sorted(directory.glob('sub2api_*'))
+    checksums = {asset.name: sha256(asset) for asset in assets}
+    (output / 'checksums.txt').write_text(''.join(f'{digest}  {name}\n' for name, digest in checksums.items()))
+    notes = subprocess.check_output(['git', 'tag', '-l', '--format=%(contents)', tag], text=True).strip()
+    repository = os.environ['GITHUB_REPOSITORY']
+    owner = repository.split('/')[0].lower()
+    mode = 'Simple release: Linux amd64 GHCR image only.\n\n' if args.simple else ''
+    body = (f'# TrueRouter Sub2API {args.version}\n\n{mode}{notes}\n\n'
+            f'## Installation\n\n```sh\ndocker pull ghcr.io/{owner}/sub2api:{args.version}\n```\n\n'
+            f'Source: https://github.com/{repository}/tree/{args.sha}\n'
+            f'Release tag: `{tag}`\n')
+    (output / 'release-notes.md').write_text(body)
+    metadata = {'tag': tag, 'version': args.version, 'sha': args.sha,
+                'repository': repository, 'simple': args.simple, 'sha256': checksums}
+    (output / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
+    (output / 'artifacts.json').write_text(json.dumps([{'name': name, 'sha256': digest}
+                                                    for name, digest in checksums.items()], indent=2) + '\n')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='command', required=True)
@@ -181,6 +205,11 @@ def main():
         if command == 'contexts':
             p.add_argument('--output', required=True)
         p.set_defaults(run=handler)
+    p = commands.add_parser('publication')
+    for arg in ('version', 'sha', 'input', 'output'):
+        p.add_argument('--' + arg, required=True)
+    p.add_argument('--simple', action='store_true')
+    p.set_defaults(run=publication)
     args = parser.parse_args()
     args.run(args)
 

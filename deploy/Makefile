@@ -1,19 +1,24 @@
-.PHONY: wire build build-embed test-unit test-integration test-e2e test-cover-integration
+.DEFAULT_GOAL := wire
+.PHONY: check-version wire build build-embed test-unit test-integration test-e2e test-cover-integration
 
 VERSION ?= $(shell ./scripts/resolve-version.sh)
 LDFLAGS ?= -s -w -X main.Version=$(VERSION)
+
+check-version:
+	@resolved="$$(./scripts/resolve-version.sh)" && \
+	  test "$(VERSION)" = "$$resolved" || { echo "VERSION must match FORK_VERSION" >&2; exit 1; }
 
 wire:
 	@echo "生成 Wire 代码..."
 	@cd cmd/server && go generate
 	@echo "Wire 代码生成完成"
 
-build:
+build: check-version
 	@echo "构建后端（不嵌入前端）..."
 	@go build -ldflags="$(LDFLAGS)" -o bin/server ./cmd/server
 	@echo "构建完成: bin/server"
 
-build-embed:
+build-embed: check-version
 	@echo "构建后端（嵌入前端）..."
 	@go build -tags embed -ldflags="$(LDFLAGS)" -o bin/server ./cmd/server
 	@echo "构建完成: bin/server (with embedded frontend)"

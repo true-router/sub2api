@@ -27,7 +27,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//go:embed VERSION
+//go:embed FORK_VERSION
 var embeddedVersion string
 
 // Build-time variables (can be set by ldflags)
@@ -44,7 +44,7 @@ func init() {
 		return
 	}
 
-	// 默认从 embedded VERSION 文件读取版本号（编译期打包进二进制）。
+	// Read the fork version embedded at compile time.
 	Version = strings.TrimSpace(embeddedVersion)
 	if Version == "" {
 		Version = "0.0.0-dev"

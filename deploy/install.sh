@@ -2,7 +2,7 @@
 #
 # Sub2API Installation Script
 # Sub2API 安装脚本
-# Usage: curl -sSL https://raw.githubusercontent.com/Wei-Shaw/sub2api/main/deploy/install.sh | bash
+# Usage: curl -sSL https://raw.githubusercontent.com/true-router/sub2api/main/deploy/install.sh | bash
 #
 
 set -e
@@ -31,7 +31,7 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Configuration
-GITHUB_REPO="Wei-Shaw/sub2api"
+GITHUB_REPO="true-router/sub2api"
 INSTALL_DIR="/opt/sub2api"
 SERVICE_NAME="sub2api"
 SERVICE_USER="sub2api"
@@ -575,9 +575,14 @@ validate_version() {
         exit 1
     fi
 
-    # Ensure version starts with 'v'
-    if [[ ! "$version" =~ ^v ]]; then
-        version="v$version"
+    # Bare versions select the independent fork tag namespace.
+    # Explicit v tags remain available for historical fork releases.
+    if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+        version="tr-v$version"
+    fi
+    if [[ ! "$version" =~ ^(tr-v|v)[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+        print_error "Invalid fork release version: $version" >&2
+        exit 1
     fi
 
     print_info "$(msg 'validating_version') $version" >&2
@@ -615,7 +620,8 @@ get_current_version() {
 
 # Download and extract
 download_and_extract() {
-    local version_num=${LATEST_VERSION#v}
+    local version_num=${LATEST_VERSION#tr-}
+    version_num=${version_num#v}
     local archive_name="sub2api_${version_num}_${OS}_${ARCH}.tar.gz"
     local download_url="https://github.com/${GITHUB_REPO}/releases/download/${LATEST_VERSION}/${archive_name}"
     local checksum_url="https://github.com/${GITHUB_REPO}/releases/download/${LATEST_VERSION}/checksums.txt"
@@ -718,7 +724,7 @@ install_service() {
     cat > /etc/systemd/system/sub2api.service << EOF
 [Unit]
 Description=Sub2API - AI API Gateway Platform
-Documentation=https://github.com/Wei-Shaw/sub2api
+Documentation=https://github.com/true-router/sub2api
 After=network.target postgresql.service redis.service
 Wants=postgresql.service redis.service
 
@@ -912,8 +918,10 @@ install_version() {
     current_version=$(get_current_version)
     print_info "$(msg 'current_version'): $current_version"
 
-    # Check if same version
-    if [ "$current_version" = "$target_version" ] || [ "$current_version" = "${target_version#v}" ]; then
+    # Compare numeric versions for both new and historical fork tags.
+    local target_number=${target_version#tr-}
+    target_number=${target_number#v}
+    if [ "$current_version" = "$target_version" ] || [ "$current_version" = "$target_number" ]; then
         print_warning "$(msg 'same_version')"
         exit 0
     fi

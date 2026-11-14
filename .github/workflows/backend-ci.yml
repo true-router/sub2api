@@ -91,5 +91,16 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -r .github/release-tools/requirements-release.txt
-      - run: python -m unittest discover -s .github/release-tools -p 'test_release_matrix.py'
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - name: Verify independent fork version end to end
+        run: python3 .github/release-tools/check-fork-version-e2e.py --output version-policy-evidence/summary.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: fork-version-policy
+          path: version-policy-evidence/
+          if-no-files-found: error
       - run: bash -n .github/release-tools/release-images.sh

@@ -14,7 +14,7 @@ event = json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text())
 run = event['workflow_run']
 repository = os.environ['GITHUB_REPOSITORY']
 tag, commit = run.get('head_branch', ''), run.get('head_sha', '')
-if run.get('conclusion') != 'success' or run.get('event') != 'push' or run.get('head_repository', {}).get('full_name') != repository or not re.fullmatch(r'v[0-9]+\.[0-9]+\.[0-9]+', tag):
+if run.get('conclusion') != 'success' or run.get('event') != 'push' or run.get('head_repository', {}).get('full_name') != repository or not re.fullmatch(r'tr-v[0-9]+\.[0-9]+\.[0-9]+', tag):
     raise SystemExit('Only a successful stable-tag release can request deployment')
 if not re.fullmatch(r'[a-f0-9]{40}', commit):
     raise SystemExit('Invalid source identity')

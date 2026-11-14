@@ -173,3 +173,6 @@ issues/
 !.github/scripts/qualify-rollout.py
 !.github/scripts/notify-rollout.py
 !docs/tag-rollout.md
+
+# The fork release policy must be version controlled.
+!/AGENTS.md

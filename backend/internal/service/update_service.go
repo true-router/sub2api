@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
@@ -23,6 +24,7 @@ import (
 )
 
 var (
+	stableForkReleaseTag         = regexp.MustCompile(`^(tr-v|v)(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$`)
 	ErrNoUpdateAvailable         = infraerrors.Conflict("ALREADY_UP_TO_DATE", "no update available; current version is latest")
 	ErrRollbackVersionNotAllowed = infraerrors.BadRequest("ROLLBACK_VERSION_NOT_ALLOWED", "version is not in the allowed rollback list")
 )
@@ -30,7 +32,7 @@ var (
 const (
 	updateCacheKey = "update_check_cache"
 	updateCacheTTL = 1200 // 20 minutes
-	githubRepo     = "Wei-Shaw/sub2api"
+	githubRepo     = "true-router/sub2api"
 
 	// Security: allowed download domains for updates
 	allowedDownloadHost = "github.com"
@@ -315,7 +317,7 @@ func (s *UpdateService) ListRollbackVersions(ctx context.Context) ([]RollbackVer
 	versions := make([]RollbackVersion, 0, len(releases))
 	for _, r := range releases {
 		versions = append(versions, RollbackVersion{
-			Version:     strings.TrimPrefix(r.TagName, "v"),
+			Version:     releaseVersion(r.TagName),
 			PublishedAt: r.PublishedAt,
 			HTMLURL:     r.HTMLURL,
 		})
@@ -327,7 +329,7 @@ func (s *UpdateService) ListRollbackVersions(ctx context.Context) ([]RollbackVer
 // The target must be one of the versions returned by ListRollbackVersions;
 // anything else (including the current version) is rejected.
 func (s *UpdateService) RollbackToVersion(ctx context.Context, version string) error {
-	target := strings.TrimPrefix(strings.TrimSpace(version), "v")
+	target := releaseVersion(strings.TrimSpace(version))
 	if target == "" {
 		return ErrRollbackVersionNotAllowed
 	}
@@ -339,7 +341,7 @@ func (s *UpdateService) RollbackToVersion(ctx context.Context, version string) e
 
 	var match *GitHubRelease
 	for _, r := range releases {
-		if strings.TrimPrefix(r.TagName, "v") == target {
+		if releaseVersion(r.TagName) == target {
 			match = r
 			break
 		}
@@ -371,10 +373,10 @@ func (s *UpdateService) fetchRollbackCandidates(ctx context.Context) ([]*GitHubR
 	seen := make(map[string]bool, len(releases))
 	candidates := make([]*GitHubRelease, 0, maxRollbackVersions)
 	for _, r := range releases {
-		if r == nil || r.Draft || r.Prerelease {
+		if r == nil || r.Draft || r.Prerelease || !stableForkReleaseTag.MatchString(r.TagName) {
 			continue
 		}
-		v := strings.TrimPrefix(r.TagName, "v")
+		v := releaseVersion(r.TagName)
 		if v == "" || seen[v] {
 			continue
 		}
@@ -388,8 +390,8 @@ func (s *UpdateService) fetchRollbackCandidates(ctx context.Context) ([]*GitHubR
 
 	sort.SliceStable(candidates, func(i, j int) bool {
 		return compareVersions(
-			strings.TrimPrefix(candidates[i].TagName, "v"),
-			strings.TrimPrefix(candidates[j].TagName, "v"),
+			releaseVersion(candidates[i].TagName),
+			releaseVersion(candidates[j].TagName),
 		) > 0
 	})
 
@@ -405,7 +407,10 @@ func (s *UpdateService) fetchLatestRelease(ctx context.Context) (*UpdateInfo, er
 		return nil, err
 	}
 
-	latestVersion := strings.TrimPrefix(release.TagName, "v")
+	if release == nil || release.Draft || release.Prerelease || !stableForkReleaseTag.MatchString(release.TagName) {
+		return nil, fmt.Errorf("invalid stable fork release tag")
+	}
+	latestVersion := releaseVersion(release.TagName)
 
 	assets := make([]Asset, len(release.Assets))
 	for i, a := range release.Assets {
@@ -600,6 +605,7 @@ func (s *UpdateService) getFromCache(ctx context.Context) (*UpdateInfo, error) {
 	}
 
 	var cached struct {
+		Repository  string       `json:"repository"`
 		Latest      string       `json:"latest"`
 		ReleaseInfo *ReleaseInfo `json:"release_info"`
 		Timestamp   int64        `json:"timestamp"`
@@ -608,6 +614,9 @@ func (s *UpdateService) getFromCache(ctx context.Context) (*UpdateInfo, error) {
 		return nil, err
 	}
 
+	if cached.Repository != githubRepo {
+		return nil, fmt.Errorf("update cache repository mismatch")
+	}
 	if time.Now().Unix()-cached.Timestamp > updateCacheTTL {
 		return nil, fmt.Errorf("cache expired")
 	}
@@ -624,10 +633,12 @@ func (s *UpdateService) getFromCache(ctx context.Context) (*UpdateInfo, error) {
 
 func (s *UpdateService) saveToCache(ctx context.Context, info *UpdateInfo) {
 	cacheData := struct {
+		Repository  string       `json:"repository"`
 		Latest      string       `json:"latest"`
 		ReleaseInfo *ReleaseInfo `json:"release_info"`
 		Timestamp   int64        `json:"timestamp"`
 	}{
+		Repository:  githubRepo,
 		Latest:      info.LatestVersion,
 		ReleaseInfo: info.ReleaseInfo,
 		Timestamp:   time.Now().Unix(),
@@ -635,6 +646,11 @@ func (s *UpdateService) saveToCache(ctx context.Context, info *UpdateInfo) {
 
 	data, _ := json.Marshal(cacheData)
 	_ = s.cache.SetUpdateInfo(ctx, string(data), time.Duration(updateCacheTTL)*time.Second)
+}
+
+// releaseVersion accepts fork tags and historical v tags from the fork repository.
+func releaseVersion(tag string) string {
+	return strings.TrimPrefix(strings.TrimPrefix(tag, "tr-"), "v")
 }
 
 // compareVersions compares two semantic versions
@@ -654,7 +670,7 @@ func compareVersions(current, latest string) int {
 }
 
 func parseVersion(v string) [3]int {
-	v = strings.TrimPrefix(v, "v")
+	v = releaseVersion(v)
 	if idx := strings.IndexByte(v, '-'); idx != -1 {
 		v = v[:idx]
 	}

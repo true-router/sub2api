@@ -651,9 +651,9 @@ import {
 import { useClipboard } from '@/composables/useClipboard'
 import Icon from '@/components/icons/Icon.vue'
 
-const GITHUB_REPO = 'Wei-Shaw/sub2api'
-// Docker Hub image published by CI (tags carry no "v" prefix, e.g. weishaw/sub2api:0.1.146)
-const DOCKER_IMAGE = 'weishaw/sub2api'
+const GITHUB_REPO = 'true-router/sub2api'
+// The fork GHCR image uses the numeric application version.
+const DOCKER_IMAGE = 'ghcr.io/true-router/sub2api'
 
 const { t } = useI18n()
 
@@ -709,8 +709,11 @@ const manualTabs = computed(() => [
 
 const scriptRollbackCommand = computed(() => {
   if (!selectedRollbackVersion.value) return ''
-  const tag = `v${selectedRollbackVersion.value}`
-  return `curl -sSL https://raw.githubusercontent.com/${GITHUB_REPO}/${tag}/deploy/install.sh | sudo bash -s -- rollback ${tag}`
+  const release = rollbackVersions.value.find(item => item.version === selectedRollbackVersion.value)
+  const tag = release?.html_url.split('/').pop()
+  if (!tag || !/^(tr-v|v)\d+\.\d+\.\d+$/.test(tag)) return ''
+  // Use the fork installer for both current and historical fork tags.
+  return `curl -sSL https://raw.githubusercontent.com/${GITHUB_REPO}/main/deploy/install.sh | sudo bash -s -- rollback ${tag}`
 })
 
 const dockerRollbackCommand = computed(() => {

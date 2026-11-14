@@ -1,9 +1,14 @@
-.PHONY: build generate test test-unit test-integration test-e2e
+.DEFAULT_GOAL := build
+.PHONY: check-version build generate test test-unit test-integration test-e2e
 
 VERSION ?= $(shell ./scripts/resolve-version.sh)
 LDFLAGS ?= -s -w -X main.Version=$(VERSION)
 
-build:
+check-version:
+	@resolved="$$(./scripts/resolve-version.sh)" && \
+	  test "$(VERSION)" = "$$resolved" || { echo "VERSION must match FORK_VERSION" >&2; exit 1; }
+
+build: check-version
 	CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -trimpath -o bin/server ./cmd/server
 
 generate:
