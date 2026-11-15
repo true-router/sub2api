@@ -2215,7 +2215,9 @@ type openAIWSTurnBillingAPIKeys struct {
 // 返回换入该分组的上下文供本 turn 的利润门使用。
 func (k *openAIWSTurnBillingAPIKeys) begin(ctx context.Context, apiKeyService *service.APIKeyService, turn int, conn *service.APIKey) context.Context {
 	turnKey := conn
-	if turn > 1 && apiKeyService != nil {
+	if turn > 1 && conn != nil && conn.AccessMode == service.UnifiedAccessMode {
+		turnKey = k.forTurn(turn, conn)
+	} else if turn > 1 && apiKeyService != nil {
 		turnKey = refreshOpenAIWSTurnBillingAPIKey(ctx, apiKeyService, conn)
 	}
 	k.set(turn, turnKey)
@@ -2475,6 +2477,10 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 		h.errorResponse(c, http.StatusUnauthorized, "authentication_error", "Invalid API key")
 		return
 	}
+	if apiKey.AccessMode == service.UnifiedAccessMode && (apiKey.IsExpired() || apiKey.IsQuotaExhausted()) {
+		h.errorResponse(c, http.StatusForbidden, "permission_error", "API key is expired or its quota is exhausted")
+		return
+	}
 	subject, ok := middleware2.GetAuthSubjectFromContext(c)
 	if !ok {
 		h.errorResponse(c, http.StatusInternalServerError, "api_error", "User context not found")
@@ -2577,6 +2583,29 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 	if reqModel == "" {
 		closeOpenAIClientWS(wsConn, coderws.StatusPolicyViolation, "model is required in first response.create payload")
 		return
+	}
+	if apiKey.AccessMode == service.UnifiedAccessMode {
+		for _, candidate := range requestmodel.FromBodyCandidates("", "application/json", firstMessage) {
+			if candidate != reqModel {
+				closeOpenAIClientWS(wsConn, coderws.StatusPolicyViolation, "conflicting model values")
+				return
+			}
+		}
+		resolved, sub, resolveErr := h.apiKeyService.ResolveUnifiedRequest(c.Request.Context(), apiKey, reqModel, service.CompositeRouteEndpointResponses)
+		if resolveErr != nil || resolved == nil {
+			closeOpenAIClientWS(wsConn, coderws.StatusPolicyViolation, "model or billing route is unavailable")
+			return
+		}
+		if resolved.Group.Platform != service.PlatformOpenAI && resolved.Group.Platform != service.PlatformGrok {
+			closeOpenAIClientWS(wsConn, coderws.StatusPolicyViolation, "WebSocket requires an OpenAI-compatible model route")
+			return
+		}
+		apiKey = resolved
+		c.Set(string(middleware2.ContextKeyAPIKey), apiKey)
+		if sub != nil {
+			c.Set(string(middleware2.ContextKeySubscription), sub)
+		}
+		c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), ctxkey.Group, apiKey.Group))
 	}
 	// 分组级模型白名单：首帧校验客户端模型，不通过则关闭连接并标记运维原因。
 	// 必须在合成路由解析和上游模型映射之前执行。
@@ -3032,6 +3061,22 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 			ReasoningEffortMappings:     reasoningEffortMappings,
 			TurnStarted:                 recordTurnStart,
 			BeforeRequest: func(turn int, payload []byte, originalModel string) error {
+				if apiKey.AccessMode == service.UnifiedAccessMode && turn > 1 {
+					latest, lookupErr := h.apiKeyService.GetByKey(ctx, apiKey.Key)
+					if lookupErr != nil || latest == nil || !latest.IsActive() || latest.IsExpired() || latest.IsQuotaExhausted() || latest.User == nil || !latest.User.IsActive() {
+						return service.NewOpenAIWSClientCloseError(coderws.StatusPolicyViolation, "API key is no longer available", nil)
+					}
+					model := strings.TrimSpace(originalModel)
+					if model == "" {
+						model = reqModel
+					}
+					resolved, sub, resolveErr := h.apiKeyService.ResolveUnifiedRequest(ctx, latest, model, service.CompositeRouteEndpointResponses)
+					sameSubscription := (sub == nil && subscription == nil) || (sub != nil && subscription != nil && sub.ID == subscription.ID)
+					if resolveErr != nil || resolved == nil || resolved.GroupID == nil || *resolved.GroupID != *apiKey.GroupID || !sameSubscription {
+						return service.NewOpenAIWSClientCloseError(coderws.StatusTryAgainLater, "billing route changed; reconnect to continue with the same API key", nil)
+					}
+					turnBillingAPIKeys.set(turn, resolved)
+				}
 				c.Set(securityAuditWSTurnContextKey, turn)
 				service.BeginOpsStreamTurn(c, turn)
 				setCyberTurnBody(turn, payload)

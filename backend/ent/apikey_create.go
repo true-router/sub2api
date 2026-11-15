@@ -73,6 +73,34 @@ func (_c *APIKeyCreate) SetUserID(v int64) *APIKeyCreate {
 	return _c
 }
 
+// SetAccessMode sets the "access_mode" field.
+func (_c *APIKeyCreate) SetAccessMode(v string) *APIKeyCreate {
+	_c.mutation.SetAccessMode(v)
+	return _c
+}
+
+// SetNillableAccessMode sets the "access_mode" field if the given value is not nil.
+func (_c *APIKeyCreate) SetNillableAccessMode(v *string) *APIKeyCreate {
+	if v != nil {
+		_c.SetAccessMode(*v)
+	}
+	return _c
+}
+
+// SetIsDefault sets the "is_default" field.
+func (_c *APIKeyCreate) SetIsDefault(v bool) *APIKeyCreate {
+	_c.mutation.SetIsDefault(v)
+	return _c
+}
+
+// SetNillableIsDefault sets the "is_default" field if the given value is not nil.
+func (_c *APIKeyCreate) SetNillableIsDefault(v *bool) *APIKeyCreate {
+	if v != nil {
+		_c.SetIsDefault(*v)
+	}
+	return _c
+}
+
 // SetKey sets the "key" field.
 func (_c *APIKeyCreate) SetKey(v string) *APIKeyCreate {
 	_c.mutation.SetKey(v)
@@ -383,6 +411,14 @@ func (_c *APIKeyCreate) defaults() error {
 		v := apikey.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.AccessMode(); !ok {
+		v := apikey.DefaultAccessMode
+		_c.mutation.SetAccessMode(v)
+	}
+	if _, ok := _c.mutation.IsDefault(); !ok {
+		v := apikey.DefaultIsDefault
+		_c.mutation.SetIsDefault(v)
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		v := apikey.DefaultStatus
 		_c.mutation.SetStatus(v)
@@ -432,6 +468,17 @@ func (_c *APIKeyCreate) check() error {
 	}
 	if _, ok := _c.mutation.UserID(); !ok {
 		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "APIKey.user_id"`)}
+	}
+	if _, ok := _c.mutation.AccessMode(); !ok {
+		return &ValidationError{Name: "access_mode", err: errors.New(`ent: missing required field "APIKey.access_mode"`)}
+	}
+	if v, ok := _c.mutation.AccessMode(); ok {
+		if err := apikey.AccessModeValidator(v); err != nil {
+			return &ValidationError{Name: "access_mode", err: fmt.Errorf(`ent: validator failed for field "APIKey.access_mode": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.IsDefault(); !ok {
+		return &ValidationError{Name: "is_default", err: errors.New(`ent: missing required field "APIKey.is_default"`)}
 	}
 	if _, ok := _c.mutation.Key(); !ok {
 		return &ValidationError{Name: "key", err: errors.New(`ent: missing required field "APIKey.key"`)}
@@ -522,6 +569,14 @@ func (_c *APIKeyCreate) createSpec() (*APIKey, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.DeletedAt(); ok {
 		_spec.SetField(apikey.FieldDeletedAt, field.TypeTime, value)
 		_node.DeletedAt = &value
+	}
+	if value, ok := _c.mutation.AccessMode(); ok {
+		_spec.SetField(apikey.FieldAccessMode, field.TypeString, value)
+		_node.AccessMode = value
+	}
+	if value, ok := _c.mutation.IsDefault(); ok {
+		_spec.SetField(apikey.FieldIsDefault, field.TypeBool, value)
+		_node.IsDefault = value
 	}
 	if value, ok := _c.mutation.Key(); ok {
 		_spec.SetField(apikey.FieldKey, field.TypeString, value)
@@ -736,6 +791,30 @@ func (u *APIKeyUpsert) SetUserID(v int64) *APIKeyUpsert {
 // UpdateUserID sets the "user_id" field to the value that was provided on create.
 func (u *APIKeyUpsert) UpdateUserID() *APIKeyUpsert {
 	u.SetExcluded(apikey.FieldUserID)
+	return u
+}
+
+// SetAccessMode sets the "access_mode" field.
+func (u *APIKeyUpsert) SetAccessMode(v string) *APIKeyUpsert {
+	u.Set(apikey.FieldAccessMode, v)
+	return u
+}
+
+// UpdateAccessMode sets the "access_mode" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateAccessMode() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldAccessMode)
+	return u
+}
+
+// SetIsDefault sets the "is_default" field.
+func (u *APIKeyUpsert) SetIsDefault(v bool) *APIKeyUpsert {
+	u.Set(apikey.FieldIsDefault, v)
+	return u
+}
+
+// UpdateIsDefault sets the "is_default" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateIsDefault() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldIsDefault)
 	return u
 }
 
@@ -1154,6 +1233,34 @@ func (u *APIKeyUpsertOne) SetUserID(v int64) *APIKeyUpsertOne {
 func (u *APIKeyUpsertOne) UpdateUserID() *APIKeyUpsertOne {
 	return u.Update(func(s *APIKeyUpsert) {
 		s.UpdateUserID()
+	})
+}
+
+// SetAccessMode sets the "access_mode" field.
+func (u *APIKeyUpsertOne) SetAccessMode(v string) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetAccessMode(v)
+	})
+}
+
+// UpdateAccessMode sets the "access_mode" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateAccessMode() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateAccessMode()
+	})
+}
+
+// SetIsDefault sets the "is_default" field.
+func (u *APIKeyUpsertOne) SetIsDefault(v bool) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetIsDefault(v)
+	})
+}
+
+// UpdateIsDefault sets the "is_default" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateIsDefault() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateIsDefault()
 	})
 }
 
@@ -1792,6 +1899,34 @@ func (u *APIKeyUpsertBulk) SetUserID(v int64) *APIKeyUpsertBulk {
 func (u *APIKeyUpsertBulk) UpdateUserID() *APIKeyUpsertBulk {
 	return u.Update(func(s *APIKeyUpsert) {
 		s.UpdateUserID()
+	})
+}
+
+// SetAccessMode sets the "access_mode" field.
+func (u *APIKeyUpsertBulk) SetAccessMode(v string) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetAccessMode(v)
+	})
+}
+
+// UpdateAccessMode sets the "access_mode" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateAccessMode() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateAccessMode()
+	})
+}
+
+// SetIsDefault sets the "is_default" field.
+func (u *APIKeyUpsertBulk) SetIsDefault(v bool) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetIsDefault(v)
+	})
+}
+
+// UpdateIsDefault sets the "is_default" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateIsDefault() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateIsDefault()
 	})
 }
 

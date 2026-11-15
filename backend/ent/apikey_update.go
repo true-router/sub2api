@@ -72,6 +72,34 @@ func (_u *APIKeyUpdate) SetNillableUserID(v *int64) *APIKeyUpdate {
 	return _u
 }
 
+// SetAccessMode sets the "access_mode" field.
+func (_u *APIKeyUpdate) SetAccessMode(v string) *APIKeyUpdate {
+	_u.mutation.SetAccessMode(v)
+	return _u
+}
+
+// SetNillableAccessMode sets the "access_mode" field if the given value is not nil.
+func (_u *APIKeyUpdate) SetNillableAccessMode(v *string) *APIKeyUpdate {
+	if v != nil {
+		_u.SetAccessMode(*v)
+	}
+	return _u
+}
+
+// SetIsDefault sets the "is_default" field.
+func (_u *APIKeyUpdate) SetIsDefault(v bool) *APIKeyUpdate {
+	_u.mutation.SetIsDefault(v)
+	return _u
+}
+
+// SetNillableIsDefault sets the "is_default" field if the given value is not nil.
+func (_u *APIKeyUpdate) SetNillableIsDefault(v *bool) *APIKeyUpdate {
+	if v != nil {
+		_u.SetIsDefault(*v)
+	}
+	return _u
+}
+
 // SetKey sets the "key" field.
 func (_u *APIKeyUpdate) SetKey(v string) *APIKeyUpdate {
 	_u.mutation.SetKey(v)
@@ -545,6 +573,11 @@ func (_u *APIKeyUpdate) defaults() error {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *APIKeyUpdate) check() error {
+	if v, ok := _u.mutation.AccessMode(); ok {
+		if err := apikey.AccessModeValidator(v); err != nil {
+			return &ValidationError{Name: "access_mode", err: fmt.Errorf(`ent: validator failed for field "APIKey.access_mode": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Key(); ok {
 		if err := apikey.KeyValidator(v); err != nil {
 			return &ValidationError{Name: "key", err: fmt.Errorf(`ent: validator failed for field "APIKey.key": %w`, err)}
@@ -586,6 +619,12 @@ func (_u *APIKeyUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.DeletedAtCleared() {
 		_spec.ClearField(apikey.FieldDeletedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.AccessMode(); ok {
+		_spec.SetField(apikey.FieldAccessMode, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.IsDefault(); ok {
+		_spec.SetField(apikey.FieldIsDefault, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.Key(); ok {
 		_spec.SetField(apikey.FieldKey, field.TypeString, value)
@@ -855,6 +894,34 @@ func (_u *APIKeyUpdateOne) SetUserID(v int64) *APIKeyUpdateOne {
 func (_u *APIKeyUpdateOne) SetNillableUserID(v *int64) *APIKeyUpdateOne {
 	if v != nil {
 		_u.SetUserID(*v)
+	}
+	return _u
+}
+
+// SetAccessMode sets the "access_mode" field.
+func (_u *APIKeyUpdateOne) SetAccessMode(v string) *APIKeyUpdateOne {
+	_u.mutation.SetAccessMode(v)
+	return _u
+}
+
+// SetNillableAccessMode sets the "access_mode" field if the given value is not nil.
+func (_u *APIKeyUpdateOne) SetNillableAccessMode(v *string) *APIKeyUpdateOne {
+	if v != nil {
+		_u.SetAccessMode(*v)
+	}
+	return _u
+}
+
+// SetIsDefault sets the "is_default" field.
+func (_u *APIKeyUpdateOne) SetIsDefault(v bool) *APIKeyUpdateOne {
+	_u.mutation.SetIsDefault(v)
+	return _u
+}
+
+// SetNillableIsDefault sets the "is_default" field if the given value is not nil.
+func (_u *APIKeyUpdateOne) SetNillableIsDefault(v *bool) *APIKeyUpdateOne {
+	if v != nil {
+		_u.SetIsDefault(*v)
 	}
 	return _u
 }
@@ -1345,6 +1412,11 @@ func (_u *APIKeyUpdateOne) defaults() error {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *APIKeyUpdateOne) check() error {
+	if v, ok := _u.mutation.AccessMode(); ok {
+		if err := apikey.AccessModeValidator(v); err != nil {
+			return &ValidationError{Name: "access_mode", err: fmt.Errorf(`ent: validator failed for field "APIKey.access_mode": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Key(); ok {
 		if err := apikey.KeyValidator(v); err != nil {
 			return &ValidationError{Name: "key", err: fmt.Errorf(`ent: validator failed for field "APIKey.key": %w`, err)}
@@ -1403,6 +1475,12 @@ func (_u *APIKeyUpdateOne) sqlSave(ctx context.Context) (_node *APIKey, err erro
 	}
 	if _u.mutation.DeletedAtCleared() {
 		_spec.ClearField(apikey.FieldDeletedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.AccessMode(); ok {
+		_spec.SetField(apikey.FieldAccessMode, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.IsDefault(); ok {
+		_spec.SetField(apikey.FieldIsDefault, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.Key(); ok {
 		_spec.SetField(apikey.FieldKey, field.TypeString, value)

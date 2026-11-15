@@ -29,6 +29,9 @@ func RegisterUserRoutes(
 		user := authenticated.Group("/user")
 		{
 			user.GET("/profile", h.User.GetProfile)
+			user.POST("/api-access", h.APIKey.PrepareAccess)
+			user.POST("/api-access/keys", h.APIKey.CreateUnifiedKey)
+			user.GET("/api-access/models", h.APIKey.UnifiedModels)
 			if h.MCPOAuth != nil {
 				user.GET("/mcp/config", h.MCPOAuth.ConnectionConfig)
 				user.GET("/mcp/grants", h.MCPOAuth.ListGrants)

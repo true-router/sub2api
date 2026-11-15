@@ -1011,7 +1011,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 						zap.Any("fallback_group_id", fallbackGroupID),
 						zap.Bool("fallback_used", fallbackUsed),
 					)
-					if !fallbackUsed && fallbackGroupID != nil && *fallbackGroupID > 0 {
+					if apiKey.AccessMode != service.UnifiedAccessMode && !fallbackUsed && fallbackGroupID != nil && *fallbackGroupID > 0 {
 						fallbackGroup, err := h.gatewayService.ResolveGroupByID(c.Request.Context(), *fallbackGroupID)
 						if err != nil {
 							reqLog.Warn("gateway.resolve_fallback_group_failed", zap.Int64("fallback_group_id", *fallbackGroupID), zap.Error(err))
@@ -1149,6 +1149,9 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 // Falls back to default models if no whitelist is configured
 func (h *GatewayHandler) Models(c *gin.Context) {
 	apiKey, _ := middleware2.GetAPIKeyFromContext(c)
+	if h.unifiedModels(c, apiKey) {
+		return
+	}
 
 	var groupID *int64
 	var platform string
@@ -1235,6 +1238,19 @@ func (h *GatewayHandler) CodexModels(c *gin.Context) {
 		forcedPlatform = strings.TrimSpace(value)
 	}
 	modelIDs := h.codexModelIDsForGroup(c.Request.Context(), apiKey.Group, forcedPlatform)
+	if apiKey.AccessMode == service.UnifiedAccessMode {
+		models, err := h.apiKeyService.UnifiedModels(c.Request.Context(), apiKey.UserID)
+		if err != nil {
+			h.errorResponse(c, 503, "api_error", "Model discovery is unavailable")
+			return
+		}
+		modelIDs = nil
+		for _, m := range models {
+			if m.Platform == service.PlatformOpenAI {
+				modelIDs = append(modelIDs, m.ID)
+			}
+		}
+	}
 	modelIDs = service.FilterCodexModelIDsForGroup(modelIDs, apiKey.Group)
 	body, err := h.gatewayService.BuildCodexModelsManifestForGroup(
 		c.Request.Context(),

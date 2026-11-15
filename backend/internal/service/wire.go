@@ -72,6 +72,7 @@ func ProvideAuthService(
 	affiliateService *AffiliateService,
 	userPlatformQuotaRepo UserPlatformQuotaRepository,
 	mcpOAuthService *MCPOAuthService,
+	apiKeyService *APIKeyService,
 ) *AuthService {
 	svc := NewAuthService(
 		entClient,
@@ -88,6 +89,7 @@ func ProvideAuthService(
 		affiliateService,
 		userPlatformQuotaRepo,
 	)
+	svc.defaultKeyService = apiKeyService
 	svc.SetTencentCaptchaService(tencentCaptchaService)
 	svc.SetAliyunCaptchaService(aliyunCaptchaService)
 	if mcpOAuthService != nil {
@@ -851,10 +853,15 @@ func ProvideAPIKeyService(
 	cfg *config.Config,
 	billingCacheService *BillingCacheService,
 	concurrencyService *ConcurrencyService,
+	accountRepo AccountRepository,
+	subscriptionService *SubscriptionService,
+	channelRepo ChannelRepository,
+	compositeRoutes CompositeModelRouteRepository,
 ) *APIKeyService {
 	svc := NewAPIKeyService(apiKeyRepo, userRepo, groupRepo, userSubRepo, userGroupRateRepo, cache, cfg)
 	svc.SetRateLimitCacheInvalidator(billingCacheService)
 	svc.SetConcurrencyService(concurrencyService)
+	svc.SetUnifiedAccessDependencies(accountRepo, subscriptionService, channelRepo, compositeRoutes)
 	return svc
 }
 

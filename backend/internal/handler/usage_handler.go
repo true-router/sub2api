@@ -252,9 +252,16 @@ func (h *UsageHandler) List(c *gin.Context) {
 		return
 	}
 
+	sources, err := h.usageService.UnifiedBillingSources(c.Request.Context(), parsed.Filters.UserID, records)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
 	out := make([]dto.UsageLog, 0, len(records))
 	for i := range records {
-		out = append(out, *dto.UsageLogFromService(&records[i]).Localized(c.GetHeader("Accept-Language")))
+		row := dto.UsageLogFromService(&records[i]).Localized(c.GetHeader("Accept-Language"))
+		row.BillingSource = sources[service.UnifiedBillingSourceKey(records[i].RequestID, records[i].APIKeyID)]
+		out = append(out, *row)
 	}
 	response.Paginated(c, out, result.Total, page, pageSize)
 }
@@ -400,7 +407,14 @@ func (h *UsageHandler) GetByID(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, dto.UsageLogFromService(record).Localized(c.GetHeader("Accept-Language")))
+	sources, err := h.usageService.UnifiedBillingSources(c.Request.Context(), subject.UserID, []service.UsageLog{*record})
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	out := dto.UsageLogFromService(record).Localized(c.GetHeader("Accept-Language"))
+	out.BillingSource = sources[service.UnifiedBillingSourceKey(record.RequestID, record.APIKeyID)]
+	response.Success(c, out)
 }
 
 // Stats handles getting usage statistics

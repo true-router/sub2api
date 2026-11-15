@@ -293,6 +293,7 @@ func buildUsageBillingCommand(requestID string, usageLog *UsageLog, p *postUsage
 	}
 
 	cmd := &UsageBillingCommand{
+		UnifiedAccess:      p.APIKey.AccessMode == UnifiedAccessMode,
 		RequestID:          requestID,
 		APIKeyID:           p.APIKey.ID,
 		UserID:             p.User.ID,

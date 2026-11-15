@@ -289,6 +289,10 @@ type RateLimitCacheInvalidator interface {
 }
 
 type APIKeyService struct {
+	unifiedRoutes             CompositeModelRouteRepository
+	unifiedAccounts           AccountRepository
+	unifiedSubscriptions      *SubscriptionService
+	unifiedChannels           ChannelRepository
 	apiKeyRepo                APIKeyRepository
 	userRepo                  UserRepository
 	groupRepo                 GroupRepository
@@ -806,6 +810,9 @@ func (s *APIKeyService) Update(ctx context.Context, id int64, userID int64, req 
 		return nil, ErrInsufficientPerms
 	}
 
+	if apiKey.AccessMode == UnifiedAccessMode && req.GroupID != nil && (apiKey.GroupID == nil || *req.GroupID != *apiKey.GroupID) {
+		return nil, infraerrors.BadRequest("UNIFIED_GROUP_IMMUTABLE", "Unified keys choose their routing group automatically")
+	}
 	// 验证 IP 白名单格式
 	if req.IPWhitelist != nil && len(*req.IPWhitelist) > 0 {
 		if invalid := ip.ValidateIPPatterns(*req.IPWhitelist); len(invalid) > 0 {

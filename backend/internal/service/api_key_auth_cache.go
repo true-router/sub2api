@@ -4,6 +4,8 @@ import "time"
 
 // APIKeyAuthSnapshot API Key 认证缓存快照（仅包含认证所需字段）
 type APIKeyAuthSnapshot struct {
+	AccessMode  string                   `json:"access_mode"`
+	IsDefault   bool                     `json:"is_default"`
 	Version     int                      `json:"version"`
 	APIKeyID    int64                    `json:"api_key_id"`
 	UserID      int64                    `json:"user_id"`

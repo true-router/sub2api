@@ -28,6 +28,8 @@ func IsWindowExpired(windowStart *time.Time, duration time.Duration) bool {
 }
 
 type APIKey struct {
+	AccessMode  string
+	IsDefault   bool
 	ID          int64
 	UserID      int64
 	Key         string

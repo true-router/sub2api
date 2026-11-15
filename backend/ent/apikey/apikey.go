@@ -23,6 +23,10 @@ const (
 	FieldDeletedAt = "deleted_at"
 	// FieldUserID holds the string denoting the user_id field in the database.
 	FieldUserID = "user_id"
+	// FieldAccessMode holds the string denoting the access_mode field in the database.
+	FieldAccessMode = "access_mode"
+	// FieldIsDefault holds the string denoting the is_default field in the database.
+	FieldIsDefault = "is_default"
 	// FieldKey holds the string denoting the key field in the database.
 	FieldKey = "key"
 	// FieldName holds the string denoting the name field in the database.
@@ -99,6 +103,8 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldDeletedAt,
 	FieldUserID,
+	FieldAccessMode,
+	FieldIsDefault,
 	FieldKey,
 	FieldName,
 	FieldGroupID,
@@ -144,6 +150,12 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultAccessMode holds the default value on creation for the "access_mode" field.
+	DefaultAccessMode string
+	// AccessModeValidator is a validator for the "access_mode" field. It is called by the builders before save.
+	AccessModeValidator func(string) error
+	// DefaultIsDefault holds the default value on creation for the "is_default" field.
+	DefaultIsDefault bool
 	// KeyValidator is a validator for the "key" field. It is called by the builders before save.
 	KeyValidator func(string) error
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
@@ -196,6 +208,16 @@ func ByDeletedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByUserID orders the results by the user_id field.
 func ByUserID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUserID, opts...).ToFunc()
+}
+
+// ByAccessMode orders the results by the access_mode field.
+func ByAccessMode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAccessMode, opts...).ToFunc()
+}
+
+// ByIsDefault orders the results by the is_default field.
+func ByIsDefault(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsDefault, opts...).ToFunc()
 }
 
 // ByKey orders the results by the key field.

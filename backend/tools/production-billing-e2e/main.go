@@ -23,6 +23,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -55,6 +56,9 @@ type fixture struct {
 	ctx                                  context.Context
 	dir, binary, origin, postgres, redis string
 	inputBinary                          string
+	unifiedOnly                          bool
+	browserReady                         string
+	sourceManifest                       map[string]string
 	db                                   *sql.DB
 	process                              *exec.Cmd
 	processDone                          chan error
@@ -172,7 +176,7 @@ func (f *fixture) bootstrap() error {
 			return err
 		}
 	} else {
-		if _, err = run("go", "build", "-o", f.binary, "./cmd/server"); err != nil {
+		if _, err = run(append([]string{"go", "build"}, f.buildArgs()...)...); err != nil {
 			return err
 		}
 	}
@@ -281,6 +285,9 @@ func (f *fixture) external(w http.ResponseWriter, r *http.Request) {
 	}
 	if r.URL.Path == "/prices.sha256" {
 		w.WriteHeader(404)
+		return
+	}
+	if f.unifiedOnly && f.unifiedExternal(w, r) {
 		return
 	}
 	if r.URL.Path == "/v1/chat/completions" || r.URL.Path == "/chat/completions" {
@@ -451,6 +458,9 @@ func (f *fixture) scenario() error {
 	}
 	if _, err = f.api("POST", "/api/v1/admin/compliance/accept", admin, map[string]any{"phrase": compliance["ack_phrase_en"], "language": "en"}); err != nil {
 		return err
+	}
+	if f.unifiedOnly {
+		return f.unifiedScenario(admin)
 	}
 	group, err := f.api("POST", "/api/v1/admin/groups", admin, map[string]any{"name": "Production billing fixture", "platform": "openai", "rate_multiplier": 1, "subscription_type": "standard", "model_pricing": []any{map[string]any{"platform": "openai", "models": []string{"gpt-4o-mini"}, "billing_mode": "per_request", "per_request_price": 1}}})
 	if err != nil {
@@ -881,18 +891,36 @@ func (f *fixture) close() error {
 }
 func main() {
 	output := flag.String("output", "../.local/production-billing-e2e/receipt.json", "JSON acceptance receipt path, relative to backend")
+	browserReady := flag.String("browser-ready", "", "Write private browser fixture credentials and wait for a .done file")
+	unified := flag.Bool("unified-access", false, "Run unified access acceptance")
 	binary := flag.String("binary", "", "Verify this fixed server binary instead of rebuilding source")
 	flag.Parse()
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
-	f := &fixture{ctx: ctx, inputBinary: *binary}
-	err := f.bootstrap()
+	f := &fixture{ctx: ctx, inputBinary: *binary, unifiedOnly: *unified, browserReady: *browserReady}
+	manifest, manifestErr := acceptanceSourceManifest(f.browserReady != "")
+	f.sourceManifest = manifest
+	err := manifestErr
+	if err == nil {
+		err = f.bootstrap()
+	}
 	if err == nil {
 		err = f.scenario()
+		if err == nil && f.browserReady != "" {
+			err = f.waitBrowser()
+		}
+	}
+	if err == nil {
+		after, e := acceptanceSourceManifest(f.browserReady != "")
+		if e != nil {
+			err = e
+		} else {
+			err = f.checked("Source manifest is unchanged during acceptance", reflect.DeepEqual(f.sourceManifest, after))
+		}
 	}
 	cleanupErr := f.close()
 	err = errors.Join(err, cleanupErr)
-	report := map[string]any{"passed": err == nil, "checks": f.checks, "mode": "production OS process, real routing/authentication/migrations/database/cache; synthetic external providers", "live_payments": false, "fixture_services_removed": cleanupErr == nil, "completed_at_utc": time.Now().UTC().Format(time.RFC3339), "os_process_starts": f.starts, "verified_migrations": f.migrationsVerified, "wallet_snapshots": f.wallets, "external_requests": f.trace}
+	report := map[string]any{"source_manifest_sha256": f.sourceManifest, "passed": err == nil, "checks": f.checks, "mode": "production OS process, real routing/authentication/migrations/database/cache; synthetic external providers", "live_payments": false, "fixture_services_removed": cleanupErr == nil, "completed_at_utc": time.Now().UTC().Format(time.RFC3339), "os_process_starts": f.starts, "verified_migrations": f.migrationsVerified, "wallet_snapshots": f.wallets, "external_requests": f.trace}
 	if f.binary != "" {
 		if data, e := os.ReadFile(f.binary); e == nil {
 			s := sha256.Sum256(data)
@@ -921,7 +949,7 @@ func main() {
 		report["backend_diff_sha256"] = hex.EncodeToString(s[:])
 	}
 	harnessHashes := map[string]string{}
-	for _, path := range []string{"tools/production-billing-e2e/main.go", "tools/production-billing-e2e/run.sh"} {
+	for _, path := range []string{"tools/production-billing-e2e/main.go", "tools/production-billing-e2e/run.sh", "tools/production-billing-e2e/unified.go"} {
 		if data, e := os.ReadFile(path); e == nil {
 			s := sha256.Sum256(data)
 			harnessHashes[path] = hex.EncodeToString(s[:])

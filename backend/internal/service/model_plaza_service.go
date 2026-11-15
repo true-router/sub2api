@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 )
 
 // PlazaOfficialPricing 模型广场展示用的官方参考价（USD per token），与计费同源：
@@ -383,4 +384,19 @@ func (s *ModelPlazaService) lookupOfficialPricing(ctx context.Context, modelName
 	}
 	memo[modelName] = result
 	return result
+}
+
+// PriceForUnifiedRoute uses the same pricing schedule as gateway settlement.
+// The caller supplies a group selected by unified access authorization.
+func (s *ModelPlazaService) PriceForUnifiedRoute(ctx context.Context, g *Group, model, platform string) (PlazaModel, float64) {
+	m := PlazaModel{Name: model, Platform: platform}
+	s.fillDisplayPricing(ctx, &m, g)
+	factor := 1.0
+	if s.resolver != nil {
+		resolved := s.resolver.Resolve(ctx, PricingInput{Model: model, Group: g, GroupID: &g.ID})
+		if resolved != nil && (resolved.Mode == "" || resolved.Mode == BillingModeToken) {
+			factor = resolvedChannelTimeMultiplier(resolved, time.Now())
+		}
+	}
+	return m, factor
 }

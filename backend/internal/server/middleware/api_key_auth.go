@@ -9,8 +9,11 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	pkghttputil "github.com/Wei-Shaw/sub2api/internal/pkg/httputil"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ip"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/requestmodel"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -165,10 +168,55 @@ func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscripti
 			AbortWithError(c, 401, "USER_INACTIVE", "User account is not active")
 			return
 		}
+		if apiKey.AccessMode == service.UnifiedAccessMode && abortIfAPIKeyGroupUnavailable(c, apiKey) {
+			return
+		}
+		var unifiedSubscription *service.UserSubscription
+		if apiKey.AccessMode == service.UnifiedAccessMode && c.Request.Method != http.MethodGet {
+			body, err := pkghttputil.ReadRequestBodyWithPrealloc(c.Request)
+			if err != nil {
+				if RejectRequestBodyReadError(c, "middleware.unified_access", err) {
+					return
+				}
+				AbortWithRequestBodyReadFailure(c, "middleware.unified_access", err)
+				return
+			}
+			models := requestmodel.FromBodyCandidates(c.FullPath(), c.GetHeader("Content-Type"), body)
+			requestmodel.ResetRequestBody(c.Request, body)
+			model := ""
+			if len(models) > 0 {
+				model = models[0]
+			}
+			for _, candidate := range models {
+				if candidate != model {
+					AbortWithError(c, 400, "AMBIGUOUS_MODEL", "Conflicting request model values")
+					return
+				}
+			}
+			endpoint := "responses"
+			if strings.Contains(c.Request.URL.Path, "messages") {
+				endpoint = "messages"
+			} else if strings.Contains(c.Request.URL.Path, "chat/completions") {
+				endpoint = "chat_completions"
+			}
+			resolved, sub, err := apiKeyService.ResolveUnifiedRequest(c.Request.Context(), apiKey, model, endpoint)
+			if err != nil {
+				code := infraerrors.Code(err)
+				reason := infraerrors.Reason(err)
+				message := infraerrors.Message(err)
+				if code >= 500 {
+					message = "Unable to resolve API access"
+				}
+				AbortWithError(c, code, reason, message)
+				return
+			}
+			apiKey = resolved
+			unifiedSubscription = sub
+		}
 		if abortIfAPIKeyGroupUnavailable(c, apiKey) {
 			return
 		}
-		if abortIfAPIKeyGroupNotAllowed(c, apiKey) {
+		if apiKey.AccessMode != service.UnifiedAccessMode && abortIfAPIKeyGroupNotAllowed(c, apiKey) {
 			return
 		}
 		ctx := context.WithValue(c.Request.Context(), ctxkey.UserID, apiKey.User.ID)
@@ -177,7 +225,7 @@ func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscripti
 		// Async image task polling only reads data that already belongs to the
 		// authenticated key and must remain available after the completed
 		// generation consumes the key's remaining balance.
-		skipBilling := c.Request.URL.Path == "/v1/usage" || billingInfoRequest || isAsyncImageTaskRead(c.Request.Method, c.Request.URL.Path)
+		skipBilling := (apiKey.AccessMode == service.UnifiedAccessMode && c.Request.Method == http.MethodGet) || c.Request.URL.Path == "/v1/usage" || billingInfoRequest || isAsyncImageTaskRead(c.Request.Method, c.Request.URL.Path)
 
 		// ── 4. SimpleMode → early return ─────────────────────────────
 
@@ -198,11 +246,11 @@ func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscripti
 
 		// ── 5. 按端点需要加载订阅 ───────────────────────────────────
 
-		var subscription *service.UserSubscription
+		var subscription *service.UserSubscription = unifiedSubscription
 		isSubscriptionType := apiKey.Group != nil && apiKey.Group.IsSubscriptionType()
 
 		// 倍率自省不需要订阅数据；/v1/usage 仍保留原有订阅读取行为。
-		if isSubscriptionType && subscriptionService != nil && !billingInfoRequest {
+		if isSubscriptionType && subscription == nil && subscriptionService != nil && !billingInfoRequest {
 			sub, subErr := subscriptionService.GetActiveSubscription(
 				c.Request.Context(),
 				apiKey.User.ID,

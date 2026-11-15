@@ -71,6 +71,7 @@ type JWTClaims struct {
 
 // AuthService 认证服务
 type AuthService struct {
+	defaultKeyService     *APIKeyService
 	entClient             *dbent.Client
 	userRepo              UserRepository
 	redeemRepo            RedeemCodeRepository
@@ -1004,6 +1005,11 @@ func (s *AuthService) postAuthUserBootstrap(ctx context.Context, user *User, sig
 
 	if strings.TrimSpace(signupSource) == "" {
 		signupSource = "email"
+	}
+	if s.defaultKeyService != nil {
+		if _, err := s.defaultKeyService.EnsureUnifiedKey(ctx, user.ID, true); err != nil {
+			logger.LegacyPrintf("service.auth", "default key preparation failed user=%d: %v", user.ID, err)
+		}
 	}
 	s.updateUserSignupSource(ctx, user.ID, signupSource)
 

@@ -133,6 +133,8 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 		Select(
 			apikey.FieldID,
 			apikey.FieldUserID,
+			apikey.FieldAccessMode,
+			apikey.FieldIsDefault,
 			apikey.FieldGroupID,
 			apikey.FieldName,
 			apikey.FieldStatus,
@@ -887,6 +889,8 @@ func apiKeyEntityToService(m *dbent.APIKey) *service.APIKey {
 		return nil
 	}
 	out := &service.APIKey{
+		AccessMode:    m.AccessMode,
+		IsDefault:     m.IsDefault,
 		ID:            m.ID,
 		UserID:        m.UserID,
 		Key:           m.Key,

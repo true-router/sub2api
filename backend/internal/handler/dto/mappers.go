@@ -85,6 +85,7 @@ func APIKeyFromService(k *service.APIKey) *APIKey {
 		return nil
 	}
 	out := &APIKey{
+		AccessMode: k.AccessMode, IsDefault: k.IsDefault,
 		ID:                 k.ID,
 		UserID:             k.UserID,
 		Key:                k.Key,

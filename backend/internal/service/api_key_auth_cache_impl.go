@@ -14,7 +14,7 @@ import (
 	"github.com/dgraph-io/ristretto"
 )
 
-const apiKeyAuthSnapshotVersion = 27 // v27: group require_privacy_set (OpenAI scheduling reads it from ctx)
+const apiKeyAuthSnapshotVersion = 28 // v28: immutable unified access mode and default identity
 
 type apiKeyAuthCacheConfig struct {
 	l1Size        int
@@ -337,6 +337,8 @@ func (s *APIKeyService) snapshotFromAPIKey(ctx context.Context, apiKey *APIKey) 
 	}
 	snapshot := &APIKeyAuthSnapshot{
 		Version:     apiKeyAuthSnapshotVersion,
+		AccessMode:  apiKey.AccessMode,
+		IsDefault:   apiKey.IsDefault,
 		APIKeyID:    apiKey.ID,
 		UserID:      apiKey.UserID,
 		GroupID:     apiKey.GroupID,
@@ -449,6 +451,8 @@ func (s *APIKeyService) snapshotToAPIKey(key string, snapshot *APIKeyAuthSnapsho
 	}
 	apiKey := &APIKey{
 		ID:          snapshot.APIKeyID,
+		AccessMode:  snapshot.AccessMode,
+		IsDefault:   snapshot.IsDefault,
 		UserID:      snapshot.UserID,
 		GroupID:     snapshot.GroupID,
 		Key:         key,

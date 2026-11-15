@@ -75,6 +75,16 @@ func UserID(v int64) predicate.APIKey {
 	return predicate.APIKey(sql.FieldEQ(FieldUserID, v))
 }
 
+// AccessMode applies equality check predicate on the "access_mode" field. It's identical to AccessModeEQ.
+func AccessMode(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldAccessMode, v))
+}
+
+// IsDefault applies equality check predicate on the "is_default" field. It's identical to IsDefaultEQ.
+func IsDefault(v bool) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldIsDefault, v))
+}
+
 // Key applies equality check predicate on the "key" field. It's identical to KeyEQ.
 func Key(v string) predicate.APIKey {
 	return predicate.APIKey(sql.FieldEQ(FieldKey, v))
@@ -308,6 +318,81 @@ func UserIDIn(vs ...int64) predicate.APIKey {
 // UserIDNotIn applies the NotIn predicate on the "user_id" field.
 func UserIDNotIn(vs ...int64) predicate.APIKey {
 	return predicate.APIKey(sql.FieldNotIn(FieldUserID, vs...))
+}
+
+// AccessModeEQ applies the EQ predicate on the "access_mode" field.
+func AccessModeEQ(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldAccessMode, v))
+}
+
+// AccessModeNEQ applies the NEQ predicate on the "access_mode" field.
+func AccessModeNEQ(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNEQ(FieldAccessMode, v))
+}
+
+// AccessModeIn applies the In predicate on the "access_mode" field.
+func AccessModeIn(vs ...string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldIn(FieldAccessMode, vs...))
+}
+
+// AccessModeNotIn applies the NotIn predicate on the "access_mode" field.
+func AccessModeNotIn(vs ...string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotIn(FieldAccessMode, vs...))
+}
+
+// AccessModeGT applies the GT predicate on the "access_mode" field.
+func AccessModeGT(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGT(FieldAccessMode, v))
+}
+
+// AccessModeGTE applies the GTE predicate on the "access_mode" field.
+func AccessModeGTE(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGTE(FieldAccessMode, v))
+}
+
+// AccessModeLT applies the LT predicate on the "access_mode" field.
+func AccessModeLT(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLT(FieldAccessMode, v))
+}
+
+// AccessModeLTE applies the LTE predicate on the "access_mode" field.
+func AccessModeLTE(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLTE(FieldAccessMode, v))
+}
+
+// AccessModeContains applies the Contains predicate on the "access_mode" field.
+func AccessModeContains(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldContains(FieldAccessMode, v))
+}
+
+// AccessModeHasPrefix applies the HasPrefix predicate on the "access_mode" field.
+func AccessModeHasPrefix(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldHasPrefix(FieldAccessMode, v))
+}
+
+// AccessModeHasSuffix applies the HasSuffix predicate on the "access_mode" field.
+func AccessModeHasSuffix(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldHasSuffix(FieldAccessMode, v))
+}
+
+// AccessModeEqualFold applies the EqualFold predicate on the "access_mode" field.
+func AccessModeEqualFold(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEqualFold(FieldAccessMode, v))
+}
+
+// AccessModeContainsFold applies the ContainsFold predicate on the "access_mode" field.
+func AccessModeContainsFold(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldContainsFold(FieldAccessMode, v))
+}
+
+// IsDefaultEQ applies the EQ predicate on the "is_default" field.
+func IsDefaultEQ(v bool) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldIsDefault, v))
+}
+
+// IsDefaultNEQ applies the NEQ predicate on the "is_default" field.
+func IsDefaultNEQ(v bool) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNEQ(FieldIsDefault, v))
 }
 
 // KeyEQ applies the EQ predicate on the "key" field.

@@ -50,11 +50,28 @@ func (r *usageBillingRepository) Apply(ctx context.Context, cmd *service.UsageBi
 		return &service.UsageBillingApplyResult{Applied: false}, nil
 	}
 
+	beforeBonus, beforeUnknown := "0", "0"
+	if cmd.UnifiedAccess && cmd.BalanceCost > 0 {
+		if err = tx.QueryRowContext(ctx, `SELECT bonus_balance,unverified_balance FROM users WHERE id=$1 FOR UPDATE`, cmd.UserID).Scan(&beforeBonus, &beforeUnknown); err != nil {
+			return nil, err
+		}
+	}
 	result := &service.UsageBillingApplyResult{Applied: true}
 	if err := r.applyUsageBillingEffects(ctx, tx, cmd, result); err != nil {
 		return nil, err
 	}
 
+	if cmd.UnifiedAccess {
+		_, err = tx.ExecContext(ctx, `INSERT INTO unified_billing_sources(request_id,api_key_id,user_id,subscription_id,subscription_name,subscription_cost,bonus_cost,paid_cost,unverified_cost)
+   SELECT $1,$2,$3,$4,COALESCE((SELECT g.name FROM user_subscriptions s JOIN groups g ON g.id=s.group_id WHERE s.id=$4),''),$5,
+     CASE WHEN $6::numeric>0 THEN $7::numeric-u.bonus_balance ELSE 0 END,
+     CASE WHEN $6::numeric>0 THEN $6::numeric-($7::numeric-u.bonus_balance)-($8::numeric-u.unverified_balance) ELSE 0 END,
+     CASE WHEN $6::numeric>0 THEN $8::numeric-u.unverified_balance ELSE 0 END
+   FROM users u WHERE u.id=$3`, cmd.RequestID, cmd.APIKeyID, cmd.UserID, cmd.SubscriptionID, cmd.SubscriptionCost, cmd.BalanceCost, beforeBonus, beforeUnknown)
+		if err != nil {
+			return nil, err
+		}
+	}
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
