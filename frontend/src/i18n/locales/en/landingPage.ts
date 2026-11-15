@@ -31,7 +31,7 @@ export default {
     giftOpen: { t: 'Your $5 credit is ready', s: 'Billed at 10% of list price. Enough to run a real task.', b: 'Add to my account', n: 'Sign-up takes 30 seconds. No card needed.' },
     giftClaimed: { t: 'You already have this gift', s: 'The credit is in your account. Use it to run real tasks.', b: 'Go to dashboard', n: 'Check your balance in the dashboard any time.' },
     giftSign: '— The {name} team',
-    footDesc: 'Original top models at 10% of list price. Compatible with the official API. Change one base URL to connect.', status: 'All systems operational',
+    footDesc: 'Original top models at 10% of list price. Compatible with the official API. Change one base URL to connect.',
     product: 'Product', usageQuery: 'Usage lookup', developers: 'Developers', quickStart: 'Quick start', apiRef: 'API reference',
     company: 'Company', contact: 'Contact us', terms: 'Terms of service', privacy: 'Privacy policy', madeFor: 'Made for developers',
     auth: {

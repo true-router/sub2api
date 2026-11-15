@@ -31,7 +31,7 @@ export default {
     giftOpen: { t: '$5 赠金，已经为你备好', s: '按官方 1 折计费，足够跑完一次真实任务。', b: '存入我的账户', n: '注册只需 30 秒，无需绑卡。' },
     giftClaimed: { t: '这份见面礼，你已经收下了', s: '赠金已在你的账户里。继续用它跑点真实任务吧。', b: '进入控制台', n: '账户余额可随时在控制台查看。' },
     giftSign: '— {name} 团队',
-    footDesc: '原版顶级大模型，官方价的 1 折。兼容官方 API，改一行 base URL 即可接入。', status: '所有服务运行正常',
+    footDesc: '原版顶级大模型，官方价的 1 折。兼容官方 API，改一行 base URL 即可接入。',
     product: '产品', usageQuery: '用量查询', developers: '开发者', quickStart: '快速开始', apiRef: 'API 参考',
     company: '公司', contact: '联系我们', terms: '服务条款', privacy: '隐私政策', madeFor: '为开发者而做',
     auth: {

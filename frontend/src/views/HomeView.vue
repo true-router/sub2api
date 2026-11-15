@@ -225,15 +225,15 @@
     <!-- FOOTER -->
     <footer>
       <div class="wrap foot">
-        <div>
-          <a class="logo" href="#" :aria-label="siteName"><span class="logo-mark" :class="{ 'has-img': siteLogo }"><img v-if="siteLogo" :src="siteLogo" alt="" /><svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M4 12h6l2-6 2 12 2-6h4" /></svg></span>{{ siteName }}</a>
-          <p>{{ t('lp.footDesc') }}</p>
-          <span class="status"><i></i>{{ t('lp.status') }}</span>
-        </div>
         <div><h4>{{ t('lp.product') }}</h4><ul><li><a href="#pricing">{{ t('lp.pricing') }}</a></li><li><router-link v-if="showModelPlazaEntry" to="/model-plaza">{{ t('lp.plaza') }}</router-link></li><li><router-link to="/key-usage">{{ t('lp.usageQuery') }}</router-link></li></ul></div>
         <div><h4>{{ t('lp.developers') }}</h4><ul><li><a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">{{ t('lp.docs') }}</a></li><li><a href="#how">{{ t('lp.quickStart') }}</a></li><li><a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">{{ t('lp.apiRef') }}</a></li></ul></div>
         <div><h4>{{ t('lp.company') }}</h4><ul><li><a>{{ t('lp.contact') }}</a></li><li><a>{{ t('lp.terms') }}</a></li><li><a>{{ t('lp.privacy') }}</a></li></ul></div>
+        <div class="foot-brand">
+          <a class="logo" href="#" :aria-label="siteName"><span class="logo-mark" :class="{ 'has-img': siteLogo }"><img v-if="siteLogo" :src="siteLogo" alt="" /><svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M4 12h6l2-6 2 12 2-6h4" /></svg></span>{{ siteName }}</a>
+          <p>{{ t('lp.footDesc') }}</p>
+        </div>
       </div>
+      <div class="foot-giant" aria-hidden="true">{{ siteName }}</div>
       <div class="wrap foot-b"><span>© {{ currentYear }} {{ siteName }}</span><span>{{ t('lp.madeFor') }}</span></div>
     </footer>
   </div>
@@ -494,7 +494,7 @@ onBeforeUnmount(() => {
 .arrow{transition:transform .2s}.btn:hover .arrow{transform:translateX(3px)}
 
 /* ---------- hero ---------- */
-.hero{position:relative;z-index:1;padding:76px 0 40px;text-align:center}
+.hero{position:relative;z-index:1;padding-block:76px 40px;text-align:center}
 .pill{display:inline-flex;align-items:center;gap:10px;padding:5px 14px 5px 5px;border-radius:999px;background:rgb(var(--boardui-background-primary-default) / .9);border:1px solid var(--line);font-size:13.5px;color:var(--ink2);box-shadow:0 2px 10px -4px rgba(15,23,42,.1)}
 .pill b{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;background:linear-gradient(135deg,#2563eb,#6366f1);color:#fff;font-size:12px;font-weight:600}
 h1{font-size:76px;line-height:1.04;letter-spacing:-.045em;font-weight:750;margin:26px auto 22px;max-width:900px}
@@ -508,7 +508,7 @@ h1{font-size:76px;line-height:1.04;letter-spacing:-.045em;font-weight:750;margin
 .trust svg{color:var(--green)}
 
 /* ---------- hero split ---------- */
-.hero{text-align:left;padding:72px 0 56px}
+.hero{text-align:left;padding-block:72px 56px}
 .hero-g{display:grid;grid-template-columns:1fr 1.02fr;gap:64px;align-items:center}
 .hero h1{margin:24px 0 20px;font-size:68px;max-width:none}
 .hero .lead{margin:0;max-width:540px}
@@ -697,7 +697,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   box-shadow:0 50px 90px -60px rgba(180,120,40,.45)}
 .gift-sec:before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(180,120,40,.13) 1px,transparent 1px);background-size:20px 20px;-webkit-mask-image:radial-gradient(ellipse 55% 60% at 50% 35%,#000,transparent);mask-image:radial-gradient(ellipse 55% 60% at 50% 35%,#000,transparent);pointer-events:none}
 .gift-sec>*{position:relative}
-.gift-sec h2{font-size:46px;margin:0 0 14px}
+.gift-sec h2{font-size:46px;margin:0 0 14px;text-wrap:balance}
 .gift-sec .sub{color:var(--ink3);max-width:440px;margin:0}
 .g-copy .ctas{justify-content:flex-start!important}
 .gift-stage{position:relative;height:420px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:30px}
@@ -728,14 +728,15 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 @keyframes spin{to{transform:rotate(360deg)}}
 /* footer */
 footer{margin-top:96px;border-top:1px solid var(--line);background:var(--soft)}
-.foot{display:grid;grid-template-columns:1.6fr repeat(3,1fr);gap:40px;padding:56px 0 40px}
+.foot{display:grid;grid-template-columns:repeat(3,1fr) 1.4fr;gap:40px;padding-block:56px 12px}
+.foot-brand{order:4}
 .foot p{color:var(--ink3);font-size:14px;line-height:1.7;margin-top:14px;max-width:300px}
 .foot h4{font-size:13px;font-weight:650;margin-bottom:14px}
 .foot ul{list-style:none;display:flex;flex-direction:column;gap:10px;font-size:14px;color:var(--ink3)}
 .foot ul a:hover{color:var(--ink)}
-.status{display:inline-flex;align-items:center;gap:8px;margin-top:18px;font-size:12.5px;color:var(--ink2);background:var(--surface);border:1px solid var(--line);padding:6px 12px;border-radius:999px}
-.status i{width:7px;height:7px;border-radius:50%;background:var(--green)}
-.foot-b{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding:22px 0;font-size:13px;color:var(--ink4)}
+.foot-giant{overflow:hidden;white-space:nowrap;text-align:center;margin-top:12px;font-size:clamp(56px,15vw,200px);font-weight:800;letter-spacing:-.05em;line-height:.95;color:transparent;background:linear-gradient(180deg,var(--line),transparent 90%);-webkit-background-clip:text;background-clip:text;user-select:none;pointer-events:none}
+@media(max-width:760px){.foot{grid-template-columns:1fr 1fr}.foot-brand{order:-1;grid-column:1/-1}}
+.foot-b{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:space-between;border-top:1px solid var(--line);padding-block:22px;font-size:13px;color:var(--ink4)}
 
 /* reveal */
 .rv{opacity:0;transform:translateY(24px);transition:opacity .8s cubic-bezier(.2,.8,.2,1),transform .8s cubic-bezier(.2,.8,.2,1)}
@@ -755,12 +756,36 @@ footer{margin-top:96px;border-top:1px solid var(--line);background:var(--soft)}
   .fid{grid-template-columns:1fr;justify-items:center}
   .hw{grid-template-columns:1fr}
   .foot{grid-template-columns:1fr 1fr}
-  .gift-sec{grid-template-columns:1fr;gap:4px;padding:36px 18px 32px;text-align:center}.gift-sec h2{font-size:32px}.gift-sec .sub{margin:0 auto}.g-copy .ctas{justify-content:center!important}.gift-stage{height:330px;padding-bottom:20px}.gift-stage .env{transform:scale(.78);transform-origin:bottom center}.g-rays,.g-spark{top:100px}
+  .gift-sec{grid-template-columns:minmax(0,1fr);gap:4px;padding:36px 18px 32px;text-align:center}.gift-sec h2{font-size:32px}.gift-sec .sub{margin:0 auto}.g-copy .ctas{justify-content:center!important}.gift-stage{height:330px;padding-bottom:20px}.gift-stage .env{transform:scale(.78);transform-origin:bottom center}.g-rays,.g-spark{top:100px}
+}
+@media (max-width:900px){
+  section.sec{padding:64px 0}
+  section.sec#how{padding-top:24px}
+  .head{margin-bottom:32px}
+  .logos{padding:40px 0 8px}
+  footer{margin-top:64px}
+  .hero{padding-block:36px 40px}
+  .card{padding:24px}
+  .fid{justify-items:stretch}.fid .gauge{justify-self:center}
+  .hw-card{padding:6px}.hw-vis{border:0}
+  .pc{padding:0;background:none;border:0}
+  .stamp{right:10px;top:-34px;width:62px;height:62px}.stamp b{font-size:20px}.stamp small{font-size:9px}
+  .gift-sec{padding-top:24px}.gift-stage{height:300px}
 }
 @media (max-width:600px){
+  .hero .lead{font-size:17px;text-wrap:pretty}
+  .hero .trust{flex-direction:column;align-items:flex-start;gap:8px}
+  .pr{grid-template-columns:minmax(0,1fr) auto auto;gap:8px;padding:14px}
+  .pr .m{gap:8px}.pr .mi{width:32px;height:32px;border-radius:10px}.pr .mi .li{width:18px;height:18px}
+  .pr .m b{font-size:14px;white-space:nowrap}.pr .o{min-width:0}.pr .o strong{font-size:17px}
+  .pc-h,.pc-f{padding-inline:14px}
+  .foot{gap:32px 24px}
   .nav{padding:0 14px}
   .logo{font-size:15px}
   .promo-in{gap:8px;padding:6px 14px;font-size:12.5px}
+}
+@media (max-width:400px){
+  .gift-sec{padding:32px 12px 28px}.gift-stage .env{transform:scale(.68)}
 }
 @media (prefers-reduced-motion:reduce){
   *,*:before,*:after{animation:none!important;transition:none!important}
