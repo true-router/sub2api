@@ -33,6 +33,17 @@ const providerName = computed(() => selectedProvider.value === 'all' ? t('modelP
   : providers.value.find(provider => provider.id === selectedProvider.value)?.name || t('modelPlaza.filters.otherProvider'))
 const endpointLabel = (endpoint: string) => endpoint === 'chat_completions' ? '/v1/chat/completions' : `/v1/${endpoint}`
 const endpoints = (model: UnifiedModel) => model.wallet_offers.map(offer => endpointLabel(offer.endpoint))
+// Endpoints share one backend, so offers with identical rate and pricing collapse into one price block.
+const uniqueOffers = (model: UnifiedModel) => {
+  const groups = new Map<string, { offer: UnifiedWalletOffer; endpoints: string[] }>()
+  for (const offer of model.wallet_offers) {
+    const sig = JSON.stringify([offer.rate_multiplier, offer.pricing, offer.time_pricing, offer.long_context_basis])
+    const group = groups.get(sig)
+    if (group) group.endpoints.push(endpointLabel(offer.endpoint))
+    else groups.set(sig, { offer, endpoints: [endpointLabel(offer.endpoint)] })
+  }
+  return [...groups.values()]
+}
 const hasTiers = (model: UnifiedModel) => model.wallet_offers.some(offer => offer.pricing?.intervals?.length || offer.time_pricing)
 function priceRows(offer: UnifiedWalletOffer) {
   const p = offer.pricing
@@ -45,6 +56,7 @@ function priceRows(offer: UnifiedWalletOffer) {
 }
 function reset() { selectedProvider.value = 'all'; search.value = '' }
 const price = (n: number | null | undefined, rate: number, tokens = true) => n == null ? '—' : `$${(n * rate * (tokens ? 1_000_000 : 1)).toFixed(6)}`
+const showBase = (rate: number) => rate !== 1
 async function load() {
   loading.value = true
   failed.value = false
@@ -97,17 +109,18 @@ onMounted(load)
           <BoardBadge :tone="model.subscription_available ? 'success' : 'neutral'">{{ model.subscription_available ? t('apiAccess.subscriptionAvailable') : t('console.sameKey') }}</BoardBadge>
           <BoardBadge v-for="endpoint in endpoints(model)" :key="endpoint" tone="neutral"><span class="font-mono">{{ endpoint }}</span></BoardBadge>
         </div>
-        <section v-for="offer in model.wallet_offers" :key="offer.endpoint" class="min-w-0 overflow-hidden rounded-2xl border border-border-button-default" data-testid="offer-prices">
+        <section v-for="{ offer, endpoints: offerEndpoints } in uniqueOffers(model)" :key="offerEndpoints.join()" class="min-w-0 overflow-hidden rounded-2xl border border-border-button-default" data-testid="offer-prices">
           <header class="flex flex-wrap items-center justify-between gap-2 bg-background-secondary-default px-3 py-2">
-            <span class="break-all font-mono text-caption-1-medium text-text-secondary">{{ endpointLabel(offer.endpoint) }}</span>
+            <span class="break-all font-mono text-caption-1-medium text-text-secondary">{{ uniqueOffers(model).length > 1 ? offerEndpoints.join(' · ') : t('apiAccess.walletPrice') }}</span>
             <BoardBadge tone="accent">{{ t('apiAccess.rateMultiplier') }} ×{{ offer.rate_multiplier }}</BoardBadge>
           </header>
           <p v-if="!offer.pricing" class="px-3 py-3 text-body-2-regular text-text-tertiary">—</p>
           <table v-else class="w-full table-fixed text-left">
-            <thead><tr class="text-caption-1-regular text-text-tertiary"><th scope="col" class="px-3 py-2 font-normal">{{ offer.pricing.billing_mode === 'per_request' ? t('apiAccess.perRequest') : t('apiAccess.perMillion') }}</th><th scope="col" class="px-3 py-2 text-right font-normal">{{ t('apiAccess.currentPrice') }}</th></tr></thead>
+            <thead><tr class="text-caption-1-regular text-text-tertiary"><th scope="col" class="px-3 py-2 font-normal">{{ offer.pricing.billing_mode === 'per_request' ? t('apiAccess.perRequest') : t('apiAccess.perMillion') }}</th><th v-if="showBase(offer.rate_multiplier)" scope="col" class="px-3 py-2 text-right font-normal">{{ t('apiAccess.basePrice') }}</th><th scope="col" class="px-3 py-2 text-right font-normal">{{ t('apiAccess.currentPrice') }}</th></tr></thead>
             <tbody>
               <tr v-for="row in priceRows(offer)" :key="row.key" class="border-t border-separator-border" :data-price-row="row.key">
                 <th scope="row" class="px-3 py-2 text-body-2-regular font-normal text-text-secondary">{{ t(`apiAccess.${row.key}`) }}</th>
+                <td v-if="showBase(offer.rate_multiplier)" class="break-all px-3 py-2 text-right text-body-2-regular tabular-nums text-text-tertiary line-through">{{ price(row.value, 1, row.tokens) }}</td>
                 <td class="break-all px-3 py-2 text-right text-body-medium tabular-nums text-text-primary">{{ price(row.value, offer.rate_multiplier, row.tokens) }}</td>
               </tr>
             </tbody>
@@ -115,9 +128,9 @@ onMounted(load)
         </section>
         <details v-if="hasTiers(model)" class="mt-auto rounded-xl border border-border-button-default p-3"><summary class="cursor-pointer text-body-medium text-text-secondary">{{ t('apiAccess.pricingDetails') }}</summary>
           <div class="mt-3 space-y-3">
-            <template v-for="offer in model.wallet_offers" :key="offer.endpoint">
+            <template v-for="{ offer, endpoints: offerEndpoints } in uniqueOffers(model)" :key="offerEndpoints.join()">
               <div v-if="offer.pricing?.intervals?.length || offer.time_pricing" class="space-y-1">
-                <p class="text-body-medium text-text-primary">{{ endpointLabel(offer.endpoint) }}</p>
+                <p v-if="uniqueOffers(model).length > 1" class="text-body-medium text-text-primary">{{ offerEndpoints.join(' · ') }}</p>
                 <p v-if="offer.long_context_basis" class="text-caption-1-regular text-text-secondary">{{ offer.long_context_basis }}</p>
                 <p v-for="(tier, i) in offer.pricing?.intervals ?? []" :key="i" class="text-caption-1-regular text-text-secondary">{{ tier.min_tokens }}–{{ tier.max_tokens ?? '∞' }} · {{ t('dashboard.input') }} {{ price(tier.input_price, offer.rate_multiplier) }} · {{ t('dashboard.output') }} {{ price(tier.output_price, offer.rate_multiplier) }}</p>
                 <p v-if="offer.time_pricing" class="text-caption-1-regular text-text-secondary">{{ offer.time_pricing.timezone }} · {{ t('apiAccess.timePrice') }}</p>

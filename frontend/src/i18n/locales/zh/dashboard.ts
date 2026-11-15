@@ -101,6 +101,7 @@ export default {
     "requestPrice": "单次请求",
     "perMillion": "每百万 Token",
     "rateMultiplier": "倍率",
+    "basePrice": "原价",
     "currentPrice": "现价",
     "pricingDetails": "阶梯与分时价格",
     "timePrice": "分时倍率按所示时区生效",

@@ -101,6 +101,7 @@ export default {
     "requestPrice": "Per request",
     "perMillion": "Per million tokens",
     "rateMultiplier": "Multiplier",
+    "basePrice": "Base",
     "currentPrice": "Current",
     "pricingDetails": "Pricing tiers and schedules",
     "timePrice": "Time multipliers use the displayed time zone",
