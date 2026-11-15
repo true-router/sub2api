@@ -26,7 +26,7 @@
         </router-link>
         <!-- Version Badge -->
         <VersionBadge v-if="!isWorkspace" :version="siteVersion" />
-        <span v-else class="text-caption-1-regular text-text-secondary">{{ t('boardui.workspace') }}</span>
+        <span v-else-if="isAdmin" class="text-caption-1-regular text-text-secondary">{{ t('boardui.workspace') }}</span>
       </div>
       <div v-if="isWorkspace" :class="cx('flex shrink-0 items-center gap-1', sidebarCollapsed && 'flex-col')">
         <AnnouncementBell v-if="authStore.user" data-testid="sidebar-announcements" />
@@ -34,7 +34,7 @@
       </div>
     </div>
 
-    <div v-if="isWorkspace" class="sidebar-search px-3 pt-2">
+    <div v-if="isWorkspace && isAdmin" class="sidebar-search px-3 pt-2">
       <button data-testid="command-trigger" type="button" :aria-label="t('boardui.commandTitle')" :class="['flex h-10 w-full items-center gap-2 rounded-full lg:h-9 bg-background-secondary-hover px-3 text-body-regular text-text-secondary outline-none hover:bg-background-tertiary-default focus-visible:ring-2 focus-visible:ring-border-focus-ring', sidebarCollapsed && 'justify-center px-0']" @click="commandOpen = true"><Icon name="search" size="md" class="shrink-0" /><span v-if="!sidebarCollapsed" class="min-w-0 flex-1 text-start">{{ t('boardui.quickSearch') }}</span><kbd v-if="!sidebarCollapsed" class="rounded-md bg-background-tertiary-default px-1.5 py-1 text-caption-1-medium">⌘K</kbd></button>
     </div>
     <div v-else-if="isAdmin && !sidebarCollapsed" class="sidebar-search px-3 pt-3">
@@ -749,7 +749,6 @@ const flagChannelMonitor = makeSidebarFlag(FeatureFlags.channelMonitor)
 const flagPayment = makeSidebarFlag(FeatureFlags.payment)
 const flagAvailableChannels = makeSidebarFlag(FeatureFlags.availableChannels)
 const flagSubscription = makeSidebarFlag(FeatureFlags.subscription)
-const flagModelPlaza = makeSidebarFlag(FeatureFlags.modelPlaza)
 
 // 购买入口文案随站点计费模式切换：仅充值 → 「充值」，仅订阅 → 「订阅」，否则「充值/订阅」。
 const purchaseNavLabel = computed(() => {
@@ -784,7 +783,7 @@ function buildSelfNavItems(withDashboard: boolean): NavItem[] {
     { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
     { path: '/batch-image', label: t('nav.batchImage'), icon: BatchImageIcon, hideInSimpleMode: true, featureFlag: flagBatchImageAccess },
     { path: '/usage', label: t('nav.usage'), icon: ChartIcon, hideInSimpleMode: true },
-    { path: '/account/model-plaza', label: t('nav.modelPlaza'), icon: GlobeIcon, featureFlag: flagModelPlaza },
+    { path: '/account/model-plaza', label: t('nav.modelPlaza'), icon: GlobeIcon },
     { path: '/available-channels', label: t('nav.availableChannels'), icon: ChannelIcon, hideInSimpleMode: true, featureFlag: flagAvailableChannels },
     { path: '/monitor', label: t('nav.channelStatus'), icon: SignalIcon, featureFlag: flagChannelMonitor },
     { path: '/subscriptions', label: t('nav.mySubscriptions'), icon: CreditCardIcon, hideInSimpleMode: true, featureFlag: flagSubscription },
@@ -811,7 +810,14 @@ function finalizeNav(items: NavItem[]): NavItem[] {
 }
 
 // User navigation items (for regular users)
-const userNavItems = computed((): NavItem[] => finalizeNav(buildSelfNavItems(true)))
+const userNavItems = computed((): NavItem[] => finalizeNav([
+  { path: '/dashboard', label: t('console.home'), icon: DashboardIcon },
+  { path: '/keys', label: t('console.keys'), icon: KeyIcon },
+  { path: '/account/model-plaza', label: t('console.models'), icon: GlobeIcon },
+  { path: '/usage', label: t('console.usage'), icon: ChartIcon, hideInSimpleMode: true },
+  { path: '/purchase', label: t('console.billing'), icon: CreditCardIcon, hideInSimpleMode: true },
+  { path: '/profile', label: t('console.account'), icon: UserIcon },
+]))
 
 // Personal navigation items (for admin's "My Account" section, without Dashboard).
 // Admins access 可用渠道 from this section just like regular users — there is no
@@ -1000,6 +1006,10 @@ function handleMenuItemClick(itemPath: string) {
 }
 
 function isActive(path: string): boolean {
+  if (!isAdmin.value) {
+    if (path === '/purchase' && ['/subscriptions', '/orders', '/redeem'].includes(route.path)) return true
+    if (path === '/profile' && (['/affiliate', '/settings/mcp', '/monitor', '/available-channels', '/batch-image', '/docs/batch-image'].includes(route.path) || route.path.startsWith('/custom/'))) return true
+  }
   return route.path === path || route.path.startsWith(path + '/')
 }
 

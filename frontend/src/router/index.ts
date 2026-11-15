@@ -190,7 +190,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/account/model-plaza',
     name: 'AccountModelPlaza',
-    component: () => import('@/views/ModelPlazaView.vue'),
+    component: () => import('@/views/user/UnifiedModelsView.vue'),
     meta: {
       requiresAuth: true,
       requiresAdmin: false,
@@ -355,9 +355,8 @@ const routes: RouteRecordRaw[] = [
       requiresAdmin: false,
       workspace: 'account',
       title: 'Purchase Subscription',
-      titleKey: 'nav.buySubscription',
-      descriptionKey: 'purchase.description',
-      requiresPayment: true
+      titleKey: 'console.billing',
+      descriptionKey: 'console.billingDescription'
     }
   },
   {
@@ -866,8 +865,8 @@ router.beforeEach(async (to, _from, next) => {
   }
 
   if (!requiresAuth || authStore.isAuthenticated) {
-    // Public and console catalogs share the feature switch and access policy.
-    if (to.path === '/model-plaza' || to.path === '/account/model-plaza') {
+    // The public catalogue has a feature switch; account API access is always available.
+    if (to.path === '/model-plaza') {
       if (!appStore.publicSettingsLoaded) {
         try {
           await appStore.fetchPublicSettings()

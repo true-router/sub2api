@@ -1,0 +1,50 @@
+const fs=await import('node:fs/promises')
+const cfg=JSON.parse(await fs.readFile('/tmp/sub2api-console-browser-ready.json','utf8'))
+const task=await taskSpace('sub2api console redesign acceptance')
+const page=task.page('p1')
+await page.cdp('Emulation.setDeviceMetricsOverride',{width:1440,height:1100,deviceScaleFactor:1,mobile:false})
+const path='/tmp/sub2api-console-browser/receipt.json'
+const receipt=JSON.parse(await fs.readFile(path,'utf8'))
+async function check(name,passed){receipt.checks.push({name,passed});await fs.writeFile(path,JSON.stringify(receipt,null,2));if(!passed)throw Error(name);console.log('PASS '+name)}
+await page.cdp('Network.enable')
+await page.cdp('Network.setBlockedURLs',{urls:['*/api/v1/payment/checkout-info']})
+await page.goto(cfg.origin+'/purchase')
+await page.waitForSelector('[data-testid="billing-checkout"] [role="alert"]')
+await check('Checkout transport failure exposes retry instead of false unavailability',await page.evaluate(()=>document.querySelector('[data-testid="billing-checkout"] [role="alert"]').innerText.includes('重试')))
+await page.cdp('Network.setBlockedURLs',{urls:[]})
+await page.click('[data-testid="billing-checkout"] [role="alert"] button')
+await page.waitForSelector('[data-testid="quick-amount-5"]')
+await check('Checkout retry restores real payment methods',await page.evaluate(()=>document.querySelector('[data-testid="payment-method-grid"]')!==null))
+const prepared=await page.evaluate(async()=>{const r=await fetch('/api/v1/user/api-access',{method:'POST',headers:{Authorization:'Bearer '+localStorage.getItem('auth_token'),'Content-Type':'application/json'},body:'{}'});return (await r.json()).data.default_key})
+for (let i=0;i<5;i++) {
+  await page.waitForFunction(async key=>{
+    const r=await fetch('/v1/responses',{method:'POST',headers:{Authorization:'Bearer '+key,'Content-Type':'application/json'},body:JSON.stringify({model:'gpt-4o-mini',input:'Synthetic console acceptance',stream:false})})
+    const body=await r.text()
+    if(r.status===403 && body.toLowerCase().includes('insufficient')) { window.__consoleAdmissionDeferrals=(window.__consoleAdmissionDeferrals||0)+1; return false }
+    if(r.status!==200) throw Error('Unexpected synthetic model status '+r.status)
+    return true
+  },prepared.key,{timeout:10000})
+  await page.waitForFunction(async expected=>{const j=await(await fetch('/api/v1/user/profile',{headers:{Authorization:'Bearer '+localStorage.getItem('auth_token')}})).json();return j.data.balance===expected},2.5-(i+1)*.5)
+}
+receipt.inflight_admission_deferrals=await page.evaluate(()=>window.__consoleAdmissionDeferrals||0)
+await check('Same default credential spends the redeemed funds through settled requests',true)
+await page.waitForFunction(async()=>{const j=await(await fetch('/api/v1/user/profile',{headers:{Authorization:'Bearer '+localStorage.getItem('auth_token')}})).json();return j.data.balance===0})
+await page.goto(cfg.origin+'/dashboard')
+await page.waitForSelector('[data-testid="home-funding-needed"]')
+await page.waitForSelector("[data-testid='default-api-access'] button:has-text('复制 API key')")
+await check('Empty wallet shows funding guidance while preserving ready credentials',await page.evaluate(()=>document.body.innerText.includes('充值后继续使用原密钥')&&document.querySelector('[data-testid="default-api-access"] code').textContent.includes('•')))
+await page.goto(cfg.origin+'/keys')
+await page.waitForSelector(`[data-key-id="${prepared.id}"]`)
+await page.click(`[data-key-id="${prepared.id}"] button:has-text('删除')`)
+await page.waitForSelector('[role="dialog"]')
+await check('Default deletion explains the durable revocation',await page.evaluate(()=>document.querySelector('[role="dialog"]').innerText.includes('系统不会重建默认密钥')))
+await page.click("[role='dialog'] button:has-text('删除')")
+await page.waitForFunction(id=>!document.querySelector(`[data-key-id="${id}"]`),prepared.id)
+await page.goto(cfg.origin+'/dashboard')
+await page.waitForFunction(()=>document.body.innerText.includes('默认 API key 已被删除'))
+await check('Dashboard reconciliation does not recreate deleted default',await page.evaluate(()=>document.body.innerText.includes('系统不会自动重建')))
+receipt.passed=true
+await fs.writeFile(path,JSON.stringify(receipt,null,2))
+await fs.writeFile('/tmp/sub2api-console-browser-ready.json.done','done')
+console.log({checks:receipt.checks.length,passed:receipt.checks.every(c=>c.passed)})
+// Inspect screenshots, then finish this TaskSpace exactly once.

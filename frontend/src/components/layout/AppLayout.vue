@@ -16,7 +16,7 @@
 
       <!-- Main Content -->
       <main id="main-content" class="app-main p-4 md:p-6 lg:p-8" tabindex="-1">
-        <AdminContentHeading v-if="isWorkspace" />
+        <AdminContentHeading v-if="isWorkspace" :breadcrumbs-only="hideHeading" />
         <slot />
       </main>
     </div>
@@ -36,6 +36,8 @@ import AppSidebar from './AppSidebar.vue'
 import AppHeader from './AppHeader.vue'
 import AdminContentHeading from './AdminContentHeading.vue'
 
+withDefaults(defineProps<{ hideHeading?: boolean }>(), { hideHeading: false })
+
 const appStore = useAppStore()
 const authStore = useAuthStore()
 const route = useRoute()
@@ -45,7 +47,7 @@ const isAdmin = computed(() => authStore.user?.role === 'admin')
 
 const { replayTour } = useOnboardingTour({
   storageKey: isAdmin.value ? 'admin_guide' : 'user_guide',
-  autoStart: true
+  autoStart: isAdmin.value
 })
 
 const onboardingStore = useOnboardingStore()

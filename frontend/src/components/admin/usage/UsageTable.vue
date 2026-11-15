@@ -227,6 +227,12 @@
                 </div>
               </div>
             </div>
+            <div v-if="showBillingSource && row.billing_source" class="space-y-1 text-caption-1-regular text-text-secondary" data-testid="billing-source">
+              <p v-if="row.billing_source.subscription_id">{{ t('apiAccess.subscription') }} · {{ row.billing_source.subscription_name }} · ${{ row.billing_source.subscription_cost.toFixed(6) }}</p>
+              <p v-if="row.billing_source.bonus_cost > 0">{{ t('apiAccess.bonus') }} · ${{ row.billing_source.bonus_cost.toFixed(6) }}</p>
+              <p v-if="row.billing_source.paid_cost > 0">{{ t('apiAccess.paid') }} · ${{ row.billing_source.paid_cost.toFixed(6) }}</p>
+              <p v-if="row.billing_source.unverified_cost > 0">{{ t('apiAccess.unknown') }} · ${{ row.billing_source.unverified_cost.toFixed(6) }}</p>
+            </div>
             <div v-if="showAccountBilling && row.account_rate_multiplier != null" class="mt-0.5 text-[11px] text-text-warning ">
               A ${{ accountBilled(row).toFixed(6) }}
             </div>
@@ -635,6 +641,7 @@ interface Props {
   serverSideSort?: boolean
   defaultSortKey?: string
   defaultSortOrder?: 'asc' | 'desc'
+  showBillingSource?: boolean
   showAccountBilling?: boolean
   showUpstreamEndpoint?: boolean
   /** 嵌入统一卡片内使用：去掉自身卡片外观 */
@@ -646,6 +653,7 @@ const props = withDefaults(defineProps<Props>(), {
   serverSideSort: false,
   defaultSortKey: '',
   defaultSortOrder: 'asc',
+  showBillingSource: false,
   showAccountBilling: true,
   showUpstreamEndpoint: true,
   flat: false

@@ -9,6 +9,7 @@ import BoardBreadcrumb from '@/components/boardui/Breadcrumb.vue'
 import BoardButton from '@/components/boardui/Button.vue'
 import Icon from '@/components/icons/Icon.vue'
 
+withDefaults(defineProps<{ breadcrumbsOnly?: boolean }>(), { breadcrumbsOnly: false })
 const route = useRoute()
 const appStore = useAppStore()
 const authStore = useAuthStore()
@@ -38,7 +39,7 @@ const description = computed(() => keys.value.descriptionKey ? t(keys.value.desc
       <BoardButton data-testid="mobile-menu-toggle" variant="ghost" size="small" icon-only class="lg:hidden" :aria-label="t('common.toggleMenu')" @click="appStore.toggleMobileSidebar()"><Icon name="menu" size="md" /></BoardButton>
       <BoardBreadcrumb :label="t('boardui.breadcrumb')" :items="breadcrumbs" />
     </div>
-    <div class="flex min-w-0 items-start justify-between gap-4">
+    <div v-if="!breadcrumbsOnly" class="flex min-w-0 items-start justify-between gap-4">
       <div class="min-w-0">
         <h1 class="text-title-1-semibold text-text-primary">{{ title }}</h1>
         <p v-if="description" class="mt-1 text-body-regular text-text-secondary">{{ description }}</p>

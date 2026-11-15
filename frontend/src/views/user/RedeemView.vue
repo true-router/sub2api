@@ -1,22 +1,7 @@
 <template>
-  <AppLayout>
+  <component :is="embedded ? 'div' : ConsolePage" :title="t('console.redeem')" :description="t('console.billingDescription')">
     <div class="max-w-5xl space-y-4">
-      <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-        <section class="card flex flex-col justify-center gap-3 p-4 sm:p-5">
-          <div class="flex h-9 w-9 items-center justify-center rounded-[10px] bg-background-accent-subtle text-text-accent">
-            <Icon name="creditCard" size="md" />
-          </div>
-          <div>
-            <p class="text-body-2-medium text-text-secondary">{{ t('redeem.currentBalance') }}</p>
-            <p class="mt-1 text-title-1-semibold tabular-nums text-text-text-accent">
-              ${{ user?.balance?.toFixed(2) || '0.00' }}
-            </p>
-          </div>
-          <p class="text-body-2-regular text-text-secondary">
-            {{ t('redeem.concurrency') }}: {{ user?.concurrency || 0 }} {{ t('redeem.requests') }}
-          </p>
-        </section>
-
+      <div>
         <section class="card p-4 sm:p-5">
           <form @submit.prevent="handleRedeem" class="space-y-4">
             <BoardInput
@@ -320,21 +305,22 @@
         </div>
       </div>
     </div>
-  </AppLayout>
+  </component>
 </template>
 
 <script setup lang="ts">
+withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
 import BoardInput from '@/components/boardui/Input.vue'
 import BoardPagination from '@/components/boardui/Pagination.vue'
 import Select from '@/components/common/Select.vue'
 import BoardButton from '@/components/boardui/Button.vue'
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { useSubscriptionStore } from '@/stores/subscriptions'
 import { redeemAPI, authAPI, type RedeemHistoryItem } from '@/api'
-import AppLayout from '@/components/layout/AppLayout.vue'
+import ConsolePage from '@/components/user/console/ConsolePage.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { formatDateTime } from '@/utils/format'
 
@@ -343,7 +329,6 @@ const authStore = useAuthStore()
 const appStore = useAppStore()
 const subscriptionStore = useSubscriptionStore()
 
-const user = computed(() => authStore.user)
 
 const redeemCode = ref('')
 const submitting = ref(false)

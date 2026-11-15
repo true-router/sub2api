@@ -1,80 +1,24 @@
 <template>
-  <div class="space-y-4">
-    <!-- Quick Amount Buttons -->
-    <div>
-      <label class="mb-2 block text-body-medium text-text-primary">
-        {{ t('payment.quickAmounts') }}
-      </label>
-      <div class="grid grid-cols-3 gap-x-4 gap-y-4 pt-2">
-        <button
-          v-for="amt in filteredAmounts"
-          :key="amt"
-          type="button"
-          :class="[
-            'relative rounded-2xl border px-3 py-3 text-center text-body-medium outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-border-focus-ring',
-            modelValue === amt
-              ? 'border-background-accent-default bg-background-accent-subtle text-text-accent ring-1 ring-background-accent-default'
-              : quoteFor(amt).percent > 0
-                ? 'border-border-button-default bg-background-primary-default text-text-primary hover:border-text-error-primary'
-                : 'border-border-button-default bg-background-primary-default text-text-primary hover:border-border-button-hover hover:bg-background-primary-hover',
-          ]"
-          :data-testid="`quick-amount-${amt}`"
-          @click="selectAmount(amt)"
-        >
-          <!-- 促销价签（单行）：仅命中档位的金额显示；红底白字、内圈点线、右侧圆孔、整体旋转 -->
-          <span
-            v-if="quoteFor(amt).percent > 0"
-            class="pointer-events-none absolute -right-2 -top-3 z-10 rotate-12"
-            data-testid="quick-amount-bonus-badge"
-          >
-            <span
-              class="relative flex items-center gap-1 whitespace-nowrap rounded-md bg-background-error-default py-0.5 pl-1.5 pr-1 text-caption-1-semibold text-text-white shadow-sm ring-2 ring-background-primary-default"
-            >
-              <span>{{ badgeText(amt) }}</span>
-              <span class="h-1 w-1 shrink-0 rounded-full bg-white"></span>
-            </span>
-          </span>
-          <span class="block">{{ amt }}</span>
-          <!-- 配置了优惠阶梯时，所有按钮都显示第二行，保持高度一致：赠金显示到账 USD，折扣显示折后实付 -->
-          <span
-            v-if="showSecondLine"
-            :class="[
-              'mt-0.5 block text-caption-1-regular',
-              quoteFor(amt).percent > 0 ? 'text-text-error-primary' : 'text-text-tertiary',
-            ]"
-            data-testid="quick-amount-credited"
-          >{{ secondLine(amt) }}</span>
-        </button>
+  <div class="space-y-5">
+    <div class="space-y-3"><h3 class="text-body-medium text-text-primary">{{ t('payment.quickAmounts') }}</h3>
+      <div class="grid gap-3 sm:grid-cols-3" role="group" :aria-label="t('payment.quickAmounts')">
+        <BoardButton v-for="amt in filteredAmounts" :key="amt" variant="secondary" :aria-pressed="modelValue === amt" :data-testid="`quick-amount-${amt}`" :class="cx('h-auto justify-start whitespace-normal p-4 text-start', modelValue === amt && 'border-border-focus-ring bg-background-accent-subtle')" @click="selectAmount(amt)">
+          <span class="space-y-1"><span class="block text-body-semibold">{{ t('console.amountPay', {amount: formatPaymentAmount(quoteFor(amt).payBase, currency)}) }}</span><span class="block text-caption-1-regular text-text-secondary" data-testid="quick-amount-credited">{{ t('console.amountCredit', {amount: '$' + quoteFor(amt).credited.toFixed(2)}) }}</span></span>
+        </BoardButton>
       </div>
     </div>
-
-    <!-- Custom Amount Input -->
-    <div>
-      <label class="mb-2 block text-body-medium text-text-primary">
-        {{ t('payment.customAmount') }}
-      </label>
-      <div class="relative">
-        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-body-regular text-text-tertiary">
-          $
-        </span>
-        <input
-          type="text"
-          inputmode="decimal"
-          :value="customText"
-          :placeholder="placeholderText"
-          class="input h-12 w-full rounded-2xl py-3 pl-8 pr-4 text-body-regular tabular-nums"
-          @input="handleInput"
-        />
-      </div>
-    </div>
+    <BoardInput :model-value="customText" :label="t('payment.customAmount')" :placeholder="placeholderText" inputmode="decimal" @input="handleInput"><template #prefix><span>{{ currency || 'USD' }}</span></template></BoardInput>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import BoardButton from '@/components/boardui/Button.vue'
+import BoardInput from '@/components/boardui/Input.vue'
+import { cx } from '@/utils/cx'
 import { useI18n } from 'vue-i18n'
 import type { RechargeBonusTier } from '@/types/payment'
-import { formatRechargeBonusNumber, quoteRechargeBonus, type RechargeBonusMode } from '@/utils/rechargeBonus'
+import { quoteRechargeBonus, type RechargeBonusMode } from '@/utils/rechargeBonus'
 import { formatPaymentAmount } from './currency'
 
 const props = withDefaults(defineProps<{
@@ -113,7 +57,6 @@ const filteredAmounts = computed(() =>
   props.amounts.filter((a) => (props.min <= 0 || a >= props.min) && (props.max <= 0 || a <= props.max))
 )
 
-const showSecondLine = computed(() => props.bonusTiers.length > 0)
 
 function currencyDigits(): number {
   if (!props.currency) return 2
@@ -130,20 +73,6 @@ function quoteFor(amt: number) {
     mode: props.bonusMode,
     currencyDigits: currencyDigits(),
   })
-}
-
-// 价签文案：赠金「+20%」，折扣「20% OFF」
-function badgeText(amt: number): string {
-  const percent = formatRechargeBonusNumber(quoteFor(amt).percent)
-  return props.bonusMode === 'discount' ? `${percent}% OFF` : `+${percent}%`
-}
-
-function secondLine(amt: number): string {
-  const quote = quoteFor(amt)
-  if (props.bonusMode === 'discount') {
-    return t('payment.rechargeBonus.payShort', { amount: formatPaymentAmount(quote.payBase, props.currency) })
-  }
-  return t('payment.rechargeBonus.creditedShort', { amount: '$' + quote.credited.toFixed(2) })
 }
 
 const placeholderText = computed(() => {

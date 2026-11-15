@@ -23,7 +23,7 @@ import { useBatchImageAccess } from '@/composables/useBatchImageAccess'
 const { t } = useI18n()
 const { canUseBatchImage, refreshBatchImageAccess } = useBatchImageAccess()
 const actions = computed(() => [
-  { path: '/keys', icon: 'key' as const, label: 'dashboard.createApiKey', description: 'dashboard.generateNewKey' },
+  { path: '/keys', icon: 'key' as const, label: 'apiAccess.manageKeys', description: 'apiAccess.sharedModels' },
   { path: '/usage', icon: 'chart' as const, label: 'dashboard.viewUsage', description: 'dashboard.checkDetailedLogs' },
   ...(canUseBatchImage.value ? [{ path: '/batch-image', icon: 'sparkles' as const, label: 'dashboard.batchImageAgent', description: 'dashboard.batchImageAgentDesc' }] : []),
   { path: '/redeem', icon: 'gift' as const, label: 'dashboard.redeemCode', description: 'dashboard.addBalanceWithCode' },

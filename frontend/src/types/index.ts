@@ -749,6 +749,8 @@ export interface CompositeRouteDecision {
 }
 
 export interface ApiKey {
+  access_mode?: 'legacy' | 'unified'
+  is_default?: boolean
   id: number
   user_id: number
   key: string
@@ -1822,6 +1824,7 @@ export type ImageSizeSource = 'output' | 'input' | 'default' | 'legacy'
 export type ImageSizeBreakdown = Record<string, number>
 
 export interface UsageLog {
+ billing_source?: { subscription_id?: number; subscription_name?: string; subscription_cost: number; bonus_cost: number; paid_cost: number; unverified_cost: number }
   id: number
   user_id: number
   api_key_id: number
