@@ -2,7 +2,7 @@
   <div data-testid="key-usage-page" class="flex min-h-screen flex-col bg-background-full text-text-primary">
     <header class="border-b border-separator-border bg-background-primary-default">
       <nav :aria-label="t('home.redesign.navigation')" class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-8">
-        <router-link to="/home" class="flex min-w-0 items-center gap-2.5 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring">
+        <router-link to="/" class="flex min-w-0 items-center gap-2.5 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring">
           <img :src="siteLogo || '/logo.svg'" alt="" class="h-8 w-8 shrink-0 rounded-lg object-contain" />
           <span class="max-w-40 truncate text-headline-semibold sm:max-w-64">{{ siteName }}</span>
         </router-link>
@@ -10,7 +10,7 @@
           <a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer" class="usage-link hidden text-body-medium sm:inline-flex">{{ t('home.docs') }}</a>
           <LocaleSwitcher />
           <Button variant="ghost" icon-only :aria-label="isDark ? t('home.switchToLight') : t('home.switchToDark')" @click="toggleTheme"><Icon :name="isDark ? 'sun' : 'moon'" size="md" aria-hidden="true" /></Button>
-          <router-link to="/home" class="usage-back"><Icon name="arrowLeft" size="sm" aria-hidden="true" />{{ t('keyUsage.design.backHome') }}</router-link>
+          <router-link to="/" class="usage-back"><Icon name="arrowLeft" size="sm" aria-hidden="true" />{{ t('keyUsage.design.backHome') }}</router-link>
         </div>
       </nav>
     </header>

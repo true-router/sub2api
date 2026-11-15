@@ -31,7 +31,7 @@ const routes: RouteRecordRaw[] = [
 
   // ==================== Public Routes ====================
   {
-    path: '/home',
+    path: '/',
     name: 'Home',
     component: () => import('@/views/HomeView.vue'),
     meta: {
@@ -200,8 +200,8 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    path: '/',
-    redirect: '/home'
+    path: '/home',
+    redirect: '/'
   },
   {
     path: '/dashboard',
@@ -882,7 +882,7 @@ router.beforeEach(async (to, _from, next) => {
             ? authStore.isAdmin
               ? '/admin/dashboard'
               : '/dashboard'
-            : '/home'
+            : '/'
         )
         return
       }
