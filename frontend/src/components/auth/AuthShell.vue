@@ -1,10 +1,11 @@
 <script setup lang="ts">
 // Shared shell for the login and register pages.
 // The shell fills exactly one viewport. It never shows a page scrollbar.
-import { computed, onBeforeUnmount } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores'
 import { sanitizeUrl } from '@/utils/url'
+import Icon from '@/components/icons/Icon.vue'
 
 defineProps<{
   title: string
@@ -16,11 +17,13 @@ defineProps<{
 const { t } = useI18n()
 const appStore = useAppStore()
 const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || 'Sub2API')
-// The auth pages are light-only. Suspend the dark theme while they are mounted.
-const root = document.documentElement
-const wasDark = root.classList.contains('dark')
-if (wasDark) root.classList.remove('dark')
-onBeforeUnmount(() => { if (wasDark) root.classList.add('dark') })
+// Theme state is shared with the landing page through the `dark` class and the `theme` storage key.
+const isDark = ref(document.documentElement.classList.contains('dark'))
+function toggleTheme() {
+  isDark.value = !document.documentElement.classList.contains('dark')
+  document.documentElement.classList.toggle('dark', isDark.value)
+  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+}
 
 const siteLogo = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '', { allowRelative: true, allowDataUrl: true }))
 const points = computed(() => [t('lp.trust1'), t('lp.trust2'), t('lp.auth.point3')])
@@ -31,7 +34,7 @@ const points = computed(() => [t('lp.trust1'), t('lp.trust2'), t('lp.auth.point3
     <!-- Brand side (desktop only) -->
     <aside class="brand">
       <div class="aurora"><i class="b1"></i><i class="b2"></i></div>
-      <router-link to="/home" class="logo" :aria-label="siteName">
+      <router-link to="/" class="logo" :aria-label="siteName">
         <span class="logo-mark" :class="{ 'has-img': siteLogo }"><img v-if="siteLogo" :src="siteLogo" alt="" /><svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M4 12h6l2-6 2 12 2-6h4" /></svg></span>{{ siteName }}
       </router-link>
       <div class="pitch">
@@ -52,10 +55,11 @@ const points = computed(() => [t('lp.trust1'), t('lp.trust2'), t('lp.auth.point3
     <!-- Form side -->
     <main class="pane">
       <div class="topbar">
-        <router-link to="/home" class="logo m-logo" :aria-label="siteName">
+        <router-link to="/" class="logo m-logo" :aria-label="siteName">
           <span class="logo-mark" :class="{ 'has-img': siteLogo }"><img v-if="siteLogo" :src="siteLogo" alt="" /><svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M4 12h6l2-6 2 12 2-6h4" /></svg></span>{{ siteName }}
         </router-link>
-        <router-link to="/home" class="home-link">{{ t('lp.auth.backHome') }}</router-link>
+        <router-link to="/" class="home-link">{{ t('lp.auth.backHome') }}</router-link>
+        <button type="button" class="theme-btn" data-testid="auth-theme-toggle" role="switch" :aria-checked="isDark" :aria-label="t(isDark ? 'nav.lightMode' : 'nav.darkMode')" :title="t(isDark ? 'nav.lightMode' : 'nav.darkMode')" @click="toggleTheme"><Icon :name="isDark ? 'moon' : 'sun'" size="sm" aria-hidden="true" /></button>
       </div>
       <div class="center">
         <div class="form-box">
@@ -73,8 +77,8 @@ const points = computed(() => [t('lp.trust1'), t('lp.trust2'), t('lp.auth.point3
 </template>
 
 <style scoped>
-.auth{--ink:#0b1220;--ink2:#334155;--ink3:#64748b;--line:#e6e9f0;--blue:#2563eb;
-  position:relative;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);height:100dvh;overflow:hidden;color:var(--ink);background:#fff;-webkit-font-smoothing:antialiased;
+.auth{--ink:rgb(var(--boardui-text-primary));--ink2:rgb(var(--boardui-text-primary));--ink3:rgb(var(--boardui-text-secondary));--line:rgb(var(--boardui-border-button-default));--blue:rgb(var(--boardui-text-accent));--bg:rgb(var(--boardui-background-full));--soft:rgb(var(--boardui-background-secondary-default));color-scheme:light dark;
+  position:relative;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);height:100dvh;overflow:hidden;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Hiragino Sans GB","Segoe UI",sans-serif}
 .num{font-variant-numeric:tabular-nums}
 .logo{display:flex;gap:10px;align-items:center;font-weight:650;font-size:17px;letter-spacing:-.01em;width:max-content}
@@ -83,32 +87,35 @@ const points = computed(() => [t('lp.trust1'), t('lp.trust2'), t('lp.auth.point3
 .logo-mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#3b82f6,#6366f1);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 4px 12px -2px rgba(59,130,246,.5);display:flex;align-items:center;justify-content:center}
 
 /* brand side */
-.brand{position:relative;display:flex;flex-direction:column;justify-content:space-between;gap:24px;padding:40px 48px;overflow:hidden;background:#f6f8fe}
-.brand:before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(15,23,42,.09) 1px,transparent 1px);background-size:22px 22px;-webkit-mask-image:radial-gradient(ellipse 80% 70% at 30% 40%,#000 20%,transparent 75%);mask-image:radial-gradient(ellipse 80% 70% at 30% 40%,#000 20%,transparent 75%)}
+.brand{position:relative;display:flex;flex-direction:column;justify-content:space-between;gap:24px;padding:40px 48px;overflow:hidden;background:var(--soft)}
+.brand:before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgb(var(--boardui-text-primary) / .09) 1px,transparent 1px);background-size:22px 22px;-webkit-mask-image:radial-gradient(ellipse 80% 70% at 30% 40%,#000 20%,transparent 75%);mask-image:radial-gradient(ellipse 80% 70% at 30% 40%,#000 20%,transparent 75%)}
 .aurora{position:absolute;inset:0;pointer-events:none}
 .aurora i{position:absolute;border-radius:50%;filter:blur(80px)}
-.b1{width:420px;height:360px;left:-100px;top:-60px;background:#bfdbfe;opacity:.7}
-.b2{width:380px;height:340px;right:-120px;bottom:-60px;background:#fde7bf;opacity:.6}
+.b1{width:420px;height:360px;left:-100px;top:-60px;background:rgb(var(--boardui-background-accent-subtle));opacity:.7}
+.b2{width:380px;height:340px;right:-120px;bottom:-60px;background:rgb(var(--boardui-background-warning-subtle));opacity:.6}
 .brand>*:not(.aurora){position:relative}
 .pitch h2{font-size:clamp(30px,3.2vw,44px);line-height:1.1;letter-spacing:-.04em;font-weight:750}
 .grad{background:linear-gradient(100deg,#1d4ed8 10%,#6366f1 55%,#06b6d4 95%);-webkit-background-clip:text;background-clip:text;color:transparent}
 .pitch ul{list-style:none;display:flex;flex-direction:column;gap:10px;margin-top:22px;font-size:14.5px;color:var(--ink3)}
 .pitch li{display:flex;gap:8px;align-items:center}
 .pitch li svg{color:#10b981;flex-shrink:0}
-.gift-card{display:flex;gap:16px;align-items:center;padding:16px 18px;border-radius:20px;border:1px solid #f4e3c6;background:linear-gradient(180deg,#fffaf3,#fff4e5);box-shadow:0 24px 40px -28px rgba(180,120,40,.45)}
+.gift-card{display:flex;gap:16px;align-items:center;padding:16px 18px;border-radius:20px;border:1px solid var(--line);background:rgb(var(--boardui-background-warning-subtle));box-shadow:0 24px 40px -28px rgba(180,120,40,.45)}
 .card{position:relative;width:96px;height:62px;flex-shrink:0;border-radius:10px;color:#fff;padding:8px 10px;overflow:hidden;transform:rotate(-4deg);
   background:radial-gradient(80px 40px at 90% 0,rgba(255,255,255,.3),transparent 60%),linear-gradient(135deg,#3b82f6,#4f46e5 70%);box-shadow:inset 0 0 0 1px rgba(253,230,138,.55),0 10px 18px -10px rgba(30,41,99,.6)}
 .card:before{content:"";position:absolute;top:0;bottom:0;left:78%;width:7px;background:linear-gradient(90deg,#f3c969,#fde68a,#f3c969)}
 .card small{position:relative;font-size:8px;opacity:.85}
 .card b{position:relative;display:block;font-size:20px;font-weight:700;letter-spacing:-.04em;margin-top:6px}
 .gift-card h3{font-size:15px;font-weight:650}
-.gift-card p{font-size:13px;color:#7c6650;margin-top:3px}
+.gift-card p{font-size:13px;color:var(--ink3);margin-top:3px}
 
 /* form side */
-.pane{position:relative;display:flex;flex-direction:column;min-width:0;height:100dvh;overflow-y:auto;scrollbar-width:none;background:#fff}
+.pane{position:relative;display:flex;flex-direction:column;min-width:0;height:100dvh;overflow-y:auto;scrollbar-width:none;background:var(--bg)}
 .pane::-webkit-scrollbar{display:none}
 .topbar{display:flex;justify-content:space-between;align-items:center;padding:24px 32px 0;flex-shrink:0}
 .m-logo{display:none}
+.theme-btn{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;margin-left:8px;border-radius:11px;color:var(--ink3);cursor:pointer;transition:background .15s,color .15s}
+.theme-btn:hover{background:var(--soft);color:var(--ink)}
+.theme-btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .home-link{margin-left:auto;font-size:13.5px;color:var(--ink3);transition:color .15s}
 .home-link:hover{color:var(--ink)}
 .center{flex:1;display:flex;align-items:center;justify-content:center;padding:16px 32px 32px}
@@ -120,7 +127,7 @@ const points = computed(() => [t('lp.trust1'), t('lp.trust2'), t('lp.auth.point3
 .slot :deep([data-boardui=input]){gap:6px}
 .slot :deep([data-boardui=input] > label){font-size:13px;font-weight:550;color:var(--ink2)}
 .slot :deep([data-boardui=input] > div){min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line);box-shadow:none}
-.slot :deep([data-boardui=input] > div:focus-within){border-color:#93c5fd;box-shadow:0 0 0 4px rgba(59,130,246,.12)}
+.slot :deep([data-boardui=input] > div:focus-within){border-color:var(--blue);box-shadow:0 0 0 4px rgb(var(--boardui-text-accent) / .15)}
 .slot :deep([data-boardui=input] > div:has(input[aria-invalid=true])){border-color:#ef4444}
 .slot :deep([data-boardui=input] input){font-size:15px}
 .slot :deep(button[type=submit]){margin-top:4px;height:48px;border:0;border-radius:14px;font-size:15.5px;font-weight:600;color:#fff;
@@ -140,7 +147,7 @@ const points = computed(() => [t('lp.trust1'), t('lp.trust2'), t('lp.auth.point3
   .brand{display:none}
   .m-logo{display:flex}
   .topbar{padding:18px 20px 0}.center{padding:12px 20px 24px}
-  .m-gift{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:8px 12px;border-radius:12px;border:1px solid #f4e3c6;background:linear-gradient(180deg,#fffaf3,#fff4e5);font-size:13px;color:#7c6650}
+  .m-gift{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:rgb(var(--boardui-background-warning-subtle));font-size:13px;color:var(--ink3)}
   .m-card{padding:3px 8px;border-radius:7px;background:linear-gradient(135deg,#3b82f6,#4f46e5);color:#fff;font-weight:700;font-size:13px}
 }
 </style>
