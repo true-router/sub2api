@@ -10,6 +10,7 @@ const scenarios = {
   account: ['boardui-account', 'account-boardui'],
   table: ['boardui-table', 'boardui-table'],
   login: ['boardui-login', 'boardui-login'],
+  'login-redirect': ['login-redirect', 'login-redirect'],
   settings: ['preview-settings', 'preview-settings']
 }
 const name = process.argv[2] || 'components'
