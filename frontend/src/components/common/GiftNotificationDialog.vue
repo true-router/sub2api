@@ -98,7 +98,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <dialog ref="dialogRef" class="gift" :data-phase="phase" aria-labelledby="gift-title" aria-describedby="gift-desc" data-testid="gift-notification" :data-gift-id="notification.id" @cancel="onCancel">
+  <dialog ref="dialogRef" class="gift" :data-phase="phase" aria-labelledby="gift-title" :aria-describedby="phase === 'opened' ? undefined : 'gift-desc'" data-testid="gift-notification" :data-gift-id="notification.id" @cancel="onCancel">
     <div class="gift-card border border-border-button-default bg-background-primary-default text-center">
       <div class="gift-confetti" aria-hidden="true"><i v-for="(piece, i) in confetti" :key="i" :style="piece" /></div>
       <div class="gift-stage">
@@ -121,7 +121,6 @@ onMounted(() => {
       <div v-else>
         <div class="gift-eyebrow text-caption-1-semibold text-text-accent">{{ t('giftNotice.unlockedEyebrow') }}</div>
         <h2 id="gift-title" class="gift-title text-text-primary">{{ t('giftNotice.claimedAmount', { amount }) }}</h2>
-        <p id="gift-desc" class="gift-desc text-body-regular text-text-secondary">{{ t('giftNotice.openedDesc') }}</p>
         <div class="gift-actions">
           <BoardButton ref="doneRef" class="w-full" data-testid="gift-done" autofocus @click="close(true)">{{ t('giftNotice.done') }}</BoardButton>
           <BoardButton variant="ghost" class="w-full" @click="close()">{{ t('giftNotice.close') }}</BoardButton>

@@ -14,7 +14,6 @@ export default {
     "claim": "Open gift",
     "unlockedEyebrow": "Gift unlocked",
     "claimedAmount": "{amount} credit is yours",
-    "openedDesc": "It is already in your balance. Use it with your default API key on any available model.",
     "amount": "Gift credit {amount}",
     "claimed": "Claimed",
     "pending": "Unclaimed",

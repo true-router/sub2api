@@ -14,7 +14,6 @@ export default {
     "claim": "打开礼盒",
     "unlockedEyebrow": "礼金已解锁",
     "claimedAmount": "{amount} 礼金已归你所有",
-    "openedDesc": "礼金已在你的余额中。使用默认 API key 即可调用任意可用模型。",
     "amount": "礼金 {amount}",
     "claimed": "已领取",
     "pending": "待领取",
