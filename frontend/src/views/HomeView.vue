@@ -700,7 +700,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .gift-sec h2{font-size:46px;margin:0 0 14px;text-wrap:balance}
 .gift-sec .sub{color:var(--ink3);max-width:440px;margin:0}
 .g-copy .ctas{justify-content:flex-start!important}
-.gift-stage{position:relative;height:420px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:30px}
+.gift-stage{position:relative;height:290px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:30px;transition:height .6s cubic-bezier(.2,.8,.2,1)}
+.gift-sec[data-state=open] .gift-stage,.gift-sec[data-state=claimed] .gift-stage{height:420px}
 .env-btn{position:relative;border:0;background:none;padding:0;cursor:pointer;border-radius:18px;outline:none;animation:breathe 4.5s ease-in-out infinite}
 .env-btn:focus-visible{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--blue)}
 @keyframes breathe{50%{transform:translateY(-7px)}}
