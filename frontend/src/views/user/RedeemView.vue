@@ -186,7 +186,7 @@
                         ? 'bg-background-success-subtle '
                         : 'bg-background-error-subtle '
                       : isSubscriptionType(item.type)
-                        ? 'bg-purple-100 dark:bg-purple-900/30'
+                        ? 'bg-amber-100 dark:bg-amber-900/30'
                         : item.value >= 0
                           ? 'bg-blue-100 dark:bg-blue-900/30'
                           : 'bg-orange-100 dark:bg-orange-900/30'
@@ -208,7 +208,7 @@
                     v-else-if="isSubscriptionType(item.type)"
                     name="badge"
                     size="md"
-                    class="text-purple-600 dark:text-purple-400"
+                    class="text-amber-600 dark:text-amber-400"
                   />
                   <!-- 并发类型图标 -->
                   <Icon
@@ -240,7 +240,7 @@
                         ? 'text-text-success '
                         : 'text-text-error-primary '
                       : isSubscriptionType(item.type)
-                        ? 'text-purple-600 dark:text-purple-400'
+                        ? 'text-amber-600 dark:text-amber-400'
                         : item.value >= 0
                           ? 'text-blue-600 dark:text-blue-400'
                           : 'text-orange-600 dark:text-orange-400'

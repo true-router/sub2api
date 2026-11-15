@@ -8,7 +8,7 @@
   --boardui-background-warning-default: 161 98 7;
   --boardui-background-error-default: 220 38 38;
   --boardui-background-info-default: 29 78 216;
-  --boardui-background-feature-default: 109 40 217;
+  --boardui-background-feature-default: 8 145 178;
   --boardui-text-primary: 10 10 10;
   --boardui-text-secondary: 115 115 115;
   --boardui-text-tertiary: 138 138 138;
@@ -20,7 +20,7 @@
   --boardui-text-success: 21 128 61;
   --boardui-text-warning: 161 98 7;
   --boardui-text-info: 29 78 216;
-  --boardui-text-feature: 109 40 217;
+  --boardui-text-feature: 14 116 144;
   --boardui-background-full: 250 250 250;
   --boardui-background-primary-default: 255 255 255;
   --boardui-background-primary-hover: 247 247 247;
@@ -36,7 +36,7 @@
   --boardui-background-warning-subtle: 254 252 232;
   --boardui-background-error-subtle: 254 242 242;
   --boardui-background-info-subtle: 239 246 255;
-  --boardui-background-feature-subtle: 245 243 255;
+  --boardui-background-feature-subtle: 236 254 255;
   --boardui-background-overlay: 10 10 10;
   --boardui-border-button-default: 235 235 235;
   --boardui-border-button-hover: 212 212 212;
@@ -57,11 +57,11 @@
   --boardui-chart-6: 96 165 250;
   --boardui-chart-7: 52 211 153;
   --boardui-chart-8: 250 204 21;
-  --boardui-chart-9: 129 140 248;
+  --boardui-chart-9: 148 163 184;
   --boardui-chart-10: 251 146 60;
   --boardui-chart-11: 34 211 238;
-  --boardui-chart-12: 232 121 249;
-  --boardui-chart-5: 192 132 252;
+  --boardui-chart-12: 251 113 133;
+  --boardui-chart-5: 245 158 11;
   --boardui-chart-track: 235 235 235;
 }
 
@@ -76,7 +76,7 @@
   --boardui-text-success: 134 239 172;
   --boardui-text-warning: 253 224 71;
   --boardui-text-info: 147 197 253;
-  --boardui-text-feature: 196 181 253;
+  --boardui-text-feature: 103 232 249;
   --boardui-background-full: 18 18 18;
   --boardui-background-primary-default: 26 26 26;
   --boardui-background-primary-hover: 38 38 38;
@@ -92,7 +92,7 @@
   --boardui-background-warning-subtle: 49 42 20;
   --boardui-background-error-subtle: 53 27 27;
   --boardui-background-info-subtle: 24 40 65;
-  --boardui-background-feature-subtle: 39 31 57;
+  --boardui-background-feature-subtle: 22 46 56;
   --boardui-border-button-default: 51 51 51;
   --boardui-border-button-hover: 64 64 64;
   --boardui-border-button-active: 115 115 115;

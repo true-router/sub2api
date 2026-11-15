@@ -84,7 +84,7 @@ const points = computed(() => [t('lp.trust1'), t('lp.trust2'), t('lp.auth.point3
 .logo{display:flex;gap:10px;align-items:center;font-weight:650;font-size:17px;letter-spacing:-.01em;width:max-content}
 .logo-mark img{width:100%;height:100%;object-fit:contain;border-radius:inherit}
 .logo-mark.has-img{background:none;box-shadow:none}
-.logo-mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#3b82f6,#6366f1);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 4px 12px -2px rgba(59,130,246,.5);display:flex;align-items:center;justify-content:center}
+.logo-mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#3b82f6,#06b6d4);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 4px 12px -2px rgba(59,130,246,.5);display:flex;align-items:center;justify-content:center}
 
 /* brand side */
 .brand{position:relative;display:flex;flex-direction:column;justify-content:space-between;gap:24px;padding:40px 48px;overflow:hidden;background:var(--soft)}
@@ -95,13 +95,13 @@ const points = computed(() => [t('lp.trust1'), t('lp.trust2'), t('lp.auth.point3
 .b2{width:380px;height:340px;right:-120px;bottom:-60px;background:rgb(var(--boardui-background-warning-subtle));opacity:.6}
 .brand>*:not(.aurora){position:relative}
 .pitch h2{font-size:clamp(30px,3.2vw,44px);line-height:1.1;letter-spacing:-.04em;font-weight:750}
-.grad{background:linear-gradient(100deg,#1d4ed8 10%,#6366f1 55%,#06b6d4 95%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.grad{background:linear-gradient(100deg,#1d4ed8 10%,#06b6d4 55%,#06b6d4 95%);-webkit-background-clip:text;background-clip:text;color:transparent}
 .pitch ul{list-style:none;display:flex;flex-direction:column;gap:10px;margin-top:22px;font-size:14.5px;color:var(--ink3)}
 .pitch li{display:flex;gap:8px;align-items:center}
 .pitch li svg{color:#10b981;flex-shrink:0}
 .gift-card{display:flex;gap:16px;align-items:center;padding:16px 18px;border-radius:20px;border:1px solid var(--line);background:rgb(var(--boardui-background-warning-subtle));box-shadow:0 24px 40px -28px rgba(180,120,40,.45)}
 .card{position:relative;width:96px;height:62px;flex-shrink:0;border-radius:10px;color:#fff;padding:8px 10px;overflow:hidden;transform:rotate(-4deg);
-  background:radial-gradient(80px 40px at 90% 0,rgba(255,255,255,.3),transparent 60%),linear-gradient(135deg,#3b82f6,#4f46e5 70%);box-shadow:inset 0 0 0 1px rgba(253,230,138,.55),0 10px 18px -10px rgba(30,41,99,.6)}
+  background:radial-gradient(80px 40px at 90% 0,rgba(255,255,255,.3),transparent 60%),linear-gradient(135deg,#3b82f6,#0891b2 70%);box-shadow:inset 0 0 0 1px rgba(253,230,138,.55),0 10px 18px -10px rgba(30,58,138,.6)}
 .card:before{content:"";position:absolute;top:0;bottom:0;left:78%;width:7px;background:linear-gradient(90deg,#f3c969,#fde68a,#f3c969)}
 .card small{position:relative;font-size:8px;opacity:.85}
 .card b{position:relative;display:block;font-size:20px;font-weight:700;letter-spacing:-.04em;margin-top:6px}
@@ -148,6 +148,6 @@ const points = computed(() => [t('lp.trust1'), t('lp.trust2'), t('lp.auth.point3
   .m-logo{display:flex}
   .topbar{padding:18px 20px 0}.center{padding:12px 20px 24px}
   .m-gift{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:rgb(var(--boardui-background-warning-subtle));font-size:13px;color:var(--ink3)}
-  .m-card{padding:3px 8px;border-radius:7px;background:linear-gradient(135deg,#3b82f6,#4f46e5);color:#fff;font-weight:700;font-size:13px}
+  .m-card{padding:3px 8px;border-radius:7px;background:linear-gradient(135deg,#3b82f6,#0891b2);color:#fff;font-weight:700;font-size:13px}
 }
 </style>

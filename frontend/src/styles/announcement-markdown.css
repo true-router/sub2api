@@ -93,7 +93,7 @@
 }
 
 .markdown-body th {
-  @apply bg-gradient-to-br from-blue-50 to-indigo-50 font-semibold text-gray-900 dark:from-blue-900/20 dark:to-indigo-900/10 dark:text-white;
+  @apply bg-gradient-to-br from-blue-50 to-cyan-50 font-semibold text-gray-900 dark:from-blue-900/20 dark:to-cyan-900/10 dark:text-white;
 }
 
 .markdown-body tbody tr {
