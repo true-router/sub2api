@@ -225,8 +225,8 @@
     <!-- FOOTER -->
     <footer>
       <div class="wrap foot">
-        <div><h4>{{ t('lp.product') }}</h4><ul><li><a href="#pricing">{{ t('lp.pricing') }}</a></li><li><router-link v-if="showModelPlazaEntry" to="/model-plaza">{{ t('lp.plaza') }}</router-link></li><li><router-link to="/key-usage">{{ t('lp.usageQuery') }}</router-link></li></ul></div>
-        <div><h4>{{ t('lp.developers') }}</h4><ul><li><a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">{{ t('lp.docs') }}</a></li><li><a href="#how">{{ t('lp.quickStart') }}</a></li><li><a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">{{ t('lp.apiRef') }}</a></li></ul></div>
+        <div><h4>{{ t('lp.product') }}</h4><ul><li><a href="#pricing">{{ t('lp.pricing') }}</a></li><li v-if="showModelPlazaEntry"><router-link to="/model-plaza">{{ t('lp.plaza') }}</router-link></li><li><router-link to="/key-usage">{{ t('lp.usageQuery') }}</router-link></li></ul></div>
+        <div><h4>{{ t('lp.developers') }}</h4><ul><li v-if="docUrl"><a :href="docUrl" target="_blank" rel="noopener noreferrer">{{ t('lp.docs') }}</a></li><li><a href="#how">{{ t('lp.quickStart') }}</a></li><li v-if="docUrl"><a :href="docUrl" target="_blank" rel="noopener noreferrer">{{ t('lp.apiRef') }}</a></li></ul></div>
         <div><h4>{{ t('lp.company') }}</h4><ul><li><a>{{ t('lp.contact') }}</a></li><li><a>{{ t('lp.terms') }}</a></li><li><a>{{ t('lp.privacy') }}</a></li></ul></div>
         <div class="foot-brand">
           <a class="logo" href="#" :aria-label="siteName"><span class="logo-mark" :class="{ 'has-img': siteLogo }"><img v-if="siteLogo" :src="siteLogo" alt="" /><svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M4 12h6l2-6 2 12 2-6h4" /></svg></span>{{ siteName }}</a>
@@ -756,7 +756,7 @@ footer{margin-top:96px;border-top:1px solid var(--line);background:var(--soft)}
   .fid{grid-template-columns:1fr;justify-items:center}
   .hw{grid-template-columns:1fr}
   .foot{grid-template-columns:1fr 1fr}
-  .gift-sec{grid-template-columns:minmax(0,1fr);gap:4px;padding:36px 18px 32px;text-align:center}.gift-sec h2{font-size:32px}.gift-sec .sub{margin:0 auto}.g-copy .ctas{justify-content:center!important}.gift-stage{height:330px;padding-bottom:20px}.gift-stage .env{transform:scale(.78);transform-origin:bottom center}.g-rays,.g-spark{top:100px}
+  .gift-sec{grid-template-columns:minmax(0,1fr);gap:4px;padding:36px 18px 32px;text-align:center}.gift-sec h2{font-size:32px}.gift-sec .sub{margin:0 auto}.g-copy .ctas{justify-content:center!important}.gift-stage .env{transform:scale(.78);transform-origin:bottom center}.g-rays,.g-spark{top:110px}
 }
 @media (max-width:900px){
   section.sec{padding:64px 0}
@@ -770,7 +770,9 @@ footer{margin-top:96px;border-top:1px solid var(--line);background:var(--soft)}
   .hw-card{padding:6px}.hw-vis{border:0}
   .pc{padding:0;background:none;border:0}
   .stamp{right:10px;top:-34px;width:62px;height:62px}.stamp b{font-size:20px}.stamp small{font-size:9px}
-  .gift-sec{padding-top:24px}.gift-stage{height:300px}
+  .gift-sec{padding-top:28px}
+  .gift-stage{height:200px;padding-bottom:20px;transition:height .6s cubic-bezier(.2,.8,.2,1)}
+  .gift-sec[data-state=open] .gift-stage,.gift-sec[data-state=claimed] .gift-stage{height:340px}
 }
 @media (max-width:600px){
   .hero .lead{font-size:17px;text-wrap:pretty}
