@@ -3,7 +3,7 @@ import { createServer } from 'node:http'
 export const PREVIEW_USER = { id: 1, email: 'admin@example.test', username: 'Admin', role: 'admin', status: 'active', balance: 100, concurrency: 10, allowed_groups: [], created_at: '2026-01-01T00:00:00Z' }
 
 /** Shared, in-memory API contracts for development preview and browser E2E. */
-export function createAdminFixtureServer({ requests = [], accountPreview = false, dashboardPreview = false, modelPlazaPreview = false } = {}) {
+export function createAdminFixtureServer({ requests = [], accountPreview = false, dashboardPreview = false, modelPlazaPreview = false, modelProvidersPreview = false } = {}) {
 const user = PREVIEW_USER
 const users = Array.from({ length: 28 }, (_, i) => ({ ...user, id: i + 2, role: 'user', username: `Member ${i + 1}`, email: `member${i + 1}@example.test`, subscriptions: [] }))
 const stats = Object.fromEntries(['total_users', 'today_new_users', 'active_users', 'hourly_active_users', 'total_api_keys', 'active_api_keys', 'total_accounts', 'normal_accounts', 'error_accounts', 'ratelimit_accounts', 'overload_accounts', 'total_requests', 'total_input_tokens', 'total_output_tokens', 'total_cache_creation_tokens', 'total_cache_read_tokens', 'total_tokens', 'total_cost', 'total_actual_cost', 'total_account_cost', 'today_requests', 'today_input_tokens', 'today_output_tokens', 'today_cache_creation_tokens', 'today_cache_read_tokens', 'today_tokens', 'today_cost', 'today_actual_cost', 'today_account_cost', 'average_duration_ms', 'uptime', 'rpm', 'tpm'].map((key, i) => [key, (i + 1) * 12]))
@@ -38,13 +38,23 @@ return createServer(async (req, res) => {
     data = settings
   }
   else if (modelPlazaPreview && path === '/model-plaza') data = { description: '', cny_per_credit: 1, exchange_rate: null, groups: [{ id: 1, name: 'E2E group', platform: 'openai', subscription_type: 'standard', rate_multiplier: 1, models: [{ name: 'console-e2e-model', platform: 'openai', pricing: { billing_mode: 'token', input_price: 0.000001, output_price: 0.000002 } }] }] }
+  else if (modelProvidersPreview && path === '/user/api-access/models') {
+    const offer = { endpoint: 'chat_completions', rate_multiplier: 0.5, pricing: { billing_mode: 'token', input_price: 0.000001, output_price: 0.000002, cache_read_price: 0.0000001 } }
+    data = [
+      ['claude-sonnet-4-5', 'anthropic'], ['anthropic/claude-opus-4', 'openai'],
+      ['gemini-2.5-pro', 'antigravity'], ['gemini-2.5-flash', 'gemini'],
+      ['gpt-4.1', 'openai'], ['deepseek-chat', 'openai'], ['qwen3-235b', 'openai'],
+      ['grok-4', 'openai'], ['custom-model', 'openai']
+    ].map(([id, platform], i) => ({ id, platform, subscription_available: i === 0, wallet_offers: [offer] }))
+  }
   else if (path === '/setup/status') data = { needs_setup: false }
   else if (path === '/auth/me' || path === '/user/profile') data = currentUser
   else if (path === '/auth/login' && req.method === 'POST') {
     const credentials = JSON.parse(body || '{}')
     const adminLogin = accountPreview ? 'admin' : user.email
-    const loginUser = credentials.email === adminLogin ? user : accountPreview && credentials.email === member.email ? member : null
-    const expectedPassword = accountPreview && loginUser === user ? 'admin' : 'BoardUI-Preview-2026'
+    const simpleMemberLogin = accountPreview && modelProvidersPreview && credentials.email === 'user'
+    const loginUser = credentials.email === adminLogin ? user : accountPreview && (credentials.email === member.email || simpleMemberLogin) ? member : null
+    const expectedPassword = simpleMemberLogin ? 'user' : accountPreview && loginUser === user ? 'admin' : 'BoardUI-Preview-2026'
     if (!loginUser || credentials.password !== expectedPassword) {
       res.writeHead(401, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ code: 401, message: 'Use the local preview credentials.' }))
