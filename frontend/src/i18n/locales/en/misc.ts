@@ -9,7 +9,7 @@ export default {
     "title": "You received a gift",
     "eyebrow": "Gift credit",
     "welcomeEyebrow": "Welcome gift",
-    "closedDesc": "A small thank-you from us. Tap the box to open it.",
+    "closedDesc": "A small thank-you from us. Tap the envelope to open it.",
     "openAria": "Open your gift",
     "claim": "Open gift",
     "unlockedEyebrow": "Gift unlocked",

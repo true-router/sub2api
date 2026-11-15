@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Gift reveal. Follows .planning/2026-11-14-console-redesign/prototype.html (dialog.gift).
-// The box opens only after the server acknowledges the claim.
+// The envelope opens only after the server acknowledges the claim.
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -104,9 +104,8 @@ onMounted(() => {
       <div class="gift-stage">
         <div class="gift-rays" aria-hidden="true" />
         <button type="button" class="gift-box" :aria-label="t('giftNotice.openAria')" :disabled="busy || phase === 'opened'" :tabindex="phase === 'opened' ? -1 : 0" @click="claim">
-          <span class="gift-lid"><span class="gift-bow" /></span><span class="gift-base" />
+          <span class="env-back" /><span class="env-card"><span class="env-card-label">Sub2API</span><span class="gift-amount" aria-hidden="true">{{ shownAmount }}</span></span><span class="env-front" /><span class="env-flap" /><span class="env-seal" />
         </button>
-        <div class="gift-amount text-text-primary" aria-hidden="true">{{ shownAmount }}</div>
       </div>
       <div v-if="phase !== 'opened'">
         <div class="gift-eyebrow text-caption-1-semibold text-text-accent">{{ eyebrow }}</div>
@@ -138,19 +137,21 @@ html:has(dialog.gift[open]) { overflow: hidden; }
 dialog.gift { margin: auto; padding: 0; border: 0; background: none; overflow: visible; width: min(420px, calc(100vw - 32px)); max-width: none; color: inherit; }
 dialog.gift::backdrop { background: rgb(10 10 10 / .6); backdrop-filter: blur(6px); animation: gift-fade .3s ease-out; }
 .gift-card { position: relative; overflow: hidden; padding: 36px 28px 28px; border-radius: 28px; box-shadow: 0 24px 64px rgb(0 0 0 / .3); animation: gift-pop .5s cubic-bezier(.2, 1.4, .4, 1); }
-.gift-stage { position: relative; height: 190px; display: grid; place-items: center; margin-bottom: 16px; }
-.gift-rays { position: absolute; left: 50%; top: 50%; width: 360px; height: 360px; margin: -180px 0 0 -180px; border-radius: 50%; background: radial-gradient(circle, oklch(85% .15 85 / .55), transparent 45%), repeating-conic-gradient(oklch(62% .21 259 / .16) 0 9deg, transparent 9deg 18deg); -webkit-mask: radial-gradient(circle, #000 25%, transparent 68%); mask: radial-gradient(circle, #000 25%, transparent 68%); opacity: 0; transition: opacity .6s .1s; pointer-events: none; }
-.gift-box { position: relative; width: 128px; height: 120px; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 16px; animation: gift-wobble 2.8s ease-in-out infinite; }
+.gift-stage { position: relative; height: 216px; display: grid; place-items: center; margin-bottom: 16px; }
+.gift-rays { position: absolute; left: 50%; top: 40%; width: 360px; height: 360px; margin: -180px 0 0 -180px; border-radius: 50%; background: radial-gradient(circle, oklch(85% .15 85 / .55), transparent 45%), repeating-conic-gradient(oklch(62% .21 259 / .16) 0 9deg, transparent 9deg 18deg); -webkit-mask: radial-gradient(circle, #000 25%, transparent 68%); mask: radial-gradient(circle, #000 25%, transparent 68%); opacity: 0; transition: opacity .6s .1s; pointer-events: none; }
+.gift-stage { align-items: end; }
+.gift-box { position: relative; width: 208px; height: 132px; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 14px; perspective: 700px; animation: gift-wobble 2.8s ease-in-out infinite; }
 .gift-box:focus-visible { outline: 2px solid oklch(62% .21 259); outline-offset: 6px; }
-.gift-lid, .gift-base { position: absolute; display: block; }
-.gift-lid { z-index: 2; left: 0; right: 0; top: 24px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, oklch(68% .19 258), oklch(56% .23 263)); box-shadow: 0 4px 0 rgb(0 0 0 / .12); }
-.gift-base { left: 9px; right: 9px; top: 52px; bottom: 0; border-radius: 0 0 14px 14px; background: linear-gradient(135deg, oklch(62% .21 259), oklch(50% .24 264)); }
-.gift-lid::before, .gift-base::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 20px; margin-left: -10px; background: linear-gradient(90deg, oklch(80% .15 80), oklch(88% .14 90), oklch(80% .15 80)); }
-.gift-bow { position: absolute; left: 50%; top: -12px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: oklch(82% .15 82); z-index: 1; }
-.gift-bow::before, .gift-bow::after { content: ""; position: absolute; top: -14px; width: 24px; height: 22px; border: 7px solid oklch(84% .15 85); }
-.gift-bow::before { right: 10px; border-radius: 60% 10% 60% 60%; transform: rotate(-18deg); }
-.gift-bow::after { left: 10px; border-radius: 10% 60% 60% 60%; transform: rotate(18deg); }
-.gift-amount { position: absolute; font-weight: 700; font-size: 48px; line-height: 1; letter-spacing: -.03em; opacity: 0; transform: translateY(24px) scale(.5); font-variant-numeric: tabular-nums; pointer-events: none; }
+.gift-box > span { position: absolute; display: block; }
+.env-back, .env-front { inset: 0; border-radius: 14px; }
+.env-back { background: linear-gradient(180deg, oklch(86% .07 75), oklch(90% .06 80)); box-shadow: 0 18px 30px -16px rgb(120 80 20 / .45); }
+.env-card { z-index: 1; left: 14px; right: 14px; top: 10px; height: 112px; padding: 12px 14px; border-radius: 10px; color: #fff; text-align: left; overflow: hidden; background: radial-gradient(120px 60px at 90% 0, rgb(255 255 255 / .3), transparent 60%), linear-gradient(135deg, oklch(62% .19 259), oklch(50% .23 275)); box-shadow: inset 0 0 0 1px oklch(88% .12 88 / .6); }
+.env-card::after { content: ""; position: absolute; top: 0; bottom: 0; left: 88%; width: 8px; background: linear-gradient(90deg, oklch(80% .13 82), oklch(90% .12 92), oklch(80% .13 82)); }
+.env-card-label { display: block; font-size: 11px; font-weight: 600; opacity: .85; }
+.gift-amount { display: block; margin-top: 16px; font-weight: 700; font-size: 30px; line-height: 1; letter-spacing: -.03em; font-variant-numeric: tabular-nums; opacity: 0; filter: blur(6px); }
+.env-front { z-index: 2; clip-path: polygon(0 0, 50% 62%, 100% 0, 100% 100%, 0 100%); background: linear-gradient(180deg, oklch(93% .05 82), oklch(89% .07 76)); }
+.env-flap { z-index: 3; left: 0; right: 0; top: 0; height: 64%; clip-path: polygon(0 0, 100% 0, 50% 100%); background: linear-gradient(180deg, oklch(91% .06 80), oklch(86% .08 74)); transform-origin: top; }
+.env-seal { z-index: 4; left: 50%; top: calc(64% - 17px); width: 34px; height: 34px; margin-left: -17px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, oklch(92% .12 92), oklch(76% .15 75) 60%, oklch(66% .14 65)); box-shadow: 0 3px 8px rgb(120 70 10 / .35), inset 0 0 0 3px oklch(84% .14 84); }
 .gift-eyebrow { font-weight: 600; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
 .gift-title { font-size: 22px; line-height: 30px; font-weight: 600; }
 .gift-desc { margin: 8px auto 0; max-width: 320px; }
@@ -160,14 +161,15 @@ dialog.gift::backdrop { background: rgb(10 10 10 / .6); backdrop-filter: blur(6p
 .gift-confetti i { position: absolute; width: 8px; height: 12px; border-radius: 2px; background: var(--c); opacity: 0; animation: gift-confetti var(--t) cubic-bezier(.15, .7, .4, 1) forwards; }
 .gift[data-phase='shaking'] .gift-box { animation: gift-shake .5s linear infinite; cursor: progress; }
 .gift[data-phase='opened'] .gift-box { animation: none; pointer-events: none; cursor: default; }
-.gift[data-phase='opened'] .gift-lid { transform: translate(36px, -110px) rotate(32deg); opacity: 0; transition: transform .7s cubic-bezier(.2, .8, .3, 1), opacity .4s .35s; }
-.gift[data-phase='opened'] .gift-base { transform: translateY(40px) scale(.85); opacity: 0; transition: transform .5s .15s, opacity .4s .2s; }
+.gift[data-phase='opened'] .env-flap { z-index: 0; transform: rotateX(180deg); transition: transform .5s cubic-bezier(.4, 0, .2, 1), z-index 0s .25s; }
+.gift[data-phase='opened'] .env-seal { opacity: 0; transform: scale(.4); transition: opacity .25s, transform .25s; }
+.gift[data-phase='opened'] .env-card { transform: translateY(-92px) rotate(-3deg); transition: transform .7s cubic-bezier(.2, 1.3, .4, 1) .35s; }
 .gift[data-phase='opened'] .gift-rays { opacity: 1; animation: gift-spin 18s linear infinite; }
-.gift[data-phase='opened'] .gift-amount { opacity: 1; transform: none; transition: opacity .4s .2s, transform .6s cubic-bezier(.2, 1.5, .4, 1) .2s; }
+.gift[data-phase='opened'] .gift-amount { opacity: 1; filter: none; transition: opacity .4s .7s, filter .5s .7s; }
 @keyframes gift-fade { from { opacity: 0; } }
 @keyframes gift-pop { from { opacity: 0; transform: translateY(24px) scale(.92); } }
-@keyframes gift-wobble { 0%, 64%, 100% { transform: rotate(0); } 70% { transform: rotate(-7deg); } 76% { transform: rotate(6deg); } 82% { transform: rotate(-4deg); } 88% { transform: rotate(2deg); } }
-@keyframes gift-shake { 0%, 100% { transform: none; } 20% { transform: translateX(-7px) rotate(-9deg); } 40% { transform: translateX(7px) rotate(9deg); } 60% { transform: translateX(-5px) rotate(-6deg) scale(1.06); } 80% { transform: translateX(5px) rotate(6deg) scale(1.1); } }
+@keyframes gift-wobble { 0%, 64%, 100% { transform: none; } 70% { transform: translateY(-4px) rotate(-3deg); } 76% { transform: translateY(-2px) rotate(3deg); } 82% { transform: rotate(-2deg); } 88% { transform: rotate(1deg); } }
+@keyframes gift-shake { 0%, 100% { transform: none; } 20% { transform: translateX(-5px) rotate(-4deg); } 40% { transform: translateX(5px) rotate(4deg); } 60% { transform: translateX(-4px) rotate(-3deg) scale(1.04); } 80% { transform: translateX(4px) rotate(3deg) scale(1.06); } }
 @keyframes gift-spin { to { transform: rotate(360deg); } }
 @keyframes gift-confetti { 0% { opacity: 1; transform: translate(-50%, -50%) scale(.3); } 45% { opacity: 1; transform: translate(var(--x), var(--y)) rotate(calc(var(--r) * .5)); } 100% { opacity: 0; transform: translate(calc(var(--x) * 1.15), calc(var(--y) + 240px)) rotate(var(--r)); } }
 @media (prefers-reduced-motion: reduce) {

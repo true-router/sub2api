@@ -2,7 +2,7 @@
 
 ## User behavior
 
-The notification bell now has two types: system announcements and personal gift credit. The gift dialog follows `.planning/2026-11-14-console-redesign/prototype.html` (`dialog.gift`). The closed state shows a wobbling box, an eyebrow ("Welcome gift" for `initial` gifts), and an **Open gift** action; it does not reveal the amount. Clicking the box or the action shakes the box while the claim request runs (at least 500 ms). On success, the lid flies off, rays spin, 36 confetti pieces burst, and the amount counts up over 900 ms. A failed claim returns to the closed state with an error. **Start using my gift** closes the dialog, navigates to the dashboard, and shows a balance toast. Reduced motion skips the shake, confetti, and count-up. The dialog uses a native modal `<dialog>` and fits narrow screens.
+The notification bell now has two types: system announcements and personal gift credit. The gift dialog follows `.planning/2026-11-14-console-redesign/prototype.html` (`dialog.gift`). The closed state shows a sealed envelope that wobbles, an eyebrow ("Welcome gift" for `initial` gifts), and an **Open gift** action; it does not reveal the amount. Clicking the envelope or the action shakes the envelope while the claim request runs (at least 500 ms). On success, the flap opens, the seal fades, a credit card slides out of the envelope, rays spin, 36 confetti pieces burst, and the amount counts up over 900 ms. A failed claim returns to the closed state with an error. **Start using my gift** closes the dialog, navigates to the dashboard, and shows a balance toast. Reduced motion skips the shake, confetti, and count-up. The dialog uses a native modal `<dialog>` and fits narrow screens.
 
 Gift credit is spendable when the credit transaction commits. Claiming is an acknowledgement, not a second funding transaction. The current wallet balance remains the source of truth for funds that are still available. A gift notice remains a historical receipt if its funds have already been spent or reclaimed.
 
@@ -68,7 +68,7 @@ No production rollout or live payment is part of this change.
 - Existing payment, wallet, and refund regression: 55 checks passed.
 - Actual compiled-frontend browser scenario: 16 checks passed.
 - Both server runs verified 310 source migration checksums. Source manifests stayed unchanged during acceptance; the browser run includes compiled frontend hashes.
-- Inspected desktop unclaimed/claimed and mobile claimed screenshots. Reduced motion follows the existing global 0.01ms transition policy and disables gift-box animation.
+- Inspected desktop unclaimed/claimed and mobile claimed screenshots. Reduced motion follows the existing global 0.01ms transition policy and disables envelope animation.
 - Ordinary announcement popups now use BaseDialog for focus and scroll locking. Admin previews keep their existing props and close behavior.
 - Artifacts and SHA256 hashes: `.local/gift-notifications/2026-11-15/`.
 - The local development database was backed up before migration. `console-user@local.test` received one idempotent $5 demonstration gift, left unread for manual interaction. No real payment or production change occurred.
