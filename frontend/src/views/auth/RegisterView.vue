@@ -1,6 +1,9 @@
 <template>
-  <LoginLayout>
-    <BoardAuthCard :title="t('auth.createAccount')" :description="t('auth.signUpToStart', { siteName })">
+  <AuthShell
+    :title="t('auth.createAccount')"
+    :subtitle="t('auth.signUpToStart', { siteName })"
+    :gift-title="registrationEnabled ? t(giftOpened ? 'lp.auth.giftOpened' : 'lp.auth.giftWaiting') : undefined"
+  >
       <!-- Registration Disabled Message -->
       <div
         v-if="!registrationEnabled && settingsLoaded"
@@ -14,7 +17,7 @@
       </div>
 
       <!-- Registration Form -->
-      <form v-else @submit.prevent="handleRegister" class="flex flex-col gap-4">
+      <form v-else @submit.prevent="handleRegister" class="flex flex-col">
         <BoardInput
           id="email"
           v-model="formData.email"
@@ -30,60 +33,62 @@
           required
         />
 
-        <BoardInput
-          id="password"
-          v-model="formData.password"
-          name="password"
-          :type="showPassword ? 'text' : 'password'"
-          :label="t('auth.passwordLabel')"
-          autocomplete="new-password"
-          :placeholder="t('auth.createPasswordPlaceholder')"
-          :hint="t('auth.passwordHint')"
-          :disabled="registrationActionDisabled"
-          :error="errors.password"
-          class="[&_input]:py-2.5"
-          required
-        >
-          <template #suffix>
-            <BoardButton
-              type="button"
-              variant="ghost"
-              size="xs"
-              icon-only
-              :disabled="registrationActionDisabled"
-              :aria-label="t(showPassword ? 'auth.hidePassword' : 'auth.showPassword')"
-              :aria-pressed="showPassword"
-              @click="showPassword = !showPassword"
-            ><Icon :name="showPassword ? 'eyeOff' : 'eye'" size="sm" /></BoardButton>
-          </template>
-        </BoardInput>
+        <div class="grid gap-3.5 sm:grid-cols-2">
+          <BoardInput
+            id="password"
+            v-model="formData.password"
+            name="password"
+            :type="showPassword ? 'text' : 'password'"
+            :label="t('auth.passwordLabel')"
+            autocomplete="new-password"
+            :placeholder="t('auth.createPasswordPlaceholder')"
+            :hint="t('auth.passwordHint')"
+            :disabled="registrationActionDisabled"
+            :error="errors.password"
+            class="[&_input]:py-2.5"
+            required
+          >
+            <template #suffix>
+              <BoardButton
+                type="button"
+                variant="ghost"
+                size="xs"
+                icon-only
+                :disabled="registrationActionDisabled"
+                :aria-label="t(showPassword ? 'auth.hidePassword' : 'auth.showPassword')"
+                :aria-pressed="showPassword"
+                @click="showPassword = !showPassword"
+              ><Icon :name="showPassword ? 'eyeOff' : 'eye'" size="sm" /></BoardButton>
+            </template>
+          </BoardInput>
 
-        <BoardInput
-          id="confirmPassword"
-          v-model="confirmPassword"
-          name="confirmPassword"
-          :type="showConfirmPassword ? 'text' : 'password'"
-          :label="t('auth.confirmPassword')"
-          autocomplete="new-password"
-          :placeholder="t('auth.confirmPasswordPlaceholder')"
-          :disabled="registrationActionDisabled"
-          :error="errors.confirmPassword"
-          class="[&_input]:py-2.5"
-          required
-        >
-          <template #suffix>
-            <BoardButton
-              type="button"
-              variant="ghost"
-              size="xs"
-              icon-only
-              :disabled="registrationActionDisabled"
-              :aria-label="t(showConfirmPassword ? 'auth.hidePassword' : 'auth.showPassword')"
-              :aria-pressed="showConfirmPassword"
-              @click="showConfirmPassword = !showConfirmPassword"
-            ><Icon :name="showConfirmPassword ? 'eyeOff' : 'eye'" size="sm" /></BoardButton>
-          </template>
-        </BoardInput>
+          <BoardInput
+            id="confirmPassword"
+            v-model="confirmPassword"
+            name="confirmPassword"
+            :type="showConfirmPassword ? 'text' : 'password'"
+            :label="t('auth.confirmPassword')"
+            autocomplete="new-password"
+            :placeholder="t('auth.confirmPasswordPlaceholder')"
+            :disabled="registrationActionDisabled"
+            :error="errors.confirmPassword"
+            class="[&_input]:py-2.5"
+            required
+          >
+            <template #suffix>
+              <BoardButton
+                type="button"
+                variant="ghost"
+                size="xs"
+                icon-only
+                :disabled="registrationActionDisabled"
+                :aria-label="t(showConfirmPassword ? 'auth.hidePassword' : 'auth.showPassword')"
+                :aria-pressed="showConfirmPassword"
+                @click="showConfirmPassword = !showConfirmPassword"
+              ><Icon :name="showConfirmPassword ? 'eyeOff' : 'eye'" size="sm" /></BoardButton>
+            </template>
+          </BoardInput>
+        </div>
 
         <!-- Invitation Code Input (Required when enabled) -->
         <BoardInput
@@ -168,7 +173,7 @@
               ? t('auth.processing')
               : emailVerifyEnabled
                 ? t('auth.continue')
-                : t('auth.createAccount')
+                : t('lp.auth.registerCta')
           }}
         </BoardButton>
 
@@ -229,29 +234,19 @@
         />
       </div>
 
-      <template #footer>
-        <p class="text-text-secondary">
-          {{ t('auth.alreadyHaveAccount') }}
-          <router-link
-            to="/login"
-            class="rounded text-body-medium text-text-accent outline-none hover:underline focus-visible:ring-2 focus-visible:ring-border-focus-ring"
-          >
-            {{ t('auth.signIn') }}
-          </router-link>
-        </p>
-      </template>
-    </BoardAuthCard>
-  </LoginLayout>
+    <template #footer>
+      {{ t('auth.alreadyHaveAccount') }}<router-link to="/login">{{ t('auth.signIn') }}</router-link>
+    </template>
+  </AuthShell>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import LoginLayout from '@/components/layout/LoginLayout.vue'
-import BoardAuthCard from '@/components/boardui/AuthCard.vue'
 import BoardInput from '@/components/boardui/Input.vue'
 import BoardButton from '@/components/boardui/Button.vue'
+import AuthShell from '@/components/auth/AuthShell.vue'
 import LinuxDoOAuthSection from '@/components/auth/LinuxDoOAuthSection.vue'
 import OidcOAuthSection from '@/components/auth/OidcOAuthSection.vue'
 import WechatOAuthSection from '@/components/auth/WechatOAuthSection.vue'
@@ -301,6 +296,8 @@ const errorMessage = ref<string>('')
 const showPassword = ref<boolean>(false)
 const showConfirmPassword = ref<boolean>(false)
 const confirmPassword = ref('')
+// Set by the landing page when the visitor opened the gift envelope.
+const giftOpened = sessionStorage.getItem('gift') === 'opened'
 
 // Public settings
 const registrationEnabled = ref<boolean>(true)
@@ -1001,16 +998,3 @@ function buildRegistrationErrorMessage(error: unknown, fallback: string): string
   return buildAuthErrorMessage(error, { fallback })
 }
 </script>
-
-<style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: all 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
-}
-</style>

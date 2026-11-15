@@ -77,8 +77,7 @@ function mountRegister() {
   return mount(RegisterView, {
     global: {
       stubs: {
-        LoginLayout: { template: '<div><slot /></div>' },
-        BoardAuthCard: { template: '<div><slot /><slot name="footer" /></div>' },
+        AuthShell: { template: '<div><slot /><slot name="footer" /></div>' },
         Icon: true,
         TurnstileWidget: {
           template: '<div data-testid="turnstile-widget" />',
@@ -156,7 +155,7 @@ describe('RegisterView', () => {
     await flushPromises()
 
     expect(showErrorMock).toHaveBeenCalledWith(error)
-    expect(wrapper.get('#confirmPassword').classes()).toContain('input-error')
+    expect(wrapper.get('#confirmPassword').attributes('aria-invalid')).toBe('true')
     expect(registerMock).not.toHaveBeenCalled()
     expect(verifyActionMock).not.toHaveBeenCalled()
     expect(pushMock).not.toHaveBeenCalled()
@@ -216,8 +215,9 @@ describe('RegisterView', () => {
     const invitationField = wrapper.get('[data-testid="affiliate-invitation-field"]')
     const turnstile = wrapper.get('[data-testid="registration-turnstile"]')
 
-    expect(invitationField.get('input').attributes('id')).toBe('affiliate_code')
-    expect(invitationField.text()).toContain('common.optional')
+    // BoardInput applies attrs to the <input>; its label is a sibling element.
+    expect(invitationField.attributes('id')).toBe('affiliate_code')
+    expect(wrapper.get('label[for="affiliate_code"]').text()).toContain('common.optional')
     expect(
       invitationField.element.compareDocumentPosition(turnstile.element) &
         Node.DOCUMENT_POSITION_FOLLOWING
@@ -303,7 +303,7 @@ describe('RegisterView', () => {
     expect(registerMock).not.toHaveBeenCalled()
     // 校验失败通过 validationToastMessage watcher 弹 toast
     expect(showErrorMock).toHaveBeenCalledWith('auth.emailSuffixNotAllowedWithAllowed')
-    expect(wrapper.get('#email').classes()).toContain('input-error')
+    expect(wrapper.get('#email').attributes('aria-invalid')).toBe('true')
   })
 
   it('still submits whitelisted email domains when the domain quota switch is disabled', async () => {

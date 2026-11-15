@@ -95,6 +95,9 @@ function mountLogin() {
   })
 }
 
+const passkeyButton = (wrapper: ReturnType<typeof mountLogin>) =>
+  wrapper.findAll('button').find((button) => button.text().includes('auth.passkeySignIn'))!
+
 describe('Tencent captcha action gate', () => {
   beforeEach(() => {
     loginMock.mockReset()
@@ -205,7 +208,7 @@ describe('Tencent captcha action gate', () => {
     const wrapper = mountLogin()
     await flushPromises()
 
-    await wrapper.get('button.btn-secondary.w-full').trigger('click')
+    await passkeyButton(wrapper).trigger('click')
     await flushPromises()
 
     expect(verifyActionMock).toHaveBeenCalledOnce()
@@ -221,7 +224,7 @@ describe('Tencent captcha action gate', () => {
     const wrapper = mountLogin()
     await flushPromises()
 
-    await wrapper.get('button.btn-secondary.w-full').trigger('click')
+    await passkeyButton(wrapper).trigger('click')
     await flushPromises()
 
     expect(loginWithPasskeyMock).not.toHaveBeenCalled()

@@ -1,7 +1,6 @@
 <template>
-  <LoginLayout>
-    <BoardAuthCard :title="t('auth.welcomeBack')" :description="t('auth.signInToAccount')">
-      <form @submit.prevent="handleLogin" class="flex flex-col gap-4">
+  <AuthShell :title="t('auth.welcomeBack')" :subtitle="t('auth.signInToAccount')">
+      <form @submit.prevent="handleLogin" class="flex flex-col">
         <BoardInput
           id="email"
           v-model="formData.email"
@@ -165,8 +164,7 @@
         </router-link>
       </p>
     </template>
-    </BoardAuthCard>
-  </LoginLayout>
+  </AuthShell>
 
   <!-- 2FA Modal -->
   <TotpLoginModal
@@ -183,8 +181,7 @@
 import { computed, ref, reactive, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import LoginLayout from '@/components/layout/LoginLayout.vue'
-import BoardAuthCard from '@/components/boardui/AuthCard.vue'
+import AuthShell from '@/components/auth/AuthShell.vue'
 import BoardInput from '@/components/boardui/Input.vue'
 import BoardButton from '@/components/boardui/Button.vue'
 import LinuxDoOAuthSection from '@/components/auth/LinuxDoOAuthSection.vue'
