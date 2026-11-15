@@ -15,6 +15,7 @@ import (
 // AnnouncementHandler handles user announcement operations
 type AnnouncementHandler struct {
 	announcementService *service.AnnouncementService
+	notifications       *service.NotificationService
 }
 
 // NewAnnouncementHandler creates a new user announcement handler

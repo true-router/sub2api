@@ -1,4 +1,29 @@
 export default {
+  giftNotice: {
+    "inbox": "Notifications",
+    "all": "All",
+    "announcements": "Announcements",
+    "gifts": "Gift credit",
+    "markAnnouncements": "Mark announcements read",
+    "empty": "No notifications",
+    "title": "You received a gift",
+    "eyebrow": "Gift credit",
+    "welcomeEyebrow": "Welcome gift",
+    "closedDesc": "A small thank-you from us. Tap the box to open it.",
+    "openAria": "Open your gift",
+    "claim": "Open gift",
+    "unlockedEyebrow": "Gift unlocked",
+    "claimedAmount": "{amount} credit is yours",
+    "openedDesc": "It is already in your balance. Use it with your default API key on any available model.",
+    "amount": "Gift credit {amount}",
+    "claimed": "Claimed",
+    "pending": "Unclaimed",
+    "failed": "Could not confirm the claim. Try again. Your gift will not be credited twice.",
+    "done": "Start using my gift",
+    "later": "Claim later",
+    "close": "Later",
+    "landed": "{amount} gift credit is in your balance."
+},
 
   // Subscription Progress (Header component)
   subscriptionProgress: {

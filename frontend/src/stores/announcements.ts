@@ -1,20 +1,19 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { announcementsAPI } from '@/api'
-import type { UserAnnouncement } from '@/types'
+import { notificationsAPI, type UserNotification } from '@/api/notifications'
 
-const THROTTLE_MS = 20 * 60 * 1000 // 20 minutes
+const THROTTLE_MS = 30 * 1000 // Bound inbox refresh while the user is active.
 
 export const useAnnouncementStore = defineStore('announcements', () => {
   // State
-  const announcements = ref<UserAnnouncement[]>([])
+  const announcements = ref<UserNotification[]>([])
   const loading = ref(false)
   const lastFetchTime = ref(0)
-  const popupQueue = ref<UserAnnouncement[]>([])
-  const currentPopup = ref<UserAnnouncement | null>(null)
+  const popupQueue = ref<UserNotification[]>([])
+  const currentPopup = ref<UserNotification | null>(null)
 
   // Session-scoped dedup set — not reactive, used as plain lookup only
-  let shownPopupIds = new Set<number>()
+  let shownPopupIds = new Set<string>()
   let fetchGeneration = 0
 
   // Getters
@@ -35,9 +34,9 @@ export const useAnnouncementStore = defineStore('announcements', () => {
 
     try {
       loading.value = true
-      const all = await announcementsAPI.list(false)
+      const all = await notificationsAPI.list()
       if (generation !== fetchGeneration) return
-      announcements.value = all.slice(0, 20)
+      announcements.value = all
       enqueueNewPopups()
     } catch (err: any) {
       if (generation !== fetchGeneration) return
@@ -51,12 +50,12 @@ export const useAnnouncementStore = defineStore('announcements', () => {
 
   function enqueueNewPopups() {
     const newPopups = announcements.value.filter(
-      (a) => a.notify_mode === 'popup' && !a.read_at && !shownPopupIds.has(a.id)
+      (a) => a.notify_mode === 'popup' && !a.read_at && !shownPopupIds.has(`${a.type}:${a.id}`)
     )
     if (newPopups.length === 0) return
 
     for (const p of newPopups) {
-      if (!popupQueue.value.some((q) => q.id === p.id)) {
+      if (!popupQueue.value.some((q) => q.id === p.id && q.type === p.type)) {
         popupQueue.value.push(p)
       }
     }
@@ -67,35 +66,34 @@ export const useAnnouncementStore = defineStore('announcements', () => {
   }
 
   function showNextPopup() {
-    if (popupQueue.value.length === 0) {
-      currentPopup.value = null
+    currentPopup.value = null
+    while (popupQueue.value.length) {
+      const queued = popupQueue.value.shift()!
+      const latest = announcements.value.find(a => a.type === queued.type && a.id === queued.id)
+      if (!latest || latest.read_at) continue
+      currentPopup.value = latest
+      shownPopupIds.add(`${latest.type}:${latest.id}`)
       return
     }
-    currentPopup.value = popupQueue.value.shift()!
-    shownPopupIds.add(currentPopup.value.id)
   }
 
   async function dismissPopup() {
     if (!currentPopup.value) return
-    const id = currentPopup.value.id
+    const { id, type } = currentPopup.value
+    if (type !== 'gift' && !await markAsRead(id, type)) return
     currentPopup.value = null
-
-    // Mark as read (fire-and-forget, UI already updated)
-    markAsRead(id)
-
-    // Show next popup after a short delay
-    if (popupQueue.value.length > 0) {
-      setTimeout(() => showNextPopup(), 300)
-    }
+    showNextPopup()
   }
 
-  async function markAsRead(id: number) {
+  async function markAsRead(id: number, type: UserNotification['type'] = 'announcement') {
     try {
-      await announcementsAPI.markRead(id)
-      const ann = announcements.value.find((a) => a.id === id)
-      if (ann) {
-        ann.read_at = new Date().toISOString()
-      }
+      await notificationsAPI.markRead(type, id)
+      fetchGeneration++
+      loading.value = false
+      const ann = announcements.value.find((a) => a.id === id && a.type === type)
+      const readAt = new Date().toISOString()
+      if (ann) ann.read_at = readAt
+      if (currentPopup.value?.id === id && currentPopup.value.type === type) currentPopup.value.read_at = readAt
       return true
     } catch (err: any) {
       console.error('Failed to mark announcement as read:', err)
@@ -104,13 +102,14 @@ export const useAnnouncementStore = defineStore('announcements', () => {
   }
 
   async function markAllAsRead() {
-    const unread = announcements.value.filter((a) => !a.read_at)
+    const unread = announcements.value.filter((a) => !a.read_at && a.type === 'announcement')
     if (unread.length === 0) return
 
     try {
       loading.value = true
+      fetchGeneration++
       const results = await Promise.allSettled(unread.map(async (a) => {
-        await announcementsAPI.markRead(a.id)
+        await notificationsAPI.markRead(a.type, a.id)
         a.read_at = new Date().toISOString()
       }))
       const failure = results.find((result) => result.status === 'rejected')
@@ -121,6 +120,13 @@ export const useAnnouncementStore = defineStore('announcements', () => {
     } finally {
       loading.value = false
     }
+  }
+
+  function openGift(item: UserNotification) {
+    if (currentPopup.value && (currentPopup.value.type !== item.type || currentPopup.value.id !== item.id)) popupQueue.value.unshift(currentPopup.value)
+    popupQueue.value = popupQueue.value.filter(a => !(a.type === item.type && a.id === item.id))
+    currentPopup.value = item
+    shownPopupIds.add(`${item.type}:${item.id}`)
   }
 
   function reset() {
@@ -143,6 +149,7 @@ export const useAnnouncementStore = defineStore('announcements', () => {
     // Actions
     fetchAnnouncements,
     dismissPopup,
+    openGift,
     markAsRead,
     markAllAsRead,
     reset,

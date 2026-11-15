@@ -123,6 +123,8 @@ func RegisterUserRoutes(
 		}
 
 		// 公告（用户可见）
+		authenticated.GET("/notifications", h.Announcement.ListNotifications)
+		authenticated.POST("/notifications/:type/:id/read", h.Announcement.ReadNotification)
 		announcements := authenticated.Group("/announcements")
 		{
 			announcements.GET("", h.Announcement.List)

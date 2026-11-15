@@ -57,6 +57,7 @@ type fixture struct {
 	dir, binary, origin, postgres, redis string
 	inputBinary                          string
 	unifiedOnly                          bool
+	giftOnly                             bool
 	browserReady                         string
 	sourceManifest                       map[string]string
 	db                                   *sql.DB
@@ -458,6 +459,9 @@ func (f *fixture) scenario() error {
 	}
 	if _, err = f.api("POST", "/api/v1/admin/compliance/accept", admin, map[string]any{"phrase": compliance["ack_phrase_en"], "language": "en"}); err != nil {
 		return err
+	}
+	if f.giftOnly {
+		return f.giftScenario(admin)
 	}
 	if f.unifiedOnly {
 		return f.unifiedScenario(admin)
@@ -892,12 +896,13 @@ func (f *fixture) close() error {
 func main() {
 	output := flag.String("output", "../.local/production-billing-e2e/receipt.json", "JSON acceptance receipt path, relative to backend")
 	browserReady := flag.String("browser-ready", "", "Write private browser fixture credentials and wait for a .done file")
+	gifts := flag.Bool("gift-notifications", false, "Run gift notification acceptance")
 	unified := flag.Bool("unified-access", false, "Run unified access acceptance")
 	binary := flag.String("binary", "", "Verify this fixed server binary instead of rebuilding source")
 	flag.Parse()
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
-	f := &fixture{ctx: ctx, inputBinary: *binary, unifiedOnly: *unified, browserReady: *browserReady}
+	f := &fixture{ctx: ctx, inputBinary: *binary, unifiedOnly: *unified, giftOnly: *gifts, browserReady: *browserReady}
 	manifest, manifestErr := acceptanceSourceManifest(f.browserReady != "")
 	f.sourceManifest = manifest
 	err := manifestErr
@@ -949,7 +954,7 @@ func main() {
 		report["backend_diff_sha256"] = hex.EncodeToString(s[:])
 	}
 	harnessHashes := map[string]string{}
-	for _, path := range []string{"tools/production-billing-e2e/main.go", "tools/production-billing-e2e/run.sh", "tools/production-billing-e2e/unified.go"} {
+	for _, path := range []string{"tools/production-billing-e2e/main.go", "tools/production-billing-e2e/run.sh", "tools/production-billing-e2e/unified.go", "tools/production-billing-e2e/gifts.go"} {
 		if data, e := os.ReadFile(path); e == nil {
 			s := sha256.Sum256(data)
 			harnessHashes[path] = hex.EncodeToString(s[:])

@@ -1,4 +1,29 @@
 export default {
+  giftNotice: {
+    "inbox": "通知",
+    "all": "全部",
+    "announcements": "系统公告",
+    "gifts": "礼金赠送",
+    "markAnnouncements": "公告全部已读",
+    "empty": "暂无通知",
+    "title": "你收到一份礼金",
+    "eyebrow": "礼金赠送",
+    "welcomeEyebrow": "欢迎礼金",
+    "closedDesc": "这是我们送你的一份心意。点击礼盒打开。",
+    "openAria": "打开礼盒",
+    "claim": "打开礼盒",
+    "unlockedEyebrow": "礼金已解锁",
+    "claimedAmount": "{amount} 礼金已归你所有",
+    "openedDesc": "礼金已在你的余额中。使用默认 API key 即可调用任意可用模型。",
+    "amount": "礼金 {amount}",
+    "claimed": "已领取",
+    "pending": "待领取",
+    "failed": "领取确认失败。请重试，礼金不会重复入账。",
+    "done": "开始使用礼金",
+    "later": "稍后领取",
+    "close": "稍后",
+    "landed": "{amount} 礼金已在你的余额中。"
+},
 
   // Subscription Progress (Header component)
   subscriptionProgress: {

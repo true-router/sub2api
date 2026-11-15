@@ -6,6 +6,7 @@ import NavigationProgress from '@/components/common/NavigationProgress.vue'
 import AdminComplianceDialog from '@/components/admin/AdminComplianceDialog.vue'
 import { usesBoardUIWorkspace } from '@/router/workspace'
 import { resolveRouteDocumentTitle } from '@/router/title'
+import GiftNotificationDialog from '@/components/common/GiftNotificationDialog.vue'
 import AnnouncementPopup from '@/components/common/AnnouncementPopup.vue'
 import { useAppStore, useAuthStore, useSubscriptionStore, useAnnouncementStore, useAdminComplianceStore, useAdminSettingsStore } from '@/stores'
 import { getSetupStatus } from '@/api/setup'
@@ -141,7 +142,10 @@ router.afterEach(() => {
   }
 })
 
+const inboxPoll = window.setInterval(() => { if (authStore.isAuthenticated && document.visibilityState === 'visible') void announcementStore.fetchAnnouncements() }, 30000)
+
 onBeforeUnmount(() => {
+  window.clearInterval(inboxPoll)
   document.removeEventListener('visibilitychange', onVisibilityChange)
   window.removeEventListener('admin-compliance-required', onAdminComplianceRequired)
 })
@@ -172,6 +176,7 @@ onMounted(async () => {
   <NavigationProgress />
   <RouterView />
   <Toast />
-  <AnnouncementPopup />
+  <GiftNotificationDialog v-if="announcementStore.currentPopup?.type === 'gift'" :key="`gift:${announcementStore.currentPopup.id}`" :notification="announcementStore.currentPopup" @close="announcementStore.dismissPopup()" />
+  <AnnouncementPopup v-else />
   <AdminComplianceDialog />
 </template>

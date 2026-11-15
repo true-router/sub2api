@@ -147,6 +147,7 @@ docs/*
 !docs/COMPOSITE_GROUPS.md
 !docs/UNIFIED_API_ACCESS.md
 !docs/CONSOLE_REDESIGN.md
+!docs/GIFT_NOTIFICATIONS.md
 !docs/PLUGIN_DEVELOPMENT.md
 !docs/channel-monitor-v2-safe-defaults.md
 !docs/codex-credits.md
