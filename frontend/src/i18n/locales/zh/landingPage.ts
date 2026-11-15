@@ -1,5 +1,6 @@
 export default {
   lp: {
+    switchLanguage: '切换为英文',
     navLabel: '主导航', fidelity: '模型保真', pricing: '价格', how: '接入方式', docs: '文档', plaza: '模型广场', login: '登录',
     claim: '领取 $5 赠金', dashboard: '进入控制台',
     newUser: '新用户', pill: '注册送 $5 赠金，无需绑卡',
@@ -13,8 +14,8 @@ export default {
     priceFoot: '同样的请求，账单只剩 1/10',
     toolsNote: '兼容你已经在用的工具和 SDK',
     whyEyebrow: '为什么选择 {name}', whyTitle: '原版模型，明码低价', whySub: '我们只做两件事：给你真正的官方模型，并且只收 1 折。',
-    fidTitle: '纯血模型保真', fidDesc: '不蒸馏，不降级，不替换。多家第三方测试机构独立评测，每一项都是满分。', fidScore: '综合保真度',
-    labA: '[测试机构 A]', labA1: '输出一致性比对', labB: '[测试机构 B]', labB1: '模型指纹识别', labC: '[测试机构 C]', labC1: '基准测试跑分',
+    fidTitle: '多项指标百分百一致', fidDesc: '知识准确度、文档识别、结构化输出等检测均通过，模型家族与官方一致。', fidScore: '指标一致性', fidReport: '查看检测报告',
+    fidKnowledge: '知识准确度', fidPdf: 'PDF 文档识别', fidStructured: '结构化输出', fidPassed: '通过', fidFamily: '模型家族校验', fidFamilyResult: '与官方模型家族一致',
     priceCardTitle: '价格透明，只收 1 折', priceCardDesc: '拖动滑块，看看你每月能省多少。',
     monthlyUsage: '每月用量', official: '官方价', monthlySave: '每月节省',
     howEyebrow: '接入流程', howTitle: '三步，马上开始', howSub: '兼容 OpenAI 和 Anthropic 官方协议。你现在用的工具，接上就能用。',

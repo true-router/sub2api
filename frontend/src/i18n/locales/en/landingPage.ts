@@ -1,5 +1,6 @@
 export default {
   lp: {
+    switchLanguage: 'Switch to Chinese',
     navLabel: 'Main navigation', fidelity: 'Fidelity', pricing: 'Pricing', how: 'Integration', docs: 'Docs', plaza: 'Model plaza', login: 'Sign in',
     claim: 'Claim $5 credit', dashboard: 'Go to dashboard',
     newUser: 'New', pill: 'Get $5 credit on sign-up. No card needed',
@@ -13,8 +14,8 @@ export default {
     priceFoot: 'Same requests, one tenth of the bill',
     toolsNote: 'Works with the tools and SDKs you already use',
     whyEyebrow: 'Why {name}', whyTitle: 'Original models. Clear low prices.', whySub: 'We do two things: give you the real official models, and charge only 10%.',
-    fidTitle: 'Pure model fidelity', fidDesc: 'No distillation, no downgrade, no substitution. Several independent third-party labs test us, and every item scores full marks.', fidScore: 'Overall fidelity',
-    labA: '[Test lab A]', labA1: 'Output consistency', labB: '[Test lab B]', labB1: 'Model fingerprinting', labC: '[Test lab C]', labC1: 'Benchmark scores',
+    fidTitle: '100% match across multiple metrics', fidDesc: 'Knowledge accuracy, document recognition and structured output checks passed. The model family matches the official model.', fidScore: 'Metric consistency', fidReport: 'View test report',
+    fidKnowledge: 'Knowledge accuracy', fidPdf: 'PDF recognition', fidStructured: 'Structured output', fidPassed: 'Passed', fidFamily: 'Model family check', fidFamilyResult: 'Matches the official model family',
     priceCardTitle: 'Clear pricing, only 10%', priceCardDesc: 'Drag the slider to see how much you save each month.',
     monthlyUsage: 'Monthly usage', official: 'List price', monthlySave: 'Monthly savings',
     howEyebrow: 'How it works', howTitle: 'Three steps to start', howSub: 'Compatible with the official OpenAI and Anthropic protocols. The tools you use now work as they are.',
