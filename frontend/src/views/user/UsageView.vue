@@ -53,7 +53,7 @@ onMounted(() => load())
       <div v-if="stats" class="grid grid-cols-1 gap-3 sm:grid-cols-3" data-testid="usage-summary">
         <section class="card space-y-2 p-4"><h2 class="text-body-regular text-text-secondary">{{ t('console.requests') }}</h2><p class="text-title-2-medium tabular-nums text-text-primary">{{ stats.total_requests.toLocaleString() }}</p></section>
         <section class="card space-y-2 p-4"><h2 class="text-body-regular text-text-secondary">{{ t('console.tokens') }}</h2><p class="text-title-2-medium tabular-nums text-text-primary">{{ stats.total_tokens.toLocaleString() }}</p></section>
-        <section class="card space-y-2 p-4"><h2 class="text-body-regular text-text-secondary">{{ t('console.actualCost') }}</h2><p class="text-title-2-medium tabular-nums text-text-primary">${{ stats.total_actual_cost.toFixed(4) }}</p></section>
+        <section class="card space-y-2 p-4"><h2 class="text-body-regular text-text-secondary">{{ t('console.actualCost') }}</h2><p class="text-title-2-medium tabular-nums text-text-primary">P {{ stats.total_actual_cost.toFixed(4) }}</p></section>
       </div>
       <section v-if="!logs.length" class="card space-y-3 p-6" data-testid="usage-empty"><h2 class="text-title-3-semibold text-text-primary">{{ t('console.noRequests') }}</h2><p class="text-body-regular text-text-secondary">{{ model ? t('console.noMatchingRequests') : t('console.usageEmptyNote') }}</p><router-link to="/dashboard" class="text-body-medium text-text-accent underline">{{ t('console.viewAccess') }}</router-link></section>
       <section v-else class="card overflow-hidden" data-testid="usage-list">

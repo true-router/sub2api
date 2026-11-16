@@ -590,7 +590,7 @@
               class="rounded bg-background-secondary-default px-1.5 py-0.5 "
               :title="t('usage.userBilled')"
             >
-              U ${{ formatKeyUserCost }}
+              U P {{ formatKeyUserCost }}
             </span>
           </div>
         </div>
@@ -701,7 +701,7 @@
             class="rounded bg-background-secondary-default px-1.5 py-0.5 "
             :title="t('usage.userBilled')"
           >
-            U ${{ formatKeyUserCost }}
+            U P {{ formatKeyUserCost }}
           </span>
         </div>
       </div>

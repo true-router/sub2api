@@ -71,7 +71,7 @@
             <td class="whitespace-nowrap px-4 py-3 text-right text-body-regular tabular-nums text-text-secondary ">{{ fmtTokens(item.output_tokens) }}</td>
             <td class="whitespace-nowrap px-4 py-3 text-right text-body-regular tabular-nums text-text-secondary ">{{ fmtTokens(item.cache_tokens) }}</td>
             <td class="whitespace-nowrap px-4 py-3 text-right text-body-medium tabular-nums text-text-primary ">{{ fmtTokens(item.total_tokens) }}</td>
-            <td class="whitespace-nowrap px-4 py-3 text-right text-body-medium tabular-nums text-text-success ">${{ fmtCost(item.actual_cost) }}</td>
+            <td class="whitespace-nowrap px-4 py-3 text-right text-body-medium tabular-nums text-text-success ">P {{ fmtCost(item.actual_cost) }}</td>
           </tr>
         </tbody>
       </BoardTable>

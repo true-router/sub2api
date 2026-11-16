@@ -103,7 +103,7 @@ export interface PaymentOrder {
   pay_amount_known?: boolean
   currency?: string
   fee_rate: number
-  /** 充值赠送额度（USD），已计入 amount */
+  /** Bonus points，已计入 amount */
   bonus_amount?: number
   payment_type: string
   out_trade_no: string

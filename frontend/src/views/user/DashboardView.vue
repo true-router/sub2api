@@ -37,7 +37,7 @@ onMounted(load)
     <div class="grid gap-4 sm:grid-cols-2">
       <section class="card space-y-3 p-5" data-testid="home-balance">
         <h2 class="text-body-medium text-text-secondary">{{ t('console.availableBalance') }}</h2>
-        <p class="text-title-1-semibold tabular-nums text-text-primary">${{ balance.toFixed(2) }}</p>
+        <p class="text-title-1-semibold tabular-nums text-text-primary">P {{ balance.toFixed(2) }}</p>
         <BalanceBreakdown :user="auth.user" />
         <router-link to="/purchase" class="inline-block text-body-medium text-text-accent underline">{{ t('console.manageBilling') }}</router-link>
       </section>

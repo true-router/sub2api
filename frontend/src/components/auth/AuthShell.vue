@@ -44,7 +44,7 @@ const points = computed(() => [t('lp.trust1'), t('lp.trust2'), t('lp.auth.point3
         </ul>
       </div>
       <div class="gift-card" data-testid="auth-gift">
-        <div class="card"><small>{{ t('lp.giftLabel', { name: siteName }) }}</small><b class="num">$5.00</b></div>
+        <div class="card"><small>{{ t('lp.giftLabel', { name: siteName }) }}</small><b class="num">P 5.00</b></div>
         <div>
           <h3>{{ giftTitle || t('lp.auth.giftNew') }}</h3>
           <p>{{ t('lp.auth.giftSub') }}</p>
@@ -64,7 +64,7 @@ const points = computed(() => [t('lp.trust1'), t('lp.trust2'), t('lp.auth.point3
       <div class="center">
         <div class="form-box">
           <div v-if="giftTitle" class="m-gift">
-            <span class="m-card num">$5.00</span><span>{{ giftTitle }}</span>
+            <span class="m-card num">P 5.00</span><span>{{ giftTitle }}</span>
           </div>
           <h1>{{ title }}</h1>
           <p v-if="subtitle" class="sub">{{ subtitle }}</p>

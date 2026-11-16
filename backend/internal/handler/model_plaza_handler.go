@@ -2,6 +2,7 @@ package handler
 
 import (
 	"log/slog"
+	"net/http"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
@@ -272,4 +273,22 @@ func toModelPlazaOfficialPricing(p *service.PlazaOfficialPricing) *modelPlazaOff
 		CacheReadPrice:     p.CacheReadPrice,
 		Intervals:          toUserPricingIntervals(p.Intervals),
 	}
+}
+
+// PricingContext serves account comparisons independently of the public showcase switch.
+// The route uses JWT middleware; it exposes no group or account configuration.
+func (h *ModelPlazaHandler) PricingContext(c *gin.Context) {
+	if h.settingService == nil {
+		response.Error(c, http.StatusServiceUnavailable, "Price conversion is unavailable")
+		return
+	}
+	rt := h.settingService.GetModelPlazaRuntime(c.Request.Context())
+	if rt.CNYPerCredit <= 0 {
+		response.Error(c, http.StatusServiceUnavailable, "Recharge reference cost is unavailable")
+		return
+	}
+	response.Success(c, map[string]any{
+		"cny_per_credit": rt.CNYPerCredit,
+		"exchange_rate":  h.exchangeRate.Get(c.Request.Context()),
+	})
 }

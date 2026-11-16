@@ -126,7 +126,7 @@ export default {
     // CTA 区块
     cta: {
       title: '准备好开始了吗？',
-      description: '注册即可获得免费试用额度，体验一站式 AI 服务',
+      description: '注册即可获得免费试用积分，体验一站式 AI 服务',
       button: '免费注册'
     },
     footer: {
@@ -155,7 +155,7 @@ export default {
       noTokenUsage: '这个范围内还没有 Token 用量',
       otherModels: '其他模型',
       details: '查看详细用量',
-      detailsHint: '额度信息、完整统计和用量明细',
+      detailsHint: '积分信息、完整统计和用量明细',
     },
     design: {
       invalidDates: '请选择有效的开始日期和结束日期。',
@@ -164,15 +164,15 @@ export default {
       queryHeading: '查询密钥用量',
       keyLabel: 'API Key',
       emptyTitle: '查看你的 API 使用情况',
-      emptyDescription: '输入 API Key，查看余额、额度、请求数量和模型用量。无需登录。',
+      emptyDescription: '输入 API Key，查看积分、积分、请求数量和模型用量。无需登录。',
       overview: '用量概览',
       resetsIn: '重置倒计时',
-      availableBalance: '当前可用余额',
-      usedOfLimit: '已用额度 / 总额度',
+      availableBalance: '当前可用积分',
+      usedOfLimit: '已用积分 / 总积分',
       startDate: '开始日期',
       endDate: '结束日期',
       active: '正常',
-      exhausted: '额度已用完',
+      exhausted: '积分已用完',
       expired: '已过期',
       unknown: '未知',
     },
@@ -207,20 +207,20 @@ export default {
     cost: '费用',
     // Status
     quotaMode: 'Key 限额模式',
-    walletBalance: '钱包余额',
+    walletBalance: '钱包积分',
     // Ring card titles
-    totalQuota: '总额度',
+    totalQuota: '总积分',
     limit5h: '5 小时限额',
     limitDaily: '日限额',
     limit7d: '7 天限额',
     limitWeekly: '周限额',
     limitMonthly: '月限额',
     // Detail rows
-    remainingQuota: '剩余额度',
+    remainingQuota: '剩余积分',
     expiresAt: '过期时间',
     todayExpires: '(今日到期)',
     daysLeft: '({days} 天)',
-    usedQuota: '已用额度',
+    usedQuota: '已用积分',
     resetNow: '即将重置',
     subscriptionType: '订阅类型',
     billingType: '计费方式',

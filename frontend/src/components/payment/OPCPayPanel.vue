@@ -55,9 +55,9 @@ async function accept(value: OPCPayOperation) {
   if (value.kind === 'purchase' && value.status === 'READY') {
     link.value = safeURL(value.result?.purchase_url)
     qrImage.value = link.value ? await QRCode.toDataURL(link.value, { width: 224, margin: 2 }) : ''
-    message.value = `付款完成后确认充值，到账 ${value.credit_usd} USD。`
+    message.value = `付款完成后确认充值，到账 ${value.credit_usd} 积分。`
   } else if (value.status === 'COMPLETED') {
-    message.value = `充值成功，已到账 ${value.credit_usd} USD。`
+    message.value = `充值成功，已到账 ${value.credit_usd} 积分。`
     clearAction(); link.value = ''; qrImage.value = ''
     await auth.refreshUser()
   } else if (value.status === 'FAILED' || value.status === 'CLOSED') {
@@ -136,7 +136,7 @@ onMounted(async () => {
         <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-b from-background-accent-default to-background-accent-hover text-text-white shadow-sm"><Icon name="creditCard" size="md" /></span>
         <div class="space-y-1">
           <h2 id="opcpay-title" class="text-title-3-semibold text-text-primary">支付宝充值</h2>
-          <p class="text-body-regular text-text-secondary">选择充值额度，使用支付宝付款。</p>
+          <p class="text-body-regular text-text-secondary">选择充值积分，使用支付宝付款。</p>
         </div>
       </div>
       <BoardButton variant="secondary" size="small" :loading="loading" :disabled="busy" @click="refresh">
@@ -150,7 +150,7 @@ onMounted(async () => {
       <p v-if="!available" class="text-body-regular text-text-secondary">支付宝充值暂不可用，请稍后重试。</p>
       <template v-else>
         <p v-if="!cards.length" class="text-body-regular text-text-secondary">当前没有可用的充值选项，请稍后重试。</p>
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" role="group" aria-label="可选充值额度">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" role="group" aria-label="可选充值积分">
           <button
             v-for="card in cards"
             :key="card.sku_id"
@@ -171,7 +171,7 @@ onMounted(async () => {
             </div>
             <p class="text-display-4-medium tabular-nums text-text-primary"><span class="mr-1 text-body-medium text-text-tertiary">{{ card.currency }}</span>{{ card.price }}</p>
             <div class="mt-auto flex flex-wrap gap-2">
-              <BoardBadge tone="success">到账 {{ card.quota_amount }} USD</BoardBadge>
+              <BoardBadge tone="success">到账 {{ card.quota_amount }} 积分</BoardBadge>
             </div>
           </button>
         </div>
@@ -185,7 +185,7 @@ onMounted(async () => {
       </template>
     </template>
   </section>
-  <BaseDialog :show="modalOpen" title="支付宝充值" :description="selectedCard ? `支付 ${selectedCard.currency} ${selectedCard.price} · 到账 ${operation?.credit_usd ?? selectedCard.quota_amount} USD` : undefined" width="narrow" @close="closeModal" @after-leave="onModalClosed">
+  <BaseDialog :show="modalOpen" title="支付宝充值" :description="selectedCard ? `支付 ${selectedCard.currency} ${selectedCard.price} · 到账 ${operation?.credit_usd ?? selectedCard.quota_amount} 积分` : undefined" width="narrow" @close="closeModal" @after-leave="onModalClosed">
     <div class="flex flex-col items-center gap-4 text-center" data-testid="opcpay-modal">
       <template v-if="canConfirm">
         <template v-if="isMobile">
@@ -199,7 +199,7 @@ onMounted(async () => {
           </div>
           <p class="text-body-regular text-text-secondary">请使用支付宝扫码付款。付款后点击“我已支付，确认充值”。</p>
         </template>
-        <p class="text-caption-1-regular text-text-tertiary">付款完成并确认后，到账 {{ operation?.credit_usd }} USD。</p>
+        <p class="text-caption-1-regular text-text-tertiary">付款完成并确认后，到账 {{ operation?.credit_usd }} 积分。</p>
       </template>
       <p v-else-if="message" role="status" class="text-body-regular text-text-secondary">{{ message }}</p>
       <p v-if="error" role="alert" class="w-full rounded-2xl bg-background-error-subtle px-4 py-3 text-body-regular text-text-error-primary">{{ error }}</p>

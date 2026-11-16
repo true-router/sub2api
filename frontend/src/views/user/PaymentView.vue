@@ -42,7 +42,7 @@ onMounted(() => { void auth.refreshUser() })
 </script>
 <template>
   <ConsolePage :title="t('console.billing')" :description="t('console.billingDescription')">
-    <section class="card space-y-3 p-5" data-testid="billing-balance"><h2 class="text-body-medium text-text-secondary">{{ t('console.availableBalance') }}</h2><p class="text-title-1-semibold tabular-nums text-text-primary">${{ (auth.user?.balance ?? 0).toFixed(2) }}</p><BalanceBreakdown :user="auth.user" /></section>
+    <section class="card space-y-3 p-5" data-testid="billing-balance"><h2 class="text-body-medium text-text-secondary">{{ t('console.availableBalance') }}</h2><p class="text-title-1-semibold tabular-nums text-text-primary">P {{ (auth.user?.balance ?? 0).toFixed(2) }}</p><BalanceBreakdown :user="auth.user" /></section>
     <div class="space-y-2 rounded-3xl border border-border-button-default bg-background-secondary-default p-4"><p class="text-body-regular text-text-secondary">{{ t('apiAccess.billingRule') }}</p><router-link to="/account/model-plaza" class="inline-block text-body-medium text-text-accent underline">{{ t('apiAccess.models') }}</router-link></div>
     <section class="space-y-5" data-testid="billing-tabs">
       <BoardPillTabs :model-value="tab" :items="items" :label="t('console.billing')" id-prefix="billing-tab" panel-id="billing-panel" @update:model-value="changeTab" />

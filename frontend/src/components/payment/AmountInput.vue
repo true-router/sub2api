@@ -3,7 +3,7 @@
     <div class="space-y-3"><h3 class="text-body-medium text-text-primary">{{ t('payment.quickAmounts') }}</h3>
       <div class="grid gap-3 sm:grid-cols-3" role="group" :aria-label="t('payment.quickAmounts')">
         <BoardButton v-for="amt in filteredAmounts" :key="amt" variant="secondary" :aria-pressed="modelValue === amt" :data-testid="`quick-amount-${amt}`" :class="cx('h-auto justify-start whitespace-normal p-4 text-start', modelValue === amt && 'border-border-focus-ring bg-background-accent-subtle')" @click="selectAmount(amt)">
-          <span class="space-y-1"><span class="block text-body-semibold">{{ t('console.amountPay', {amount: formatPaymentAmount(quoteFor(amt).payBase, currency)}) }}</span><span class="block text-caption-1-regular text-text-secondary" data-testid="quick-amount-credited">{{ t('console.amountCredit', {amount: '$' + quoteFor(amt).credited.toFixed(2)}) }}</span></span>
+          <span class="space-y-1"><span class="block text-body-semibold">{{ t('console.amountPay', {amount: formatPaymentAmount(quoteFor(amt).payBase, currency)}) }}</span><span class="block text-caption-1-regular text-text-secondary" data-testid="quick-amount-credited">{{ t('console.amountCredit', {amount: quoteFor(amt).credited.toFixed(2)}) }}</span></span>
         </BoardButton>
       </div>
     </div>

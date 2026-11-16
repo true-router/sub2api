@@ -32,6 +32,7 @@ func RegisterUserRoutes(
 			user.POST("/api-access", h.APIKey.PrepareAccess)
 			user.POST("/api-access/keys", h.APIKey.CreateUnifiedKey)
 			user.GET("/api-access/models", h.APIKey.UnifiedModels)
+			user.GET("/api-access/pricing-context", h.ModelPlaza.PricingContext)
 			if h.MCPOAuth != nil {
 				user.GET("/mcp/config", h.MCPOAuth.ConnectionConfig)
 				user.GET("/mcp/grants", h.MCPOAuth.ListGrants)

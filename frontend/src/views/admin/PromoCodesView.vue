@@ -76,7 +76,7 @@
 
           <template #cell-bonus_amount="{ value }">
             <span class="text-body-medium text-text-primary ">
-              ${{ value.toFixed(2) }}
+              P {{ value.toFixed(2) }}
             </span>
           </template>
 
@@ -347,7 +347,7 @@
           </div>
           <div class="text-right">
             <span class="text-body-medium text-text-success ">
-              +${{ usage.bonus_amount.toFixed(2) }}
+              +P {{ usage.bonus_amount.toFixed(2) }}
             </span>
           </div>
         </div>

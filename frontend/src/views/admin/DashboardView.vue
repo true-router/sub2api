@@ -19,11 +19,11 @@
             <span>{{ t('common.total') }}</span><span class="text-text-primary">{{ formatNumber(stats.total_requests) }}</span>
           </AdminMetricCard>
           <AdminMetricCard :label="t('admin.dashboard.todayTokens')" :value="formatTokens(stats.today_tokens)" icon="cube">
-            <span :title="t('admin.dashboard.actual')" class="text-text-success">${{ formatCost(stats.today_actual_cost) }}</span>
+            <span :title="t('admin.dashboard.actual')" class="text-text-success">P {{ formatCost(stats.today_actual_cost) }}</span>
             <span aria-hidden="true">/</span>
             <span :title="t('admin.dashboard.accountCost')" class="text-text-warning">${{ formatCost(stats.today_account_cost) }}</span>
             <span aria-hidden="true">/</span>
-            <span :title="t('admin.dashboard.standard')">${{ formatCost(stats.today_cost) }}</span>
+            <span :title="t('admin.dashboard.standard')">P {{ formatCost(stats.today_cost) }}</span>
           </AdminMetricCard>
           <AdminMetricCard :label="t('admin.dashboard.accounts')" :value="stats.total_accounts" icon="server">
             <span class="text-text-success">{{ stats.normal_accounts }} {{ t('common.active') }}</span>
@@ -36,11 +36,11 @@
             <span class="text-text-success">{{ stats.active_api_keys }} {{ t('common.active') }}</span>
           </AdminMetricCard>
           <AdminMetricCard :label="t('admin.dashboard.totalTokens')" :value="formatTokens(stats.total_tokens)" icon="database">
-            <span :title="t('admin.dashboard.actual')" class="text-text-success">${{ formatCost(stats.total_actual_cost) }}</span>
+            <span :title="t('admin.dashboard.actual')" class="text-text-success">P {{ formatCost(stats.total_actual_cost) }}</span>
             <span aria-hidden="true">/</span>
             <span :title="t('admin.dashboard.accountCost')" class="text-text-warning">${{ formatCost(stats.total_account_cost) }}</span>
             <span aria-hidden="true">/</span>
-            <span :title="t('admin.dashboard.standard')">${{ formatCost(stats.total_cost) }}</span>
+            <span :title="t('admin.dashboard.standard')">P {{ formatCost(stats.total_cost) }}</span>
           </AdminMetricCard>
           <AdminMetricCard :label="t('admin.dashboard.performance')" :value="formatTokens(stats.rpm) + ' RPM'" icon="bolt">
             <span class="text-text-primary">{{ formatTokens(stats.tpm) }}</span><span>TPM</span>
@@ -397,7 +397,7 @@ const userTrendChartData = computed(() => {
 
 // Format helpers
 const formatUserTrendValue = (value: number): string =>
-  userTrendMetric.value === 'tokens' ? formatTokens(value) : `$${formatCost(value)}`
+  userTrendMetric.value === 'tokens' ? formatTokens(value) : `P ${formatCost(value)}`
 
 const formatTokens = (value: number | undefined): string => {
   if (value === undefined || value === null) return '0'

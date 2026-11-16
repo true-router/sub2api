@@ -27,9 +27,9 @@
           <GroupBadge :name="selectedGroupInfo.name" :platform="selectedGroupInfo.platform" :rate-multiplier="selectedGroupInfo.rate_multiplier" />
         </div>
         <div class="grid grid-cols-2 gap-2 text-caption-1-regular">
-          <div><span class="text-text-secondary">{{ t('payment.admin.dailyLimit') }}:</span> <span class="ml-1 font-medium text-text-primary ">{{ selectedGroupInfo.daily_limit_usd != null ? '$' + selectedGroupInfo.daily_limit_usd : t('payment.admin.unlimited') }}</span></div>
-          <div><span class="text-text-secondary">{{ t('payment.admin.weeklyLimit') }}:</span> <span class="ml-1 font-medium text-text-primary ">{{ selectedGroupInfo.weekly_limit_usd != null ? '$' + selectedGroupInfo.weekly_limit_usd : t('payment.admin.unlimited') }}</span></div>
-          <div><span class="text-text-secondary">{{ t('payment.admin.monthlyLimit') }}:</span> <span class="ml-1 font-medium text-text-primary ">{{ selectedGroupInfo.monthly_limit_usd != null ? '$' + selectedGroupInfo.monthly_limit_usd : t('payment.admin.unlimited') }}</span></div>
+          <div><span class="text-text-secondary">{{ t('payment.admin.dailyLimit') }}:</span> <span class="ml-1 font-medium text-text-primary ">{{ selectedGroupInfo.daily_limit_usd != null ? 'P ' + selectedGroupInfo.daily_limit_usd : t('payment.admin.unlimited') }}</span></div>
+          <div><span class="text-text-secondary">{{ t('payment.admin.weeklyLimit') }}:</span> <span class="ml-1 font-medium text-text-primary ">{{ selectedGroupInfo.weekly_limit_usd != null ? 'P ' + selectedGroupInfo.weekly_limit_usd : t('payment.admin.unlimited') }}</span></div>
+          <div><span class="text-text-secondary">{{ t('payment.admin.monthlyLimit') }}:</span> <span class="ml-1 font-medium text-text-primary ">{{ selectedGroupInfo.monthly_limit_usd != null ? 'P ' + selectedGroupInfo.monthly_limit_usd : t('payment.admin.unlimited') }}</span></div>
         </div>
       </div>
 

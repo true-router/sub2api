@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { formatPoints } from '@/utils/points'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import DOMPurify from 'dompurify'
@@ -13,7 +14,7 @@ import { useAnnouncementStore } from '@/stores/announcements'
 import { useAppStore } from '@/stores/app'
 import { formatRelativeWithDateTime } from '@/utils/format'
 import type { UserNotification } from '@/api/notifications'
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const inbox = useAnnouncementStore()
 const app = useAppStore()
 const {announcements,loading}=storeToRefs(inbox)
@@ -42,7 +43,7 @@ async function markAll(){try{await inbox.markAllAsRead()}catch{app.showError(t('
         <p v-else-if="!filtered.length" class="text-body-regular text-text-secondary">{{ t('giftNotice.empty') }}</p>
         <div class="space-y-2"><BoardButton v-for="item in filtered" :key="`${item.type}:${item.id}`" variant="secondary" class="h-auto w-full justify-start whitespace-normal p-4 text-start" :data-notification="`${item.type}:${item.id}`" @click="detail(item)">
           <Icon :name="item.type==='gift' ? 'gift' : 'bell'" size="md" class="shrink-0 text-foreground-icon-secondary" />
-          <span class="min-w-0 flex-1 space-y-1"><span class="block break-words text-body-medium text-text-primary">{{ item.type==='gift' ? t('giftNotice.amount',{amount: new Intl.NumberFormat(locale,{style:'currency',currency:'USD',maximumFractionDigits:8}).format(item.gift_amount ?? 0)}) : item.title }}</span><span class="block text-caption-1-regular text-text-secondary">{{ formatRelativeWithDateTime(item.created_at) }}</span></span>
+          <span class="min-w-0 flex-1 space-y-1"><span class="block break-words text-body-medium text-text-primary">{{ item.type==='gift' ? t('giftNotice.amount',{amount: formatPoints(item.gift_amount, { maximumFractionDigits: 8 })}) : item.title }}</span><span class="block text-caption-1-regular text-text-secondary">{{ formatRelativeWithDateTime(item.created_at) }}</span></span>
           <BoardBadge :tone="item.read_at ? 'neutral' : 'accent'">{{ t(item.type==='gift' ? item.read_at ? 'giftNotice.claimed' : 'giftNotice.pending' : item.read_at ? 'announcements.read' : 'announcements.unread') }}</BoardBadge>
         </BoardButton></div>
       </div>

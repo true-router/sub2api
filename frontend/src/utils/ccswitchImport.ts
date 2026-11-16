@@ -37,7 +37,7 @@ export const CC_SWITCH_USAGE_SCRIPT = `({
     },
     extractor: function(response) {
       const remaining = response?.remaining ?? response?.quota?.remaining ?? response?.balance;
-      const unit = response?.unit ?? response?.quota?.unit ?? "USD";
+      const unit = response?.unit ?? response?.quota?.unit ?? "P";
       return {
         isValid: response?.is_active ?? response?.isValid ?? true,
         remaining,

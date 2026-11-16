@@ -35,6 +35,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatPoints } from '@/utils/points'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, ArcElement, BarElement, Tooltip, Filler, type ChartOptions } from 'chart.js'
@@ -63,7 +64,7 @@ const modelMetricLabel = computed(() => modelMetrics.value.find(item => item.val
 const numeric = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : 0
 const compact = (value: number) => new Intl.NumberFormat(locale.value, { notation: 'compact', maximumFractionDigits: 1 }).format(value)
 function formatValue(value: number, metric: string) {
-  return metric === 'cost' ? new Intl.NumberFormat(locale.value, { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 6 }).format(value) : new Intl.NumberFormat(locale.value).format(value)
+  return metric === 'cost' ? formatPoints(value, { minimumFractionDigits: 2, maximumFractionDigits: 6 }) : new Intl.NumberFormat(locale.value).format(value)
 }
 const orderedDays = computed(() => [...props.daily].sort((a, b) => a.date.localeCompare(b.date)))
 const trendValues = computed(() => orderedDays.value.map(row => trendMetric.value === 'cost' ? numeric(row.actual_cost ?? row.cost) : trendMetric.value === 'requests' ? numeric(row.requests) : numeric(row.input_tokens) + numeric(row.output_tokens)))
@@ -73,7 +74,7 @@ const trendOptions = computed<ChartOptions<'line'>>(() => ({
   responsive: true, maintainAspectRatio: false, animation: false,
   interaction: { intersect: false, mode: 'index' },
   plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => `${context.dataset.label}: ${formatValue(Number(context.raw), trendMetric.value)}` } } },
-  scales: { x: { grid: { display: false }, border: { display: false }, ticks: { color: theme.value.text, maxTicksLimit: 6, maxRotation: 0, callback: (_value, index) => orderedDays.value[index]?.date.slice(5) } }, y: { beginAtZero: true, grid: { color: theme.value.grid }, border: { display: false }, ticks: { color: theme.value.text, maxTicksLimit: 5, precision: trendMetric.value === 'requests' ? 0 : undefined, callback: value => trendMetric.value === 'cost' ? '$' + compact(Number(value)) : compact(Number(value)) } } },
+  scales: { x: { grid: { display: false }, border: { display: false }, ticks: { color: theme.value.text, maxTicksLimit: 6, maxRotation: 0, callback: (_value, index) => orderedDays.value[index]?.date.slice(5) } }, y: { beginAtZero: true, grid: { color: theme.value.grid }, border: { display: false }, ticks: { color: theme.value.text, maxTicksLimit: 5, precision: trendMetric.value === 'requests' ? 0 : undefined, callback: value => trendMetric.value === 'cost' ? 'P ' + compact(Number(value)) : compact(Number(value)) } } },
 }))
 const groupedModels = computed(() => {
   const totals = new Map<string, number>()

@@ -74,7 +74,7 @@
             <p class="mt-1 text-caption-1-regular text-text-secondary ">
               {{ t('admin.accounts.stats.accumulatedCost') }}
               <span class="text-text-tertiary ">
-                ({{ t('usage.userBilled') }}: ${{ formatCost(stats.summary.total_user_cost) }} ·
+                ({{ t('usage.userBilled') }}: P {{ formatCost(stats.summary.total_user_cost) }} ·
                 {{ t('admin.accounts.stats.standardCost') }}: ${{
                   formatCost(stats.summary.total_standard_cost)
                 }})
@@ -129,7 +129,7 @@
                 })
               }}
               <span class="text-text-tertiary ">
-                ({{ t('usage.userBilled') }}: ${{ formatCost(stats.summary.avg_daily_user_cost) }})
+                ({{ t('usage.userBilled') }}: P {{ formatCost(stats.summary.avg_daily_user_cost) }})
               </span>
             </p>
           </div>
@@ -201,7 +201,7 @@
               <div class="flex items-center justify-between">
                 <span class="text-caption-1-regular text-text-secondary ">{{ t('usage.userBilled') }}</span>
                 <span class="text-body-semibold text-text-primary "
-                  >${{ formatCost(stats.summary.today?.user_cost || 0) }}</span
+                  >P {{ formatCost(stats.summary.today?.user_cost || 0) }}</span
                 >
               </div>
               <div class="flex items-center justify-between">
@@ -256,7 +256,7 @@
               <div class="flex items-center justify-between">
                 <span class="text-caption-1-regular text-text-secondary ">{{ t('usage.userBilled') }}</span>
                 <span class="text-body-semibold text-text-primary "
-                  >${{ formatCost(stats.summary.highest_cost_day?.user_cost || 0) }}</span
+                  >P {{ formatCost(stats.summary.highest_cost_day?.user_cost || 0) }}</span
                 >
               </div>
               <div class="flex items-center justify-between">
@@ -311,7 +311,7 @@
               <div class="flex items-center justify-between">
                 <span class="text-caption-1-regular text-text-secondary ">{{ t('usage.userBilled') }}</span>
                 <span class="text-body-semibold text-text-primary "
-                  >${{ formatCost(stats.summary.highest_request_day?.user_cost || 0) }}</span
+                  >P {{ formatCost(stats.summary.highest_request_day?.user_cost || 0) }}</span
                 >
               </div>
             </div>
@@ -421,7 +421,7 @@
               <div class="flex items-center justify-between">
                 <span class="text-caption-1-regular text-text-secondary ">{{ t('usage.userBilled') }}</span>
                 <span class="text-body-semibold text-text-primary "
-                  >${{ formatCost(stats.summary.today?.user_cost || 0) }}</span
+                  >P {{ formatCost(stats.summary.today?.user_cost || 0) }}</span
                 >
               </div>
             </div>
@@ -559,7 +559,7 @@ const trendChartData = computed(() => {
         yAxisID: 'y'
       },
       {
-        label: t('usage.userBilled') + ' (USD)',
+        label: t('usage.userBilled') + ' (P)',
         data: stats.value.history.map((h) => h.user_cost),
         borderColor: '#10b981',
         backgroundColor: 'rgba(16, 185, 129, 0.08)',
@@ -607,6 +607,7 @@ const lineChartOptions = computed(() => ({
         label: (context: any) => {
           const label = context.dataset.label || ''
           const value = context.raw
+          if (label.includes('(P)')) return `${label}: P ${formatCost(value)}`
           if (label.includes('USD')) {
             return `${label}: $${formatCost(value)}`
           }

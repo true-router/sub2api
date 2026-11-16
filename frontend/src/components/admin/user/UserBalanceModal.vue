@@ -3,7 +3,7 @@
     <form v-if="user" id="balance-form" @submit.prevent="handleBalanceSubmit" class="space-y-5">
       <div class="flex items-center gap-3 rounded-xl bg-background-secondary-default p-4 ">
         <div class="flex h-10 w-10 items-center justify-center rounded-full bg-background-accent-subtle"><span class="text-title-3-medium text-text-accent">{{ user.email.charAt(0).toUpperCase() }}</span></div>
-        <div class="flex-1"><p class="font-medium text-text-primary ">{{ user.email }}</p><p class="text-body-regular text-text-secondary ">{{ t('admin.users.currentBalance') }}: ${{ formatBalance(user.balance) }}</p></div>
+        <div class="flex-1"><p class="font-medium text-text-primary ">{{ user.email }}</p><p class="text-body-regular text-text-secondary ">{{ t('admin.users.currentBalance') }}: P {{ formatBalance(user.balance) }}</p></div>
       </div>
       <div v-if="isConversion" class="space-y-2">
         <BalanceBreakdown :user="user" />
@@ -12,7 +12,7 @@
       <div>
         <label class="input-label">{{ isConversion ? t('wallet.conversionAmount') : operation === 'add' ? t('admin.users.depositAmount') : t('admin.users.withdrawAmount') }}</label>
         <div class="relative flex gap-2">
-          <div class="relative flex-1"><div class="absolute left-3 top-1/2 -translate-y-1/2 font-medium text-text-secondary">$</div><input v-model.number="form.amount" type="number" step="any" min="0" :max="isConversion ? availablePaid : undefined" required class="input pl-8" /></div>
+          <div class="relative flex-1"><div class="absolute left-3 top-1/2 -translate-y-1/2 font-medium text-text-secondary">P</div><input v-model.number="form.amount" type="number" step="any" min="0" :max="isConversion ? availablePaid : undefined" required class="input pl-8" /></div>
           <BoardButton v-if="operation === 'subtract'" type="button" @click="fillAllBalance" class="whitespace-nowrap" variant="secondary" size="medium">{{ t('admin.users.withdrawAll') }}</BoardButton>
         </div>
       </div>
@@ -23,10 +23,10 @@
       </div>
       <div><label class="input-label">{{ isConversion ? t('wallet.conversionReason') : t('admin.users.notes') }}</label><textarea v-model="form.notes" :required="isConversion" rows="3" class="input"></textarea></div>
       <div v-if="isConversion && form.amount > 0" class="space-y-1 text-body-regular text-text-secondary">
-        <p>{{ t('wallet.paidAfterConversion') }}: ${{ formatBalance(availablePaid - form.amount) }}</p>
-        <p>{{ t('wallet.bonusAfterConversion') }}: ${{ formatBalance((user.bonus_balance ?? 0) + form.amount) }}</p>
+        <p>{{ t('wallet.paidAfterConversion') }}: P {{ formatBalance(availablePaid - form.amount) }}</p>
+        <p>{{ t('wallet.bonusAfterConversion') }}: P {{ formatBalance((user.bonus_balance ?? 0) + form.amount) }}</p>
       </div>
-      <div v-if="form.amount > 0" class="rounded-xl border border-text-info bg-background-info-subtle p-4 "><div class="flex items-center justify-between text-body-regular"><span class="text-text-primary ">{{ t('admin.users.newBalance') }}:</span><span class="font-bold text-text-primary ">${{ formatBalance(calculateNewBalance()) }}</span></div></div>
+      <div v-if="form.amount > 0" class="rounded-xl border border-text-info bg-background-info-subtle p-4 "><div class="flex items-center justify-between text-body-regular"><span class="text-text-primary ">{{ t('admin.users.newBalance') }}:</span><span class="font-bold text-text-primary ">P {{ formatBalance(calculateNewBalance()) }}</span></div></div>
     </form>
     <template #footer>
       <div class="flex justify-end gap-3">

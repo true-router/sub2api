@@ -53,15 +53,15 @@
         </div>
         <div v-if="plan.daily_limit_usd != null" class="flex items-center justify-between">
           <span class="text-text-tertiary">{{ t('payment.planCard.dailyLimit') }}</span>
-          <span class="text-caption-1-medium text-text-primary">${{ plan.daily_limit_usd }}</span>
+          <span class="text-caption-1-medium text-text-primary">P {{ plan.daily_limit_usd }}</span>
         </div>
         <div v-if="plan.weekly_limit_usd != null" class="flex items-center justify-between">
           <span class="text-text-tertiary">{{ t('payment.planCard.weeklyLimit') }}</span>
-          <span class="text-caption-1-medium text-text-primary">${{ plan.weekly_limit_usd }}</span>
+          <span class="text-caption-1-medium text-text-primary">P {{ plan.weekly_limit_usd }}</span>
         </div>
         <div v-if="plan.monthly_limit_usd != null" class="flex items-center justify-between">
           <span class="text-text-tertiary">{{ t('payment.planCard.monthlyLimit') }}</span>
-          <span class="text-caption-1-medium text-text-primary">${{ plan.monthly_limit_usd }}</span>
+          <span class="text-caption-1-medium text-text-primary">P {{ plan.monthly_limit_usd }}</span>
         </div>
         <div v-if="plan.daily_limit_usd == null && plan.weekly_limit_usd == null && plan.monthly_limit_usd == null" class="flex items-center justify-between">
           <span class="text-text-tertiary">{{ t('payment.planCard.quota') }}</span>

@@ -31,7 +31,7 @@ export default {
     refundRule: 'Refunds deduct paid credit and reclaim this order’s unspent promotional credit.',
     refundPrincipal: 'Order paid credit',
     refundPaidAvailable: 'Available paid credit',
-    refundPrincipalAmount: 'Refund paid credit (USD)',
+    refundPrincipalAmount: 'Refund paid credit (points)',
     refundBonus: 'Original promotional credit (not refundable)',
     adminCreditRule: 'Promotional additions cannot be refunded.',
   },

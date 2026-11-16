@@ -37,6 +37,13 @@ func (f *fixture) unifiedScenario(admin string) error {
 	keyID := key["id"]
 	secret, _ := key["key"].(string)
 	f.secrets = append(f.secrets, secret)
+	usage, usageErr := f.request("GET", "/v1/usage", secret, nil, "")
+	if usageErr != nil {
+		return usageErr
+	}
+	if err = f.checked("Usage metadata labels points without changing the stored balance", usage.Status == 200 && usage.Data["unit"] == "P" && usage.Data["remaining"] == float64(5)); err != nil {
+		return err
+	}
 	var wg sync.WaitGroup
 	errs := make(chan error, 8)
 	for i := 0; i < 8; i++ {
@@ -509,6 +516,20 @@ func (f *fixture) waitBrowser() error {
 	}
 }
 func (f *fixture) unifiedPriceAndSocketChecks(admin, jwt, key string, userID int64) error {
+	priceContext, contextErr := f.request("GET", "/api/v1/user/api-access/pricing-context", jwt, nil, "")
+	if contextErr != nil {
+		return contextErr
+	}
+	if err := f.checked("Authenticated pricing context is available independently of public plaza", priceContext.Status == 200 && priceContext.Data["cny_per_credit"] == float64(1)); err != nil {
+		return err
+	}
+	anonymous, contextErr := f.request("GET", "/api/v1/user/api-access/pricing-context", "", nil, "")
+	if contextErr != nil {
+		return contextErr
+	}
+	if err := f.checked("Anonymous pricing context requests remain unauthorized", anonymous.Status == 401); err != nil {
+		return err
+	}
 	r, err := f.request("GET", "/api/v1/user/api-access/models", jwt, nil, "")
 	if err != nil {
 		return err
@@ -517,8 +538,9 @@ func (f *fixture) unifiedPriceAndSocketChecks(admin, jwt, key string, userID int
 		Data []struct {
 			ID     string `json:"id"`
 			Offers []struct {
-				Endpoint string  `json:"endpoint"`
-				Rate     float64 `json:"rate_multiplier"`
+				Endpoint string         `json:"endpoint"`
+				Rate     float64        `json:"rate_multiplier"`
+				Official map[string]any `json:"official_pricing"`
 				Pricing  struct {
 					PerRequest float64 `json:"per_request_price"`
 				} `json:"pricing"`
@@ -529,14 +551,22 @@ func (f *fixture) unifiedPriceAndSocketChecks(admin, jwt, key string, userID int
 		return err
 	}
 	matched := false
+	catalogReference := false
 	for _, m := range catalog.Data {
 		for _, o := range m.Offers {
+			if m.ID == "gpt-4o-mini" && o.Official != nil {
+				price, _ := o.Official["input_price"].(float64)
+				catalogReference = price > 0 && price < 0.001
+			}
 			if m.ID == "gpt-4o-mini" && o.Endpoint == "responses" && o.Rate == .5 && o.Pricing.PerRequest == 1 {
 				matched = true
 			}
 		}
 	}
 	if err = f.checked("Displayed wallet price and negotiated rate match settlement", r.Status == 200 && matched); err != nil {
+		return err
+	}
+	if err = f.checked("Official USD reference is independent from the custom wallet price", catalogReference); err != nil {
 		return err
 	}
 	ctx, cancel := context.WithTimeout(f.ctx, 12*time.Second)

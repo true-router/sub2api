@@ -70,7 +70,7 @@ func (h *APIKeyHandler) UnifiedModels(c *gin.Context) {
 				continue
 			}
 			m, timeFactor := h.unifiedPricing.PriceForUnifiedRoute(c.Request.Context(), route.Group, route.BillingModel, model.Platform)
-			offers = append(offers, map[string]any{"endpoint": route.Endpoint, "rate_multiplier": route.Rate * timeFactor, "pricing": toUserPricing(m.Pricing), "time_pricing": toModelPlazaTimePricing(m.TimePricing), "long_context_basis": string(m.LongContextBasis)})
+			offers = append(offers, map[string]any{"endpoint": route.Endpoint, "rate_multiplier": route.Rate * timeFactor, "pricing": toUserPricing(m.Pricing), "official_pricing": toModelPlazaOfficialPricing(m.OfficialPricing), "time_pricing": toModelPlazaTimePricing(m.TimePricing), "long_context_basis": string(m.LongContextBasis)})
 		}
 		rows = append(rows, map[string]any{"id": model.ID, "platform": model.Platform, "subscription_available": model.SubscriptionAvailable, "wallet_offers": offers})
 	}

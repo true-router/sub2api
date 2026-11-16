@@ -62,7 +62,7 @@
           </div>
           <div class="mt-2 flex justify-between text-sm">
             <span class="text-text-secondary">{{ t('wallet.refundPrincipal') }}</span>
-            <span class="text-text-primary">${{ Math.max(0, refundTarget.amount - (refundTarget.bonus_amount ?? 0)).toFixed(2) }}</span>
+            <span class="text-text-primary">P {{ Math.max(0, refundTarget.amount - (refundTarget.bonus_amount ?? 0)).toFixed(2) }}</span>
           </div>
         </div>
         <p class="text-caption-1-regular text-text-secondary">{{ t('wallet.refundRule') }}</p>

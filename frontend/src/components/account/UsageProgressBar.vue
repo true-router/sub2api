@@ -20,7 +20,7 @@
           class="rounded bg-background-secondary-default px-1.5 py-0.5 "
           :title="t('usage.userBilled')"
         >
-          U ${{ formatUserCost }}
+          U P {{ formatUserCost }}
         </span>
         <span
           v-if="estimatedTotalCost != null"

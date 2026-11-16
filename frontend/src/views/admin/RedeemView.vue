@@ -130,7 +130,7 @@
 
           <template #cell-value="{ value, row }">
             <span class="text-body-medium text-text-primary ">
-              <template v-if="row.type === 'balance'">${{ value.toFixed(2) }}</template>
+              <template v-if="row.type === 'balance'">P {{ value.toFixed(2) }}</template>
               <template v-else-if="row.type === 'subscription'">
                 {{ row.validity_days || 30 }} {{ t('admin.redeem.days') }}
                 <span v-if="row.group" class="ml-1 text-caption-1-regular text-text-secondary "

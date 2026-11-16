@@ -529,7 +529,7 @@ const modelColumns = ['model', 'requests', 'inputTokens', 'outputTokens', 'cache
 
 function usd(value: number | null | undefined): string {
   if (value == null || value < 0) return '-'
-  return '$' + Number(value).toFixed(2)
+  return 'P ' + Number(value).toFixed(2)
 }
 
 function fmtNum(val: number | null | undefined): string {

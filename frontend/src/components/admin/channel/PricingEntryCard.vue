@@ -199,7 +199,7 @@
           <!-- Default per-request price -->
           <label class="mt-3 block text-caption-1-medium text-text-secondary ">
             {{ t('admin.channels.form.defaultPerRequestPrice') }}
-            <span class="ml-1 font-normal text-text-tertiary">$</span>
+            <span class="ml-1 font-normal text-text-tertiary">P</span>
           </label>
           <div class="mt-1 w-48">
             <input :value="entry.per_request_price" @input="emitField('per_request_price', ($event.target as HTMLInputElement).value)"
@@ -235,7 +235,7 @@
           <!-- Default image price (per-request, same as per_request mode) -->
           <label class="mt-3 block text-caption-1-medium text-text-secondary ">
             {{ entry.billing_mode === 'video' ? t('admin.channels.form.defaultVideoPrice') : t('admin.channels.form.defaultImagePrice') }}
-            <span class="ml-1 font-normal text-text-tertiary">$</span>
+            <span class="ml-1 font-normal text-text-tertiary">P</span>
           </label>
           <div class="mt-1 w-48">
             <input :value="entry.per_request_price" @input="emitField('per_request_price', ($event.target as HTMLInputElement).value)"

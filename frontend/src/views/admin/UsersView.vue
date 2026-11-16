@@ -426,7 +426,7 @@
                     class="font-medium text-text-primary underline decoration-dashed decoration-text-disabled underline-offset-4 transition-colors hover:text-text-accent"
                     @click="handleBalanceHistory(row)"
                   >
-                    ${{ value.toFixed(2) }}
+                    P {{ value.toFixed(2) }}
                   </button>
                 </template>
               </HelpTooltip>

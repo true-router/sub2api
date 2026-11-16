@@ -38,8 +38,9 @@ return createServer(async (req, res) => {
     data = settings
   }
   else if (modelPlazaPreview && path === '/model-plaza') data = { description: '', cny_per_credit: 1, exchange_rate: null, groups: [{ id: 1, name: 'E2E group', platform: 'openai', subscription_type: 'standard', rate_multiplier: 1, models: [{ name: 'console-e2e-model', platform: 'openai', pricing: { billing_mode: 'token', input_price: 0.000001, output_price: 0.000002 } }] }] }
+  else if (modelProvidersPreview && path === '/user/api-access/pricing-context') data = { cny_per_credit: 1, exchange_rate: null }
   else if (modelProvidersPreview && path === '/user/api-access/models') {
-    const offer = { endpoint: 'chat_completions', rate_multiplier: 0.5, pricing: { billing_mode: 'token', input_price: 0.000001, output_price: 0.000002, cache_read_price: 0.0000001 } }
+    const offer = { endpoint: 'chat_completions', rate_multiplier: 0.5, official_pricing: { input_price: 0.000001, output_price: 0.000002, cache_read_price: 0.0000001 }, pricing: { billing_mode: 'token', input_price: 0.000001, output_price: 0.000002, cache_read_price: 0.0000001 } }
     data = [
       ['claude-sonnet-4-5', 'anthropic'], ['anthropic/claude-opus-4', 'openai'],
       ['gemini-2.5-pro', 'antigravity'], ['gemini-2.5-flash', 'gemini'],

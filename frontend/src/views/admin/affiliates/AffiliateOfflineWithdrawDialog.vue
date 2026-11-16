@@ -68,7 +68,7 @@
             class="h-4 w-4 animate-spin rounded-full border-2 border-border-focus-ring border-t-transparent"
           ></span>
           <span v-else class="font-semibold text-text-primary " data-test="withdraw-available-quota">
-            ${{ formatPreciseAmount(availableQuota) }}
+            P {{ formatPreciseAmount(availableQuota) }}
           </span>
         </div>
         <p class="mt-1 text-caption-1-regular text-text-secondary ">{{ t('admin.affiliates.withdraw.frozenHint') }}</p>
@@ -324,8 +324,8 @@ async function submit() {
     pendingOperation.value = null
     appStore.showSuccess(
       t(replayed ? 'admin.affiliates.withdraw.replayed' : 'admin.affiliates.withdraw.success', {
-        amount: `$${formatPreciseAmount(result.amount)}`,
-        remaining: `$${formatPreciseAmount(result.available_quota_after)}`,
+        amount: `P ${formatPreciseAmount(result.amount)}`,
+        remaining: `P ${formatPreciseAmount(result.available_quota_after)}`,
       }),
     )
     emit('success', result)

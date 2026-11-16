@@ -253,22 +253,22 @@ export default {
         actions: '操作'
       },
       types: {
-        balance: '余额',
+        balance: '积分',
         concurrency: '并发数',
         subscription: '订阅',
         invitation: '邀请码',
-        // 管理员在用户管理页面调整余额/并发时产生的记录
-        admin_balance: '余额（管理员）',
+        // 管理员在用户管理页面调整积分/并发时产生的记录
+        admin_balance: '积分（管理员）',
         admin_concurrency: '并发数（管理员）'
       },
       // 用于选择器和筛选器的直接键
-      balance: '余额',
+      balance: '积分',
       concurrency: '并发数',
       subscription: '订阅',
       invitation: '邀请码',
       invitationHint: '邀请码用于限制用户注册，使用后自动标记为已使用。',
       typeDesc: {
-        balance: '为账户充入余额（美元）',
+        balance: '为账户充入积分（积分）',
         concurrency: '增加账户并发请求数',
         subscription: '开通指定分组的订阅',
         invitation: '用于限制用户注册'
@@ -341,7 +341,7 @@ export default {
         selectType: '选择类型',
         valueLabel: '面值',
         valuePlaceholder: '请输入面值',
-        balanceHint: '余额金额（美元）',
+        balanceHint: '积分金额（积分）',
         concurrencyHint: '并发数增量',
         countLabel: '数量',
         countPlaceholder: '请输入数量',
@@ -365,7 +365,7 @@ export default {
       deleteCode: '删除',
       deleteConfirmMessage: '确定要删除此兑换码吗？',
       noCodes: '暂无兑换码',
-      noCodesDescription: '生成兑换码以向用户分发余额或并发数。',
+      noCodesDescription: '生成兑换码以向用户分发积分或并发数。',
       codesGeneratedSuccess: '兑换码生成成功，共 {count} 个',
       codeDisabledSuccess: '兑换码已禁用',
       codeEnabledSuccess: '兑换码已启用',
@@ -422,9 +422,9 @@ export default {
         addAndCondition: '添加 AND 条件',
         conditionType: '条件类型',
         conditionSubscription: '订阅套餐',
-        conditionBalance: '余额',
+        conditionBalance: '积分',
         operator: '运算符',
-        balanceValue: '余额阈值',
+        balanceValue: '积分阈值',
         selectPackages: '选择套餐'
       },
       operators: {
@@ -555,7 +555,7 @@ export default {
       failedToLoad: '加载使用记录失败',
       billingType: '计费类型',
       allBillingTypes: '全部计费类型',
-      billingTypeBalance: '钱包余额',
+      billingTypeBalance: '钱包积分',
       billingTypeSubscription: '订阅套餐',
       billingMode: '计费模式',
       billingModeToken: '按量',

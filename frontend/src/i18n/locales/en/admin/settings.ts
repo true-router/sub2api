@@ -446,7 +446,7 @@ export default {
       defaults: {
         title: 'Default User Settings',
         description: 'Default values for new users',
-        defaultBalance: 'Default Promotional Balance (USD)',
+        defaultBalance: 'Default Promotional Balance (points)',
         defaultBalanceHint: 'Promotional credit granted at signup. Spent first and non-refundable. Set to 0 to disable. Applies only to new users.',
         affiliateRebateRate: 'Affiliate Rebate Rate',
         affiliateRebateRateHint:
@@ -469,9 +469,9 @@ export default {
       },
       platformQuota: {
         platform:    'Platform',
-        daily:       'Daily (USD)',
-        weekly:      'Weekly (USD)',
-        monthly:     'Monthly (USD, 30d rolling)',
+        daily:       'Daily (points)',
+        weekly:      'Weekly (points)',
+        monthly:     'Monthly (points, 30d rolling)',
         placeholder: 'Unlimited',
       },
       claudeCode: {
@@ -778,8 +778,8 @@ export default {
         maxAmount: 'Maximum Amount',
         dailyLimit: 'Daily Limit',
         balanceRechargeMultiplier: 'Balance Recharge Multiplier',
-        balanceRechargeMultiplierHint: 'How many USD balance the user receives for each 1 CNY paid (up to 6 decimal places, e.g. for live FX rates)',
-        balanceRechargePreview: 'Preview: 1 CNY = {usd} USD',
+        balanceRechargeMultiplierHint: 'Points credited for each 1 CNY paid (up to 6 decimal places)',
+        balanceRechargePreview: 'Preview: 1 CNY = {usd} points',
         subscriptionUsdToCnyRate: 'Subscription USD to CNY Rate',
         subscriptionUsdToCnyRateHint:
           'CNY charged per 1 USD of plan price on CNY channels (e.g. 7.15). 0 or empty = disabled, plan price is charged as-is. When enabled, all plan prices must be set in USD',
@@ -854,7 +854,7 @@ export default {
         providerOPCPay: 'OPCPay · Recharge cards',
         field_publicOrigin: 'Return website after purchase',
         opcpayOriginHint: 'Optional public HTTPS origin, such as https://example.com. Leave blank to return manually after purchase.',
-        opcpayCardsHint: 'Load POINT recharge cards from OPCPay. Customers choose a card and purchase with Alipay. Redeem 1 point for 1 USD balance. Custom payment amounts are unavailable. API keys are encrypted; leave blank when editing to keep the saved key.',
+        opcpayCardsHint: 'Load POINT recharge cards from OPCPay. Customers choose a card and purchase with Alipay. Redeem 1 provider point for 1 internal point. Custom payment amounts are unavailable. API keys are encrypted; leave blank when editing to keep the saved key.',
         typeDisabled: 'type disabled',
         enableTypesFirst: 'Enable at least one payment type above first',
         easypayRedirect: 'Redirect',

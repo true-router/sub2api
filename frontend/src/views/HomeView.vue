@@ -155,7 +155,7 @@
                 <span class="env-back"></span>
                 <div class="env-card">
                   <div class="ec-top"><span>{{ t('lp.giftLabel', { name: siteName }) }}</span></div>
-                  <div class="ec-amt num">$<span class="ec-v">?.??</span></div>
+                  <div class="ec-amt num">P <span class="ec-v">?.??</span></div>
                   <div class="ec-bot"><span>{{ t('lp.giftCardSub') }}</span><i class="ec-chip"></i></div>
                   <span class="ec-stamp">{{ t('lp.claimedStamp') }}</span>
                 </div>
@@ -200,7 +200,7 @@
               <span class="env-back"></span>
               <div class="env-card">
                 <div class="ec-top"><span>{{ t('lp.giftLabel', { name: siteName }) }}</span></div>
-                <div class="ec-amt num">$<span class="ec-v">{{ giftAmount }}</span></div>
+                <div class="ec-amt num">P <span class="ec-v">{{ giftAmount }}</span></div>
                 <div class="ec-bot"><span>{{ t('lp.giftCardSub') }}</span><i class="ec-chip"></i></div>
                 <span class="ec-stamp">{{ t('lp.claimedStamp') }}</span>
               </div>

@@ -209,7 +209,7 @@
         <template #cell-cost="{ row }">
           <div class="text-body-regular">
             <div class="flex items-center gap-1.5">
-              <span class="font-medium text-text-success ">${{ row.actual_cost?.toFixed(6) || '0.000000' }}</span>
+              <span class="font-medium text-text-success ">P {{ row.actual_cost?.toFixed(6) || '0.000000' }}</span>
               <span
                 v-if="row.long_context_billing_applied"
                 data-testid="long-context-billing-marker"
@@ -228,10 +228,10 @@
               </div>
             </div>
             <div v-if="showBillingSource && row.billing_source" class="space-y-1 text-caption-1-regular text-text-secondary" data-testid="billing-source">
-              <p v-if="row.billing_source.subscription_id">{{ t('apiAccess.subscription') }} · {{ row.billing_source.subscription_name }} · ${{ row.billing_source.subscription_cost.toFixed(6) }}</p>
-              <p v-if="row.billing_source.bonus_cost > 0">{{ t('apiAccess.bonus') }} · ${{ row.billing_source.bonus_cost.toFixed(6) }}</p>
-              <p v-if="row.billing_source.paid_cost > 0">{{ t('apiAccess.paid') }} · ${{ row.billing_source.paid_cost.toFixed(6) }}</p>
-              <p v-if="row.billing_source.unverified_cost > 0">{{ t('apiAccess.unknown') }} · ${{ row.billing_source.unverified_cost.toFixed(6) }}</p>
+              <p v-if="row.billing_source.subscription_id">{{ t('apiAccess.subscription') }} · {{ row.billing_source.subscription_name }} · P {{ row.billing_source.subscription_cost.toFixed(6) }}</p>
+              <p v-if="row.billing_source.bonus_cost > 0">{{ t('apiAccess.bonus') }} · P {{ row.billing_source.bonus_cost.toFixed(6) }}</p>
+              <p v-if="row.billing_source.paid_cost > 0">{{ t('apiAccess.paid') }} · P {{ row.billing_source.paid_cost.toFixed(6) }}</p>
+              <p v-if="row.billing_source.unverified_cost > 0">{{ t('apiAccess.unknown') }} · P {{ row.billing_source.unverified_cost.toFixed(6) }}</p>
             </div>
             <div v-if="showAccountBilling && row.account_rate_multiplier != null" class="mt-0.5 text-[11px] text-text-warning ">
               A ${{ accountBilled(row).toFixed(6) }}
@@ -456,19 +456,19 @@
             <div class="text-caption-1-semibold text-text-disabled mb-1">{{ t('usage.costDetails') }}</div>
             <div v-if="tooltipData && tooltipData.input_cost > 0" class="flex items-center justify-between gap-4">
               <span class="text-text-tertiary">{{ t('admin.usage.inputCost') }}</span>
-              <span class="font-medium text-text-white">${{ tooltipData.input_cost.toFixed(8) }}</span>
+              <span class="font-medium text-text-white">P {{ tooltipData.input_cost.toFixed(8) }}</span>
             </div>
             <div v-if="tooltipData && hasImageInputCost(tooltipData)" class="flex items-center justify-between gap-4">
               <span class="text-text-tertiary">{{ t('usage.imageInputCost') }}</span>
-              <span class="font-medium text-fuchsia-300">${{ tooltipData.image_input_cost.toFixed(8) }}</span>
+              <span class="font-medium text-fuchsia-300">P {{ tooltipData.image_input_cost.toFixed(8) }}</span>
             </div>
             <div v-if="tooltipData && tooltipData.output_cost > 0" class="flex items-center justify-between gap-4">
               <span class="text-text-tertiary">{{ t('admin.usage.outputCost') }}</span>
-              <span class="font-medium text-text-white">${{ tooltipData.output_cost.toFixed(8) }}</span>
+              <span class="font-medium text-text-white">P {{ tooltipData.output_cost.toFixed(8) }}</span>
             </div>
             <div v-if="tooltipData && hasImageOutputCost(tooltipData)" class="flex items-center justify-between gap-4">
               <span class="text-text-tertiary">{{ t('usage.imageOutputCost') }}</span>
-              <span class="font-medium text-text-error-primary">${{ tooltipData.image_output_cost.toFixed(8) }}</span>
+              <span class="font-medium text-text-error-primary">P {{ tooltipData.image_output_cost.toFixed(8) }}</span>
             </div>
             <!-- Token billing: show unit prices per 1M tokens -->
             <template v-if="tooltipData && !isImageUsage(tooltipData) && (!tooltipData.billing_mode || tooltipData.billing_mode === BILLING_MODE_TOKEN)">
@@ -516,24 +516,24 @@
               </div>
               <div class="flex items-center justify-between gap-4">
                 <span class="text-text-tertiary">{{ t('usage.imageUnitPrice') }}</span>
-                <span class="font-medium text-text-info">${{ imageUnitPrice(tooltipData).toFixed(8) }}</span>
+                <span class="font-medium text-text-info">P {{ imageUnitPrice(tooltipData).toFixed(8) }}</span>
               </div>
               <div class="flex items-center justify-between gap-4">
                 <span class="text-text-tertiary">{{ t('usage.imageTotalPrice') }}</span>
-                <span class="font-medium text-text-white">${{ tooltipData.total_cost?.toFixed(8) || '0.00000000' }}</span>
+                <span class="font-medium text-text-white">P {{ tooltipData.total_cost?.toFixed(8) || '0.00000000' }}</span>
               </div>
             </template>
             <div v-else class="flex items-center justify-between gap-4">
               <span class="text-text-tertiary">{{ t('usage.unitPrice') }}</span>
-              <span class="font-medium text-text-info">${{ tooltipData?.total_cost?.toFixed(8) || '0.00000000' }}</span>
+              <span class="font-medium text-text-info">P {{ tooltipData?.total_cost?.toFixed(8) || '0.00000000' }}</span>
             </div>
             <div v-if="tooltipData && tooltipData.cache_creation_cost > 0" class="flex items-center justify-between gap-4">
               <span class="text-text-tertiary">{{ t('admin.usage.cacheCreationCost') }}</span>
-              <span class="font-medium text-text-white">${{ tooltipData.cache_creation_cost.toFixed(8) }}</span>
+              <span class="font-medium text-text-white">P {{ tooltipData.cache_creation_cost.toFixed(8) }}</span>
             </div>
             <div v-if="tooltipData && tooltipData.cache_read_cost > 0" class="flex items-center justify-between gap-4">
               <span class="text-text-tertiary">{{ t('admin.usage.cacheReadCost') }}</span>
-              <span class="font-medium text-text-white">${{ tooltipData.cache_read_cost.toFixed(8) }}</span>
+              <span class="font-medium text-text-white">P {{ tooltipData.cache_read_cost.toFixed(8) }}</span>
             </div>
           </div>
           <!-- Rate and Summary -->
@@ -547,11 +547,11 @@
           </div>
           <div class="flex items-center justify-between gap-6">
             <span class="text-text-tertiary">{{ t('usage.original') }}</span>
-            <span class="font-medium text-text-white">${{ tooltipData?.total_cost?.toFixed(8) || '0.00000000' }}</span>
+            <span class="font-medium text-text-white">P {{ tooltipData?.total_cost?.toFixed(8) || '0.00000000' }}</span>
           </div>
           <div class="flex items-center justify-between gap-6">
             <span class="text-text-tertiary">{{ t('usage.userBilled') }}</span>
-            <span class="font-semibold text-text-success">${{ tooltipData?.actual_cost?.toFixed(8) || '0.00000000' }}</span>
+            <span class="font-semibold text-text-success">P {{ tooltipData?.actual_cost?.toFixed(8) || '0.00000000' }}</span>
           </div>
           <!-- Account billing (separated from user billing) -->
           <template v-if="showAccountBilling">

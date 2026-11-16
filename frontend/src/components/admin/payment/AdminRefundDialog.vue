@@ -171,6 +171,7 @@
 </template>
 
 <script setup lang="ts">
+import { POINTS_SYMBOL } from '@/utils/points'
 import BoardButton from '@/components/boardui/Button.vue'
 import { reactive, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -195,7 +196,7 @@ const emit = defineEmits<{
   (e: 'cancel'): void
 }>()
 
-const creditedAmountSymbol = currencySymbol('USD')
+const creditedAmountSymbol = POINTS_SYMBOL
 
 const paymentAmountSymbol = computed(() => currencySymbol(props.order?.currency))
 

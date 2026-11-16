@@ -65,7 +65,7 @@
       <div class="min-w-0 flex-1">
         <p class="text-caption-1-medium text-text-secondary">{{ t('usage.totalCost') }}</p>
         <p class="text-title-2-bold text-text-success">
-          ${{ (stats?.total_actual_cost || 0).toFixed(4) }}
+          P {{ (stats?.total_actual_cost || 0).toFixed(4) }}
         </p>
         <p class="text-caption-1-regular text-text-tertiary">
           <template v-if="showAccountCost && totalAccountCost != null">
@@ -74,7 +74,7 @@
           </template>
           <span>
             {{ t('usage.standardCost') }}
-            <span :class="{ 'line-through': strikeStandardCost }">${{ (stats?.total_cost || 0).toFixed(4) }}</span>
+            <span :class="{ 'line-through': strikeStandardCost }">P {{ (stats?.total_cost || 0).toFixed(4) }}</span>
           </span>
         </p>
       </div>

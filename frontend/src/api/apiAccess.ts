@@ -16,12 +16,14 @@ export const createUnifiedAPIKey = async (): Promise<ApiKey> => {
 }
 
 import type { UserSupportedModelPricing } from './channels'
+import type { PlazaOfficialPricing, PlazaExchangeRate, PlazaLongContextBasis } from './modelPlaza'
 export interface UnifiedWalletOffer {
   endpoint: string
   rate_multiplier: number
   pricing: UserSupportedModelPricing | null
+  official_pricing?: PlazaOfficialPricing | null
   time_pricing?: { timezone: string; periods: Array<{ start_time: string; end_time: string; multiplier: number }> } | null
-  long_context_basis?: string
+  long_context_basis?: PlazaLongContextBasis
 }
 export interface UnifiedModel {
   id: string
@@ -31,5 +33,14 @@ export interface UnifiedModel {
 }
 export const getUnifiedModels = async (): Promise<UnifiedModel[]> => {
   const { data } = await apiClient.get<UnifiedModel[]>('/user/api-access/models')
+  return data
+}
+
+export interface UnifiedPricingContext {
+  cny_per_credit: number
+  exchange_rate: PlazaExchangeRate | null
+}
+export const getUnifiedPricingContext = async (): Promise<UnifiedPricingContext> => {
+  const { data } = await apiClient.get<UnifiedPricingContext>('/user/api-access/pricing-context')
   return data
 }

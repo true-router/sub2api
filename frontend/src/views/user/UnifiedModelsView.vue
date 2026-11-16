@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { formatPoints } from '@/utils/points'
 import { useI18n } from 'vue-i18n'
 import ConsolePage from '@/components/user/console/ConsolePage.vue'
 import BoardButton from '@/components/boardui/Button.vue'
@@ -7,12 +8,16 @@ import BoardBadge from '@/components/boardui/Badge.vue'
 import BoardSkeleton from '@/components/boardui/Skeleton.vue'
 import SearchField from '@/components/boardui/SearchField.vue'
 import PlazaProviderIcon from '@/components/modelPlaza/PlazaProviderIcon.vue'
+import UnifiedPriceComparison from '@/components/modelPlaza/UnifiedPriceComparison.vue'
+import { validQuote } from '@/components/modelPlaza/plazaPricing'
 import { modelProvider } from '@/components/modelPlaza/plazaProviders'
-import { getUnifiedModels, type UnifiedModel, type UnifiedWalletOffer } from '@/api/apiAccess'
+import { getUnifiedModels, getUnifiedPricingContext, type UnifiedPricingContext, type UnifiedModel, type UnifiedWalletOffer } from '@/api/apiAccess'
 import { useClipboard } from '@/composables/useClipboard'
 const { t } = useI18n()
 const { copyToClipboard } = useClipboard()
 const models = ref<UnifiedModel[]>([])
+const pricingContext = ref<UnifiedPricingContext | null>(null)
+const quote = computed(() => validQuote(pricingContext.value?.exchange_rate) ? pricingContext.value!.exchange_rate : null)
 const search = ref('')
 const selectedProvider = ref('all')
 const loading = ref(false)
@@ -37,7 +42,7 @@ const endpoints = (model: UnifiedModel) => model.wallet_offers.map(offer => endp
 const uniqueOffers = (model: UnifiedModel) => {
   const groups = new Map<string, { offer: UnifiedWalletOffer; endpoints: string[] }>()
   for (const offer of model.wallet_offers) {
-    const sig = JSON.stringify([offer.rate_multiplier, offer.pricing, offer.time_pricing, offer.long_context_basis])
+    const sig = JSON.stringify([offer.rate_multiplier, offer.pricing, offer.official_pricing, offer.time_pricing, offer.long_context_basis])
     const group = groups.get(sig)
     if (group) group.endpoints.push(endpointLabel(offer.endpoint))
     else groups.set(sig, { offer, endpoints: [endpointLabel(offer.endpoint)] })
@@ -45,22 +50,16 @@ const uniqueOffers = (model: UnifiedModel) => {
   return [...groups.values()]
 }
 const hasTiers = (model: UnifiedModel) => model.wallet_offers.some(offer => offer.pricing?.intervals?.length || offer.time_pricing)
-function priceRows(offer: UnifiedWalletOffer) {
-  const p = offer.pricing
-  if (!p) return []
-  if (p.billing_mode === 'per_request') return [{ key: 'requestPrice', value: p.per_request_price, tokens: false }]
-  const rows = [{ key: 'inputPrice', value: p.input_price, tokens: true }, { key: 'outputPrice', value: p.output_price, tokens: true }]
-  if (p.cache_write_price != null) rows.push({ key: 'cacheWritePrice', value: p.cache_write_price, tokens: true })
-  if (p.cache_read_price != null) rows.push({ key: 'cacheReadPrice', value: p.cache_read_price, tokens: true })
-  return rows
-}
 function reset() { selectedProvider.value = 'all'; search.value = '' }
-const price = (n: number | null | undefined, rate: number, tokens = true) => n == null ? '—' : `$${(n * rate * (tokens ? 1_000_000 : 1)).toFixed(6)}`
-const showBase = (rate: number) => rate !== 1
+const price = (n: number | null | undefined, rate: number, tokens = true) => n == null ? '—' : formatPoints(n * rate * (tokens ? 1_000_000 : 1), { minimumFractionDigits: 6, maximumFractionDigits: 6 })
 async function load() {
   loading.value = true
   failed.value = false
-  try { models.value = await getUnifiedModels() } catch { failed.value = true } finally { loading.value = false }
+  try {
+    const [catalog, context] = await Promise.all([getUnifiedModels(), getUnifiedPricingContext().catch(() => null)])
+    models.value = catalog
+    pricingContext.value = context
+  } catch { failed.value = true } finally { loading.value = false }
 }
 onMounted(load)
 </script>
@@ -68,6 +67,13 @@ onMounted(load)
   <ConsolePage :title="t('console.models')" :description="t('console.modelsDescription')">
     <div class="space-y-4">
       <p class="rounded-3xl border border-border-button-default bg-background-secondary-default p-4 text-body-regular text-text-secondary">{{ t('apiAccess.billingRule') }}</p>
+      <section v-if="!loading" class="space-y-2 rounded-3xl border border-border-button-default bg-background-secondary-default p-4" :aria-label="t('modelPlaza.compare.basis')" data-testid="account-comparison-basis">
+        <p class="text-body-medium text-text-primary">{{ t('modelPlaza.accountComparison.intro') }}</p>
+        <p v-if="pricingContext" class="text-caption-1-regular tabular-nums text-text-secondary">{{ t('modelPlaza.compare.rechargeBasis', { value: pricingContext.cny_per_credit }) }}</p>
+        <p v-if="quote" class="text-caption-1-regular text-text-secondary">{{ t('modelPlaza.compare.exchange', { rate: quote.usd_to_cny, date: quote.date, source: quote.source }) }}<span v-if="quote.stale"> · {{ t('modelPlaza.compare.cached') }}</span></p>
+        <p v-else class="text-caption-1-regular text-text-warning" role="status">{{ t(pricingContext ? 'modelPlaza.compare.noExchange' : 'modelPlaza.accountComparison.contextUnavailable') }}</p>
+        <p class="text-caption-1-regular text-text-tertiary">{{ t('modelPlaza.accountComparison.disclaimer') }}</p>
+      </section>
       <section class="flex flex-col gap-4 rounded-3xl border border-border-button-default bg-background-primary-default p-4 sm:p-5" :aria-label="t('modelPlaza.compare.filters')">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div class="space-y-1">
@@ -114,17 +120,7 @@ onMounted(load)
             <span class="break-all font-mono text-caption-1-medium text-text-secondary">{{ uniqueOffers(model).length > 1 ? offerEndpoints.join(' · ') : t('apiAccess.walletPrice') }}</span>
             <BoardBadge tone="accent">{{ t('apiAccess.rateMultiplier') }} ×{{ offer.rate_multiplier }}</BoardBadge>
           </header>
-          <p v-if="!offer.pricing" class="px-3 py-3 text-body-2-regular text-text-tertiary">—</p>
-          <table v-else class="w-full table-fixed text-left">
-            <thead><tr class="text-caption-1-regular text-text-tertiary"><th scope="col" class="px-3 py-2 font-normal">{{ offer.pricing.billing_mode === 'per_request' ? t('apiAccess.perRequest') : t('apiAccess.perMillion') }}</th><th v-if="showBase(offer.rate_multiplier)" scope="col" class="px-3 py-2 text-right font-normal">{{ t('apiAccess.basePrice') }}</th><th scope="col" class="px-3 py-2 text-right font-normal">{{ t('apiAccess.currentPrice') }}</th></tr></thead>
-            <tbody>
-              <tr v-for="row in priceRows(offer)" :key="row.key" class="border-t border-separator-border" :data-price-row="row.key">
-                <th scope="row" class="px-3 py-2 text-body-2-regular font-normal text-text-secondary">{{ t(`apiAccess.${row.key}`) }}</th>
-                <td v-if="showBase(offer.rate_multiplier)" class="break-all px-3 py-2 text-right text-body-2-regular tabular-nums text-text-tertiary line-through">{{ price(row.value, 1, row.tokens) }}</td>
-                <td class="break-all px-3 py-2 text-right text-body-medium tabular-nums text-text-primary">{{ price(row.value, offer.rate_multiplier, row.tokens) }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <UnifiedPriceComparison :offer="offer" :context="pricingContext" />
         </section>
         <details v-if="hasTiers(model)" class="mt-auto rounded-xl border border-border-button-default p-3"><summary class="cursor-pointer text-body-medium text-text-secondary">{{ t('apiAccess.pricingDetails') }}</summary>
           <div class="mt-3 space-y-3">

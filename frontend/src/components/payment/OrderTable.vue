@@ -42,6 +42,7 @@
 </template>
 
 <script setup lang="ts">
+import { POINTS_SYMBOL } from '@/utils/points'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { PaymentOrder } from '@/types/payment'
@@ -60,7 +61,7 @@ const props = defineProps<{
 
 function formatDate(dateStr: string) { return new Date(dateStr).toLocaleString() }
 
-const creditedAmountSymbol = currencySymbol('USD')
+const creditedAmountSymbol = POINTS_SYMBOL
 
 function paymentAmountSymbol(order: PaymentOrder): string {
   return currencySymbol(order.currency)

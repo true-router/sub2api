@@ -85,11 +85,11 @@
                 </div>
                 <div v-if="showBonusRow" class="flex justify-between" :class="{ 'border-t border-border-button-default pt-2 ': !showActualPay }" data-testid="recharge-bonus-row">
                   <span class="text-text-secondary">{{ t('payment.rechargeBonus.amountLabelWithPercent', { percent: formatRechargeBonusNumber(bonusQuote.percent) }) }}</span>
-                  <span class="text-body-medium text-text-error-primary">+${{ bonusQuote.bonus.toFixed(2) }}</span>
+                  <span class="text-body-medium text-text-error-primary">+P {{ bonusQuote.bonus.toFixed(2) }}</span>
                 </div>
                 <div v-if="validAmount > 0" class="flex justify-between" :class="{ 'border-t border-border-button-default pt-2 ': !showActualPay && !showBonusRow }" data-testid="recharge-credited-row">
                   <span class="text-text-secondary">{{ t('payment.creditedBalance') }}</span>
-                  <span :class="bonusQuote.percent > 0 ? 'text-body-semibold text-text-primary ' : 'text-text-primary '">${{ creditedAmount.toFixed(2) }}</span>
+                  <span :class="bonusQuote.percent > 0 ? 'text-body-semibold text-text-primary ' : 'text-text-primary '">P {{ creditedAmount.toFixed(2) }}</span>
                 </div>
                 <p v-if="balanceRechargeMultiplier !== 1" class="border-t border-border-button-default pt-2 text-caption-1-regular text-text-secondary">
                   {{ t('payment.rechargeRatePreview', { currency: selectedCurrency, usd: formatBalanceRechargeMultiplier(balanceRechargeMultiplier) }) }}
@@ -141,15 +141,15 @@
                   </div>
                   <div v-if="selectedPlan.daily_limit_usd != null">
                     <span class="text-caption-1-regular text-text-tertiary">{{ t('payment.planCard.dailyLimit') }}</span>
-                    <div class="text-title-3-semibold text-text-primary">${{ selectedPlan.daily_limit_usd }}</div>
+                    <div class="text-title-3-semibold text-text-primary">P {{ selectedPlan.daily_limit_usd }}</div>
                   </div>
                   <div v-if="selectedPlan.weekly_limit_usd != null">
                     <span class="text-caption-1-regular text-text-tertiary">{{ t('payment.planCard.weeklyLimit') }}</span>
-                    <div class="text-title-3-semibold text-text-primary">${{ selectedPlan.weekly_limit_usd }}</div>
+                    <div class="text-title-3-semibold text-text-primary">P {{ selectedPlan.weekly_limit_usd }}</div>
                   </div>
                   <div v-if="selectedPlan.monthly_limit_usd != null">
                     <span class="text-caption-1-regular text-text-tertiary">{{ t('payment.planCard.monthlyLimit') }}</span>
-                    <div class="text-title-3-semibold text-text-primary">${{ selectedPlan.monthly_limit_usd }}</div>
+                    <div class="text-title-3-semibold text-text-primary">P {{ selectedPlan.monthly_limit_usd }}</div>
                   </div>
                   <div v-if="selectedPlan.daily_limit_usd == null && selectedPlan.weekly_limit_usd == null && selectedPlan.monthly_limit_usd == null">
                     <span class="text-caption-1-regular text-text-tertiary">{{ t('payment.planCard.quota') }}</span>

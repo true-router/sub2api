@@ -390,6 +390,7 @@ func (s *ModelPlazaService) lookupOfficialPricing(ctx context.Context, modelName
 // The caller supplies a group selected by unified access authorization.
 func (s *ModelPlazaService) PriceForUnifiedRoute(ctx context.Context, g *Group, model, platform string) (PlazaModel, float64) {
 	m := PlazaModel{Name: model, Platform: platform}
+	m.OfficialPricing = s.lookupOfficialPricing(ctx, model, make(map[string]*PlazaOfficialPricing))
 	s.fillDisplayPricing(ctx, &m, g)
 	factor := 1.0
 	if s.resolver != nil {

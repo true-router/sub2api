@@ -116,6 +116,7 @@
 </template>
 
 <script setup lang="ts">
+import { POINTS_SYMBOL } from '@/utils/points'
 import BoardButton from '@/components/boardui/Button.vue'
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -160,7 +161,7 @@ const refundRequireForce = ref(false)
 const refundWarning = ref('')
 const refundQueryingIds = ref(new Set<number>())
 const orderAuditLogs = ref<AuditLog[]>([])
-const creditedAmountSymbol = currencySymbol('USD')
+const creditedAmountSymbol = POINTS_SYMBOL
 
 function paymentAmountSymbol(order: PaymentOrder | null | undefined): string {
   return currencySymbol(order?.currency)

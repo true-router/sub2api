@@ -274,7 +274,7 @@ const providerLabels = computed<Record<UserAuthProvider, string>>(() => ({
 }))
 
 function formatCurrency(value: number): string {
-  return `$${value.toFixed(2)}`
+  return `P ${value.toFixed(2)}`
 }
 
 function normalizeProvider(value: string): UserAuthProvider | null {

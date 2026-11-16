@@ -89,7 +89,7 @@
           type="number" min="0" class="input mt-0.5 text-caption-1-regular" :placeholder="'∞'" />
       </div>
       <div class="flex-1">
-        <label class="text-caption-1-regular text-text-tertiary">{{ t('admin.channels.form.perRequestPrice') }} <span v-if="isEmpty" class="text-text-error-primary">*</span> <span class="text-text-disabled">$</span></label>
+        <label class="text-caption-1-regular text-text-tertiary">{{ t('admin.channels.form.perRequestPrice') }} <span v-if="isEmpty" class="text-text-error-primary">*</span> <span class="text-text-disabled">P</span></label>
         <input :value="interval.per_request_price" @input="emitField('per_request_price', ($event.target as HTMLInputElement).value)"
           type="number" step="any" min="0" class="input mt-0.5 text-caption-1-regular" />
       </div>

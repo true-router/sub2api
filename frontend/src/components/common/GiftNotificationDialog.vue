@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatPoints } from '@/utils/points'
 // Gift reveal. Follows .planning/2026-11-14-console-redesign/prototype.html (dialog.gift).
 // The envelope opens only after the server acknowledges the claim.
 import { computed, nextTick, onMounted, ref } from 'vue'
@@ -12,7 +13,7 @@ import type { UserNotification } from '@/api/notifications'
 
 const props = defineProps<{ notification: UserNotification }>()
 const emit = defineEmits<{ close: [] }>()
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const inbox = useAnnouncementStore()
 const app = useAppStore()
 const auth = useAuthStore()
@@ -32,7 +33,7 @@ const confetti = ref<Record<string, string>[]>([])
 const target = props.notification.gift_amount ?? 0
 const shown = ref(props.notification.read_at ? target : 0)
 
-const money = (value: number, exact = false) => new Intl.NumberFormat(locale.value, { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: exact ? 8 : 2 }).format(value)
+const money = (value: number, exact = false) => formatPoints(value, { minimumFractionDigits: 2, maximumFractionDigits: exact ? 8 : 2 })
 const amount = computed(() => money(target, true))
 const shownAmount = computed(() => (shown.value === target ? amount.value : money(shown.value)))
 const eyebrow = computed(() => t(props.notification.gift_source === 'initial' ? 'giftNotice.welcomeEyebrow' : 'giftNotice.eyebrow'))

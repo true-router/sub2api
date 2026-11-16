@@ -43,7 +43,7 @@
       <div v-if="props.stats.user_cost != null" class="flex items-center gap-1">
         <span class="text-text-secondary ">{{ t('usage.userBilled') }}:</span>
         <span class="font-medium text-text-primary ">{{
-          formatCurrency(props.stats.user_cost)
+          formatPoints(props.stats.user_cost)
         }}</span>
       </div>
     </div>
@@ -56,6 +56,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import type { WindowStats } from '@/types'
+import { formatPoints } from '@/utils/points'
 import { formatNumber, formatCurrency } from '@/utils/format'
 
 const props = withDefaults(

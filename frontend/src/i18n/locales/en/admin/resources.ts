@@ -252,7 +252,7 @@ export default {
       invitation: 'Invitation',
       invitationHint: 'Invitation codes are used to restrict user registration. They are automatically marked as used after use.',
       typeDesc: {
-        balance: 'Add balance (USD) to an account',
+        balance: 'Add balance (points) to an account',
         concurrency: 'Increase concurrent request limit',
         subscription: 'Grant a subscription for a group',
         invitation: 'Restrict user registration'
@@ -350,7 +350,7 @@ export default {
         selectType: 'Select type',
         valueLabel: 'Value',
         valuePlaceholder: 'Enter value',
-        balanceHint: 'Balance amount (USD)',
+        balanceHint: 'Balance amount (points)',
         concurrencyHint: 'Concurrency increment',
         countLabel: 'Count',
         countPlaceholder: 'Enter count',

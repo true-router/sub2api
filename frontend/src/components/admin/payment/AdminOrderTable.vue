@@ -137,6 +137,7 @@
 </template>
 
 <script setup lang="ts">
+import { POINTS_SYMBOL } from '@/utils/points'
 import BoardButton from '@/components/boardui/Button.vue'
 import { ref, reactive, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -172,7 +173,7 @@ const emit = defineEmits<{
 
 const searchQuery = ref('')
 const filters = reactive({ status: '', payment_type: '', order_type: '' })
-const creditedAmountSymbol = currencySymbol('USD')
+const creditedAmountSymbol = POINTS_SYMBOL
 
 function paymentAmountSymbol(order: PaymentOrder): string {
   return currencySymbol(order.currency)

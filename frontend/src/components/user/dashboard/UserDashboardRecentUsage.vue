@@ -28,8 +28,8 @@
             <td class="whitespace-nowrap text-text-secondary">{{ formatDateTime(log.created_at) }}</td>
             <td class="text-end tabular-nums">{{ (log.input_tokens + log.output_tokens).toLocaleString() }}</td>
             <td class="whitespace-nowrap text-end tabular-nums">
-              <span class="text-text-primary">${{ formatCost(log.actual_cost) }}</span>
-              <span class="text-text-tertiary"> / ${{ formatCost(log.total_cost) }}</span>
+              <span class="text-text-primary">P {{ formatCost(log.actual_cost) }}</span>
+              <span class="text-text-tertiary"> / P {{ formatCost(log.total_cost) }}</span>
             </td>
           </tr>
         </tbody>

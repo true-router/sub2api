@@ -31,7 +31,7 @@
           <div class="flex-shrink-0 text-right">
             <p class="text-caption-1-regular text-text-secondary ">{{ t('admin.users.currentBalance') }}</p>
             <p class="text-title-2-bold text-text-primary ">
-              ${{ user.balance?.toFixed(2) || '0.00' }}
+              P {{ user.balance?.toFixed(2) || '0.00' }}
             </p>
           </div>
         </div>
@@ -42,7 +42,7 @@
             <template v-else>&nbsp;</template>
           </p>
           <p class="ml-4 flex-shrink-0 text-caption-1-regular text-text-secondary ">
-            {{ t('admin.users.totalRecharged') }}: <span class="font-semibold text-text-success ">${{ totalRecharged.toFixed(2) }}</span>
+            {{ t('admin.users.totalRecharged') }}: <span class="font-semibold text-text-success ">P {{ totalRecharged.toFixed(2) }}</span>
           </p>
         </div>
       </div>
@@ -325,7 +325,7 @@ const getItemTitle = (item: BalanceHistoryItem) => {
 const formatValue = (item: BalanceHistoryItem) => {
   if (isBalanceType(item.type)) {
     const sign = item.value >= 0 ? '+' : ''
-    return `${sign}$${item.value.toFixed(2)}`
+    return `${sign}P ${item.value.toFixed(2)}`
   }
   if (isSubscriptionType(item.type)) {
     const days = item.validity_days || Math.round(item.value)

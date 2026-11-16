@@ -1,6 +1,6 @@
 <template>
   <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" data-testid="user-dashboard-stats">
-    <BoardStatCard v-if="!isSimple" :label="t('dashboard.balance')" :value="'$' + formatBalance(balance)" icon="creditCard">
+    <BoardStatCard v-if="!isSimple" :label="t('dashboard.balance')" :value="'P ' + formatBalance(balance)" icon="creditCard">
       <BalanceBreakdown :user="authStore.user" />
     </BoardStatCard>
     <BoardStatCard :label="t('dashboard.apiKeys')" :value="stats.total_api_keys || 0" icon="key">
@@ -9,9 +9,9 @@
     <BoardStatCard :label="t('dashboard.todayRequests')" :value="formatNumber(stats.today_requests || 0)" icon="chart">
       {{ t('common.total') }}: {{ formatNumber(stats.total_requests || 0) }}
     </BoardStatCard>
-    <BoardStatCard :label="t('dashboard.todayCost')" :value="'$' + formatCost(stats.today_actual_cost || 0)" icon="dollar">
-      <span :title="t('dashboard.standard')">{{ t('dashboard.standard') }}: ${{ formatCost(stats.today_cost || 0) }}</span>
-      <span>{{ t('common.total') }}: ${{ formatCost(stats.total_actual_cost || 0) }}</span>
+    <BoardStatCard :label="t('dashboard.todayCost')" :value="'P ' + formatCost(stats.today_actual_cost || 0)" icon="dollar">
+      <span :title="t('dashboard.standard')">{{ t('dashboard.standard') }}: P {{ formatCost(stats.today_cost || 0) }}</span>
+      <span>{{ t('common.total') }}: P {{ formatCost(stats.total_actual_cost || 0) }}</span>
     </BoardStatCard>
     <BoardStatCard :label="t('dashboard.todayTokens')" :value="formatTokens(stats.today_tokens || 0)" icon="cube">
       {{ t('dashboard.input') }}: {{ formatTokens(stats.today_input_tokens || 0) }} /
@@ -57,13 +57,13 @@
             {{ item.isOther ? t('dashboard.platformOther') : platformLabel(item.platform) }}
           </span>
           <span class="font-mono text-body-regular text-text-accent" :title="t('dashboard.actual')">
-            ${{ formatCost(item.total_actual_cost) }}
+            P {{ formatCost(item.total_actual_cost) }}
           </span>
         </div>
         <div class="mt-2 space-y-1 text-caption-1-regular">
           <div class="flex items-center justify-between">
             <span class="text-text-secondary">{{ t('dashboard.todayCost') }}</span>
-            <span class="font-mono text-text-primary">${{ formatCost(item.today_actual_cost) }}</span>
+            <span class="font-mono text-text-primary">P {{ formatCost(item.today_actual_cost) }}</span>
           </div>
           <div class="flex items-center justify-between">
             <span class="text-text-secondary">{{ t('dashboard.requests') }}</span>
@@ -101,7 +101,7 @@
                 <div class="flex items-center justify-between text-caption-1-regular">
                   <span class="text-text-secondary">{{ t(`dashboard.platformQuota.${w}`) }}</span>
                   <span class="font-mono text-text-primary">
-                    ${{ formatUsd((quotaVal(item.quota, `${w}_usage_usd`) as number) ?? 0) }} / ${{ formatUsd(quotaVal(item.quota, `${w}_limit_usd`) as number) }}
+                    P {{ formatUsd((quotaVal(item.quota, `${w}_usage_usd`) as number) ?? 0) }} / P {{ formatUsd(quotaVal(item.quota, `${w}_limit_usd`) as number) }}
                   </span>
                 </div>
                 <div class="h-1.5 w-full overflow-hidden rounded-full bg-background-tertiary-default">
