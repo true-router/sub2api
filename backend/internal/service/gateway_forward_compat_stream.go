@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/apicompat"
@@ -19,9 +18,6 @@ import (
 	"github.com/tidwall/gjson"
 	"go.uber.org/zap"
 )
-
-// 旧测试的兼容标识；生产断开时限由 HTTP 传输层独立管理。
-var anthropicCompatDisconnectDrainInterval = 180 * time.Second
 
 // anthropicCompatStream 是 Anthropic 上游经 chat/responses 兼容入口流式转发时的
 // 上游读取状态。客户端断开后停止向下游写入，传输层按独立断开时限取消读取。

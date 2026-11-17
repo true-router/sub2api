@@ -1121,6 +1121,8 @@ func TestForwardAsRawChatCompletions_UpstreamRequestIgnoresClientCancel(t *testi
 		cfg:          rawChatCompletionsTestConfig(),
 		httpUpstream: upstream,
 	}
+	// 此用例验证显式继续读取模式；默认立即取消由 HTTP E2E 覆盖。
+	svc.cfg.Gateway.ClientDisconnectDrainTimeout = 1
 	account := rawChatCompletionsTestAccount()
 
 	result, err := svc.forwardAsRawChatCompletions(reqCtx, c, account, body, "")

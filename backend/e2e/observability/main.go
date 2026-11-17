@@ -47,9 +47,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	proxy := httputil.NewSingleHostReverseProxy(target)
-	director := proxy.Director
-	proxy.Director = func(r *http.Request) { director(r); r.Header.Set("Authorization", "Bearer "+os.Getenv("E2E_API_KEY")) }
+	proxy := &httputil.ReverseProxy{Rewrite: func(r *httputil.ProxyRequest) {
+		r.SetURL(target)
+		r.Out.Host = r.In.Host
+		r.SetXForwarded()
+		r.Out.Header.Set("Authorization", "Bearer "+os.Getenv("E2E_API_KEY"))
+	}}
 	proxy.Transport = observability.WrapTransport(http.DefaultTransport)
 	proxy.FlushInterval = -1
 	gin.SetMode(gin.ReleaseMode)

@@ -139,6 +139,11 @@ linters:
       - path: '_test\.go$'
         linters: [ gosec ]
         text: 'G70[34]'
+      # E2E 可执行夹具由操作者指定合成上游、输入工件和回执路径，与测试文件
+      # 使用同一信任边界。只排除 G703/G704；生产路径和其他安全检查保持启用。
+      - path: '(^|/)(e2e/|tools/[^/]+-e2e/)'
+        linters: [ gosec ]
+        text: 'G70[34]'
 
 formatters:
   enable:

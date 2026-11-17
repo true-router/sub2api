@@ -144,7 +144,7 @@ func (s *OPCPayService) find(ctx context.Context, userID int64, where string, ar
 	if err != nil {
 		return nil, errors.New("无法读取一人付操作")
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	if !rows.Next() {
 		return nil, rows.Err()
 	}
@@ -359,7 +359,7 @@ func (s *OPCPayService) credit(ctx context.Context, o *OPCPayOperation) error {
 	if err != nil {
 		return errors.New("核销待交付，请恢复原操作")
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 	res, err := tx.ExecContext(ctx, `UPDATE opcpay_operations SET status='COMPLETED',updated_at=CURRENT_TIMESTAMP WHERE business_id=$1 AND status='CONFIRMED'`, o.ID)
 	if err != nil {
 		return errors.New("核销待交付，请恢复原操作")
@@ -369,7 +369,7 @@ func (s *OPCPayService) credit(ctx context.Context, o *OPCPayOperation) error {
 		return errors.New("核销待交付，请恢复原操作")
 	}
 	if n == 1 {
-		res, err = tx.ExecContext(ctx, `SELECT wallet_credit_payment($2,$1,$1,opcpay_record_order($3))`, o.Credit, o.UserID, o.ID)
+		_, err = tx.ExecContext(ctx, `SELECT wallet_credit_payment($2,$1,$1,opcpay_record_order($3))`, o.Credit, o.UserID, o.ID)
 		if err != nil {
 			return errors.New("核销待交付，请恢复原操作")
 		}

@@ -659,13 +659,13 @@ func TestAnthropicCompatStreaming_RequestContextCanceledDrainsWithoutWriting(t *
 	}
 }
 
-func TestAnthropicCompatStream_ClientDisconnectBoundsDrainWhenIntervalDisabled(t *testing.T) {
+func TestAnthropicCompatStream_ClientDisconnectPreservesDataInterval(t *testing.T) {
 	for _, tc := range []struct {
 		name         string
 		intervalSec  int
 		wantInterval time.Duration
 	}{
-		{name: "interval_disabled", intervalSec: 0, wantInterval: anthropicCompatDisconnectDrainInterval},
+		{name: "interval_disabled", intervalSec: 0, wantInterval: 0},
 		{name: "interval_configured", intervalSec: 30, wantInterval: 30 * time.Second},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -681,36 +681,14 @@ func TestAnthropicCompatStream_ClientDisconnectBoundsDrainWhenIntervalDisabled(t
 			stream.markClientDisconnected()
 
 			require.True(t, stream.clientDisconnected)
-			require.NotNil(t, stream.pump.timer)
+			require.Equal(t, tc.intervalSec > 0, stream.pump.timer != nil)
 			require.Equal(t, tc.wantInterval, stream.pump.interval)
 		})
 	}
 }
 
-func TestAnthropicCompatStreaming_DisconnectDrainEndsWhenIntervalDisabled(t *testing.T) {
-	original := anthropicCompatDisconnectDrainInterval
-	anthropicCompatDisconnectDrainInterval = 200 * time.Millisecond
-	t.Cleanup(func() { anthropicCompatDisconnectDrainInterval = original })
-
-	for name, handle := range compatStreamHandlers() {
-		t.Run(name, func(t *testing.T) {
-			gin.SetMode(gin.TestMode)
-			writer := &disconnectOnMarkerResponseWriter{ResponseRecorder: httptest.NewRecorder(), marker: "second"}
-			c, _ := gin.CreateTestContext(writer)
-			resp, pw := stallingAnthropicUpstream(t, anthropicStreamTruncatedBeforeMessageDelta())
-
-			got := runCompatStreamWithDeadline(t, handle, newCompatStreamIdleTestService(0), resp, c)
-
-			require.NoError(t, got.err)
-			require.NotNil(t, got.result)
-			require.True(t, got.result.ClientDisconnect)
-			require.Equal(t, 20, got.result.Usage.InputTokens)
-			require.Zero(t, writer.writesAfterError)
-			_, werr := io.WriteString(pw, "event: ping\n")
-			require.Error(t, werr, "upstream body must be closed after the disconnect drain bound")
-		})
-	}
-}
+// 断开总时限由真实 HTTP 传输持有。该契约改由 backend/e2e/stream-cancellation/check.py
+// 的三协议取消与持续上游输出场景验证，不能再由解析器测试伪造独立计时器。
 
 func TestForwardAsCompatStreaming_IdleTimeoutTriggersStreamTimeoutHandling(t *testing.T) {
 	for _, endpoint := range []string{"chat_completions", "responses"} {

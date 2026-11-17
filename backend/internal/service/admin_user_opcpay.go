@@ -18,7 +18,7 @@ WHERE user_id = $1 AND kind = 'consume' AND status = 'COMPLETED'`, userID)
 	if err != nil {
 		return 0, 0, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var count int64
 	var amount float64
 	if rows.Next() {
@@ -55,7 +55,7 @@ OFFSET $2 LIMIT $3`, userID, offset, limit)
 	if err != nil {
 		return nil, 0, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	codes := make([]RedeemCode, 0)
 	for rows.Next() {
 		var code string

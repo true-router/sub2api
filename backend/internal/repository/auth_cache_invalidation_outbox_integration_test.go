@@ -51,6 +51,10 @@ func TestAuthCacheInvalidationTriggers_CoverSecurityMutationsOnly(t *testing.T) 
 		require.NoError(t, err)
 		_, err = integrationDB.ExecContext(ctx, "DELETE FROM api_keys WHERE id = $1", key.ID)
 		require.NoError(t, err)
+		for _, table := range []string{"wallet_holds", "wallet_grants", "wallet_journal"} {
+			_, err = integrationDB.ExecContext(ctx, "DELETE FROM "+table+" WHERE user_id = $1", user.ID)
+			require.NoError(t, err)
+		}
 		_, err = integrationDB.ExecContext(ctx, "DELETE FROM users WHERE id = $1", user.ID)
 		require.NoError(t, err)
 		_, err = integrationDB.ExecContext(ctx, "DELETE FROM groups WHERE id = $1", group.ID)

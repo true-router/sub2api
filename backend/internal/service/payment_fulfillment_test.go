@@ -4,7 +4,9 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
+	"github.com/DATA-DOG/go-sqlmock"
 	"math"
 	"strconv"
 	"testing"
@@ -820,7 +822,8 @@ func TestPaymentRedeemDoesNotIncrementFailureLimit(t *testing.T) {
 
 func TestExecuteBalanceFulfillmentBypassesUserRedeemRateLimit(t *testing.T) {
 	ctx := context.Background()
-	client := newPaymentConfigServiceTestClient(t)
+	walletDB, walletSQL := newPaymentWalletSQLMock(t)
+	client := newPaymentConfigServiceTestClient(t, walletDB)
 	ensurePaymentAuditOrderActionUniqueIndex(t, ctx, client)
 	order := createPaymentFulfillmentSubscriptionOrder(t, ctx, client, OrderStatusPaid, time.Now())
 	order, err := client.PaymentOrder.UpdateOneID(order.ID).
@@ -832,19 +835,16 @@ func TestExecuteBalanceFulfillmentBypassesUserRedeemRateLimit(t *testing.T) {
 	require.NoError(t, err)
 
 	redeemRepo := &paymentFulfillmentRedeemRepo{}
-	credited := 0.0
+	walletSQL.ExpectExec(`^SELECT wallet_credit_payment\(\$1,\$2,\$3,\$4\)$`).
+		WithArgs(order.UserID, order.Amount, order.Amount, order.ID).
+		WillReturnResult(sqlmock.NewResult(0, 1))
 	userRepo := &mockUserRepo{getByIDUser: &User{ID: order.UserID, Balance: 0}}
-	userRepo.updateBalanceFn = func(_ context.Context, id int64, amount float64) error {
-		require.Equal(t, order.UserID, id)
-		credited += amount
-		return nil
-	}
 	cache := &paymentFulfillmentRedeemCacheStub{count: redeemMaxFailedAttempts}
 	redeemService := NewRedeemService(redeemRepo, userRepo, nil, cache, nil, client, nil, nil)
 	svc := &PaymentService{entClient: client, redeemService: redeemService, userRepo: userRepo}
 
 	require.NoError(t, svc.ExecuteBalanceFulfillment(ctx, order.ID))
-	require.InDelta(t, order.Amount, credited, 1e-8)
+	require.NoError(t, walletSQL.ExpectationsWereMet())
 	require.Zero(t, cache.getCalls, "trusted payment fulfillment must not read the public failure counter")
 	require.Zero(t, cache.incrementCalls, "trusted payment fulfillment must not mutate the public failure counter")
 	require.Equal(t, 1, cache.acquireCalls)
@@ -1293,3 +1293,11 @@ func TestExecuteSubscriptionFulfillmentDoesNotDuplicateWorkAfterLegacySuccessAud
 
 var _ AffiliateRepository = (*paymentFulfillmentAffiliateRepoStub)(nil)
 var _ SettingRepository = (*paymentFulfillmentSettingRepoStub)(nil)
+
+func newPaymentWalletSQLMock(t *testing.T) (*sql.DB, sqlmock.Sqlmock) {
+	t.Helper()
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, mock.ExpectationsWereMet()); _ = db.Close() })
+	return db, mock
+}

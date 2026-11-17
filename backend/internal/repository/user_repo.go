@@ -1631,7 +1631,7 @@ func (r *userRepository) CreditPaidBalance(ctx context.Context, id int64, amount
 		if err != nil {
 			return service.BalanceChange{}, err
 		}
-		defer tx.Rollback()
+		defer func() { _ = tx.Rollback() }()
 		ctx = dbent.NewTxContext(ctx, tx)
 	}
 	change, ok, err := scanBalanceChange(ctx, tx.Client(), `SELECT balance,balance+$1 FROM users WHERE id=$2 AND deleted_at IS NULL FOR UPDATE`, amount, id)

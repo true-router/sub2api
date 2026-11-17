@@ -622,7 +622,7 @@ func (s *GroupRepoSuite) TestListWithFilters_IsExclusive() {
 	}))
 
 	isExclusive := true
-	groups, _, err := s.repo.ListWithFilters(s.ctx, pagination.PaginationParams{Page: 1, PageSize: 10}, "", "", "", &isExclusive)
+	groups, _, err := s.repo.ListWithFilters(s.ctx, pagination.PaginationParams{Page: 1, PageSize: 10}, service.PlatformAnthropic, "", "", &isExclusive)
 	s.Require().NoError(err)
 	s.Require().Len(groups, 1)
 	s.Require().True(groups[0].IsExclusive)

@@ -246,7 +246,7 @@ func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscripti
 
 		// ── 5. 按端点需要加载订阅 ───────────────────────────────────
 
-		var subscription *service.UserSubscription = unifiedSubscription
+		subscription := unifiedSubscription
 		isSubscriptionType := apiKey.Group != nil && apiKey.Group.IsSubscriptionType()
 
 		// 倍率自省不需要订阅数据；/v1/usage 仍保留原有订阅读取行为。

@@ -71,6 +71,9 @@ func normalizeObservedUpstreamResponseModel(model string) string {
 }
 
 func (o *upstreamResponseModelObserver) ObserveOpenAI(payload []byte, eventType string) {
+	if o == nil {
+		return
+	}
 	if (eventType == "response.completed" || eventType == "response.done") && observedUsageCount(payload, "response.usage.input_tokens") && observedUsageCount(payload, "response.usage.output_tokens") {
 		o.inputUsageObserved = true
 		o.finalUsageObserved = true
@@ -99,6 +102,9 @@ func (o *upstreamResponseModelObserver) ObserveOpenAI(payload []byte, eventType 
 }
 
 func (o *upstreamResponseModelObserver) ObserveAnthropic(payload []byte) {
+	if o == nil {
+		return
+	}
 	kind := gjson.GetBytes(payload, "type").String()
 	if kind == "message_start" && observedUsageCount(payload, "message.usage.input_tokens") {
 		o.inputUsageObserved = true

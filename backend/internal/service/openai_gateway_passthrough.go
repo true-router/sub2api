@@ -2036,7 +2036,7 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 	needModelReplace := strings.TrimSpace(originalModel) != "" && strings.TrimSpace(mappedModel) != "" && strings.TrimSpace(originalModel) != strings.TrimSpace(mappedModel)
 	resultWithUsage := func() *openaiStreamingResultPassthrough {
 		return &openaiStreamingResultPassthrough{
-			usageIncomplete:  !((sawDone || sawTerminalEvent) && !sawFailedEvent && observer.UsageComplete()),
+			usageIncomplete:  (!sawDone && !sawTerminalEvent) || sawFailedEvent || !observer.UsageComplete(),
 			usage:            usage,
 			firstTokenMs:     firstTokenMs,
 			responseID:       responseID,

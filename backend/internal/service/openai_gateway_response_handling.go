@@ -354,7 +354,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 	streamSearchSeen := make(map[string]struct{})
 	resultWithUsage := func() *openaiStreamingResult {
 		return &openaiStreamingResult{
-			usageIncomplete:  !(sawTerminalEvent && !sawFailedEvent && observer.UsageComplete()),
+			usageIncomplete:  !sawTerminalEvent || sawFailedEvent || !observer.UsageComplete(),
 			usage:            usage,
 			firstTokenMs:     firstTokenMs,
 			responseID:       responseID,

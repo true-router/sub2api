@@ -28,7 +28,7 @@ func (h *APIKeyHandler) PrepareAccess(c *gin.Context) {
 	if key == nil {
 		state = "revoked"
 	} else {
-		out = dto.APIKeyFromService(key)
+		out = dto.APIKeyFromService(key).Localized(c.GetHeader("Accept-Language"))
 		if key.Status != service.StatusActive {
 			state = key.Status
 		}
@@ -47,7 +47,7 @@ func (h *APIKeyHandler) CreateUnifiedKey(c *gin.Context) {
 		if err != nil {
 			return nil, err
 		}
-		return dto.APIKeyFromService(key), nil
+		return dto.APIKeyFromService(key).Localized(c.GetHeader("Accept-Language")), nil
 	})
 }
 

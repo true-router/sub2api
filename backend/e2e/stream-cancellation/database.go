@@ -19,7 +19,7 @@ func checkDatabase() error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 	var name string
@@ -126,11 +126,16 @@ func checkDatabase() error {
 	}
 	// 验证异步最佳努力写入与去重分支使用相同的完整性字段。
 	log.RequestID = "best-effort-incomplete"
-	if err = repo.(interface {
+	bestEffort, ok := repo.(interface {
 		CreateBestEffort(context.Context, *service.UsageLog) error
-	}).CreateBestEffort(ctx, log); err != nil {
+	})
+	if !ok {
+		return fmt.Errorf("usage repository does not expose the fixture write path")
+	}
+	if err = bestEffort.CreateBestEffort(ctx, log); err != nil {
 		return err
 	}
+
 	var storedFlag sql.NullBool
 	deadline := time.Now().Add(3 * time.Second)
 	for time.Now().Before(deadline) {
@@ -146,11 +151,10 @@ func checkDatabase() error {
 	if !storedFlag.Valid || !storedFlag.Bool {
 		return fmt.Errorf("best effort completeness lost")
 	}
-	if err = repo.(interface {
-		CreateBestEffort(context.Context, *service.UsageLog) error
-	}).CreateBestEffort(ctx, log); err != nil {
+	if err = bestEffort.CreateBestEffort(ctx, log); err != nil {
 		return err
 	}
+
 	// 旧版本只写已存在的列，新增 nullable 列必须允许其继续写入。
 	if _, err = db.ExecContext(ctx, `INSERT INTO usage_logs(user_id,api_key_id,account_id,model,input_tokens,output_tokens,total_cost,actual_cost,rate_multiplier)
         VALUES($1,$2,$3,'legacy-fixture',0,0,0,0,1)`, user, key, account); err != nil {

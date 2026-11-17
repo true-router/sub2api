@@ -302,7 +302,11 @@ func (s *APIKeyService) unifiedGroupAccounts(ctx context.Context, groupID int64)
 
 func (s *APIKeyService) UnifiedModels(ctx context.Context, userID int64) ([]UnifiedAPIModel, error) {
 	ctx = withUnifiedLookup(ctx, userID)
-	ctx.Value(unifiedLookupKey{}).(*unifiedLookup).readOnly = true
+	lookup, ok := ctx.Value(unifiedLookupKey{}).(*unifiedLookup)
+	if !ok || lookup == nil {
+		return nil, fmt.Errorf("unified lookup was not initialized")
+	}
+	lookup.readOnly = true
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err

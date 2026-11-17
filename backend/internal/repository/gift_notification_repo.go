@@ -17,7 +17,7 @@ func (r *giftNotificationRepository) List(ctx context.Context, userID int64) ([]
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := []service.GiftNotification{}
 	for rows.Next() {
 		var item service.GiftNotification

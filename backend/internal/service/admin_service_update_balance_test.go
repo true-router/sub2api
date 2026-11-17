@@ -21,6 +21,10 @@ func (s *balanceUserRepoStub) AdjustBalance(ctx context.Context, id int64, delta
 	return s.apply(func(current float64) float64 { return current + delta })
 }
 
+func (s *balanceUserRepoStub) CreditPaidBalance(ctx context.Context, id int64, amount float64, evidence string) (BalanceChange, error) {
+	return s.AdjustBalance(ctx, id, amount)
+}
+
 func (s *balanceUserRepoStub) SetBalance(ctx context.Context, id int64, value float64) (BalanceChange, error) {
 	return s.apply(func(float64) float64 { return value })
 }
@@ -121,7 +125,7 @@ func TestAdminService_UpdateUserBalance_UsesAtomicPrimitives(t *testing.T) {
 				redeemCodeRepo: &balanceRedeemRepoStub{redeemRepoStub: &redeemRepoStub{}},
 			}
 
-			user, err := svc.UpdateUserBalance(context.Background(), 7, tt.amount, tt.operation, "")
+			user, err := svc.UpdateUserBalance(context.Background(), 7, tt.amount, tt.operation, "synthetic funding evidence")
 			require.NoError(t, err)
 			require.Equal(t, []BalanceChange{tt.want}, repo.changes)
 			require.Equal(t, tt.want.New, user.Balance)
@@ -166,7 +170,7 @@ func TestAdminService_UpdateUserBalance_InvalidatesAuthCache(t *testing.T) {
 		authCacheInvalidator: invalidator,
 	}
 
-	_, err := svc.UpdateUserBalance(context.Background(), 7, 5, "add", "")
+	_, err := svc.UpdateUserBalance(context.Background(), 7, 5, "add_paid", "synthetic funding evidence")
 	require.NoError(t, err)
 	require.Equal(t, []int64{7}, invalidator.userIDs)
 	require.Len(t, redeemRepo.created, 1)
@@ -203,9 +207,9 @@ func TestAdminService_UpdateUserBalance_AdminRechargeAffiliateRebate(t *testing.
 			amount:    5,
 		},
 		{
-			name:      "enabled add",
+			name:      "enabled verified paid credit",
 			enabled:   true,
-			operation: "add",
+			operation: "add_paid",
 			amount:    0.1,
 			wantCalls: []adminRechargeAffiliateAccrual{{userID: 7, amount: 0.1}},
 		},
@@ -236,7 +240,7 @@ func TestAdminService_UpdateUserBalance_AdminRechargeAffiliateRebate(t *testing.
 				affiliateService: affiliate,
 			}
 
-			_, err := svc.UpdateUserBalance(context.Background(), 7, tt.amount, tt.operation, "")
+			_, err := svc.UpdateUserBalance(context.Background(), 7, tt.amount, tt.operation, "synthetic funding evidence")
 			require.NoError(t, err)
 			require.Equal(t, tt.wantCalls, affiliate.calls)
 		})
@@ -255,7 +259,7 @@ func TestAdminService_UpdateUserBalance_AffiliateFailureDoesNotRollbackRecharge(
 		affiliateService: affiliate,
 	}
 
-	user, err := svc.UpdateUserBalance(context.Background(), 7, 5, "add", "")
+	user, err := svc.UpdateUserBalance(context.Background(), 7, 5, "add_paid", "synthetic funding evidence")
 	require.NoError(t, err)
 	require.Equal(t, 15.0, user.Balance)
 	require.Equal(t, []adminRechargeAffiliateAccrual{{userID: 7, amount: 5}}, affiliate.calls)

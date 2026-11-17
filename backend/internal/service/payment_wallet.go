@@ -24,7 +24,7 @@ func (s *PaymentService) reserveWalletRefund(ctx context.Context, p *RefundPlan)
 	if err != nil {
 		return 0, infraerrors.BadRequest("REFUND_BALANCE_UNAVAILABLE", "paid balance is insufficient or order promotional credit is reserved by an active task").WithCause(err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	if !rows.Next() {
 		if err := rows.Err(); err != nil {
 			return 0, err

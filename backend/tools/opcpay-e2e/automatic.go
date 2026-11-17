@@ -70,7 +70,7 @@ func (m *automaticMerchant) serve(w http.ResponseWriter, r *http.Request, body m
 		}
 	case "/consume":
 		if m.results[key] == nil {
-			amount := body["amount"].(float64)
+			amount := fixtureValue[float64](body["amount"])
 			if amount > m.quota[user] {
 				panic("consumed unavailable quota")
 			}
@@ -97,7 +97,7 @@ func verifyAutomaticRecharge(db *sql.DB, client *dbent.Client, cfg *service.Paym
 	create := func(session, action string) string {
 		status, body := request(session, "POST", "/operations", map[string]any{"kind": "purchase", "action_id": action, "sku_id": "actual-fixture-sku"})
 		check(status == 200, "create purchase: "+action)
-		return body["data"].(map[string]any)["business_id"].(string)
+		return fixtureValue[string](fixtureValue[map[string]any](body["data"])["business_id"])
 	}
 	balance := func(user int) float64 {
 		var n float64
@@ -127,7 +127,7 @@ func verifyAutomaticRecharge(db *sql.DB, client *dbent.Client, cfg *service.Paym
 	worker.Stop()
 	check(balance(1) == 10 && balance(2) == 0, "background scheduler credits a paid closed purchase without any user request")
 	status, body := request("one", "GET", "/operations/"+first, nil)
-	check(status == 200 && body["data"].(map[string]any)["status"] == "COMPLETED", "original purchase ID reports automatic delivery")
+	check(status == 200 && fixtureValue[map[string]any](body["data"])["status"] == "COMPLETED", "original purchase ID reports automatic delivery")
 	status, _ = request("two", "GET", "/operations/"+first, nil)
 	check(status != 200, "another user cannot inspect the purchase")
 	second := create("two", "auto_lost_00000001")
@@ -187,7 +187,7 @@ func verifyAutomaticRecharge(db *sql.DB, client *dbent.Client, cfg *service.Paym
 	_, err := db.Exec(`CREATE FUNCTION reject_auto_credit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'delivery unavailable'; END; $$; CREATE TRIGGER reject_auto_credit BEFORE UPDATE OF balance ON users FOR EACH ROW EXECUTE FUNCTION reject_auto_credit()`)
 	must(err)
 	due()
-	paymentSvc.OPCPay().Reconcile(ctx)
+	_, _ = paymentSvc.OPCPay().Reconcile(ctx)
 	check(balance(1) == 10, "wallet failure does not expose uncommitted credit")
 	var confirmed string
 	must(db.QueryRow(`SELECT status FROM opcpay_operations WHERE user_id=1 AND action_id='auto_unpaid_000001' AND kind='consume'`).Scan(&confirmed))
@@ -198,7 +198,7 @@ func verifyAutomaticRecharge(db *sql.DB, client *dbent.Client, cfg *service.Paym
 	var wg sync.WaitGroup
 	for i := 0; i < 8; i++ {
 		wg.Add(1)
-		go func() { defer wg.Done(); paymentSvc.OPCPay().Reconcile(ctx) }()
+		go func() { defer wg.Done(); _, _ = paymentSvc.OPCPay().Reconcile(ctx) }()
 	}
 	wg.Wait()
 	check(balance(1) == 20 && balance(2) == 10, "concurrent recovery credits each user exactly once")

@@ -5,6 +5,7 @@ package service
 import (
 	"context"
 	"errors"
+	"github.com/DATA-DOG/go-sqlmock"
 	"math"
 	"strconv"
 	"testing"
@@ -69,8 +70,16 @@ func TestRefundPendingKeepsBalanceDeductedUntilGatewaySettles(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
-			client := newPaymentConfigServiceTestClient(t)
+			walletDB, walletSQL := newPaymentWalletSQLMock(t)
+			client := newPaymentConfigServiceTestClient(t, walletDB)
 			order := createCompletedRefundableOrderForTest(t, ctx, client, "hold-flow")
+
+			walletSQL.ExpectQuery(`^SELECT wallet_reserve_refund\(\$1,\$2,\$3\)$`).WithArgs(order.UserID, order.ID, 100.0).WillReturnRows(sqlmock.NewRows([]string{"reserved"}).AddRow(100.0))
+			if tc.queryStatus == payment.ProviderStatusSuccess {
+				walletSQL.ExpectExec(`^SELECT wallet_capture_refund\(\$1,\$2\)$`).WithArgs(order.UserID, order.ID).WillReturnResult(sqlmock.NewResult(0, 1))
+			} else {
+				walletSQL.ExpectExec(`^SELECT wallet_release_refund\(\$1,\$2,\$3\)$`).WithArgs(order.UserID, order.ID, 100.0).WillReturnResult(sqlmock.NewResult(0, 1))
+			}
 
 			wallet := &refundHoldWallet{balance: 100}
 			prov := &pendingRefundProviderTestDouble{queryStatus: tc.queryStatus}
@@ -87,8 +96,6 @@ func TestRefundPendingKeepsBalanceDeductedUntilGatewaySettles(t *testing.T) {
 			require.Contains(t, result.Warning, "pending confirmation")
 
 			// pending 期间余额必须保持扣减，否则用户可先消费再等网关退款成功。
-			require.Zero(t, wallet.balance)
-			require.Zero(t, wallet.restoreCalls)
 			reloaded, err := client.PaymentOrder.Get(ctx, order.ID)
 			require.NoError(t, err)
 			require.Equal(t, OrderStatusRefundPending, reloaded.Status)
@@ -103,9 +110,6 @@ func TestRefundPendingKeepsBalanceDeductedUntilGatewaySettles(t *testing.T) {
 			if result.Success {
 				require.Equal(t, 100.0, result.BalanceDeducted)
 			}
-			require.Equal(t, 1, wallet.deductCalls, "held deduction must not be applied twice")
-			require.Equal(t, tc.wantRestore, wallet.restoreCalls)
-			require.Equal(t, tc.wantBalance, wallet.balance)
 			require.Equal(t, 1, prov.refundCalls)
 
 			reloaded, err = client.PaymentOrder.Get(ctx, order.ID)
@@ -114,16 +118,18 @@ func TestRefundPendingKeepsBalanceDeductedUntilGatewaySettles(t *testing.T) {
 
 			_, err = svc.QueryAndFinalizeRefund(ctx, order.ID)
 			require.Equal(t, "INVALID_STATUS", infraerrors.Reason(err))
-			require.Equal(t, tc.wantRestore, wallet.restoreCalls)
 		})
 	}
 }
 
 func TestFinalizeRefundFailedRestoresHeldDeductionOnce(t *testing.T) {
 	ctx := context.Background()
-	client := newPaymentConfigServiceTestClient(t)
+	walletDB, walletSQL := newPaymentWalletSQLMock(t)
+	client := newPaymentConfigServiceTestClient(t, walletDB)
 	order := createPendingRefundOrderWithDetailForTest(t, ctx, client, "hold-failed-once",
 		`{"refundID":"rf_test","deductionHeld":true,"deductionType":"balance","balanceDeducted":60}`)
+
+	walletSQL.ExpectExec(`^SELECT wallet_release_refund\(\$1,\$2,\$3\)$`).WithArgs(order.UserID, order.ID, 60.0).WillReturnResult(sqlmock.NewResult(0, 1))
 
 	wallet := &refundHoldWallet{}
 	svc := &PaymentService{entClient: client, userRepo: wallet.repo(order.UserID)}
@@ -139,16 +145,19 @@ func TestFinalizeRefundFailedRestoresHeldDeductionOnce(t *testing.T) {
 	require.Nil(t, second)
 	require.Equal(t, "CONFLICT", infraerrors.Reason(err))
 
-	require.Equal(t, 1, wallet.restoreCalls)
-	require.Equal(t, 60.0, wallet.balance)
+	require.NoError(t, walletSQL.ExpectationsWereMet())
+	// Actual wallet balances are checked by PostgreSQL E2E, not this SQL boundary fixture.
 }
 
 func TestQueryAndFinalizeRefundHeldDeductionWithoutBalanceDeduction(t *testing.T) {
 	ctx := context.Background()
-	client := newPaymentConfigServiceTestClient(t)
+	walletDB, walletSQL := newPaymentWalletSQLMock(t)
+	client := newPaymentConfigServiceTestClient(t, walletDB)
 	// 管理员选择不扣余额时，终态收敛也不能按旧逻辑补扣。
 	order := createPendingRefundOrderWithDetailForTest(t, ctx, client, "hold-no-deduct",
 		`{"refundID":"rf_test","deductionHeld":true,"deductionType":"none","balanceDeducted":0}`)
+
+	walletSQL.ExpectExec(`^SELECT wallet_capture_refund\(\$1,\$2\)$`).WithArgs(order.UserID, order.ID).WillReturnResult(sqlmock.NewResult(0, 1))
 
 	wallet := &refundHoldWallet{balance: 100}
 	restore := replacePaymentProviderFactoryForTest(t, &pendingRefundProviderTestDouble{queryStatus: payment.ProviderStatusSuccess})
@@ -183,9 +192,14 @@ func countRefundAuditsForTest(t *testing.T, ctx context.Context, client *dbent.C
 
 func TestFinalizeRefundFailedRecordsRollbackFailureWhenHeldDeductionCannotBeReturned(t *testing.T) {
 	ctx := context.Background()
-	client := newPaymentConfigServiceTestClient(t)
+	walletDB, walletSQL := newPaymentWalletSQLMock(t)
+	client := newPaymentConfigServiceTestClient(t, walletDB)
 	order := createPendingRefundOrderWithDetailForTest(t, ctx, client, "hold-return-fails",
 		`{"refundID":"rf_test","deductionHeld":true,"deductionType":"balance","balanceDeducted":60}`)
+
+	walletSQL.ExpectExec(`^SELECT wallet_release_refund\(\$1,\$2,\$3\)$`).WithArgs(order.UserID, order.ID, 60.0).WillReturnError(errors.New("db unavailable"))
+	walletSQL.ExpectQuery(`^SELECT wallet_reserve_refund\(\$1,\$2,\$3\)$`).WithArgs(order.UserID, order.ID, 100.0).WillReturnRows(sqlmock.NewRows([]string{"reserved"}).AddRow(60.0))
+	walletSQL.ExpectExec(`^SELECT wallet_capture_refund\(\$1,\$2\)$`).WithArgs(order.UserID, order.ID).WillReturnResult(sqlmock.NewResult(0, 1))
 
 	wallet := &refundHoldWallet{balance: 40}
 	repo := wallet.repo(order.UserID)
@@ -201,7 +215,7 @@ func TestFinalizeRefundFailedRecordsRollbackFailureWhenHeldDeductionCannotBeRetu
 	require.NoError(t, err)
 	require.False(t, result.Success)
 	require.Contains(t, result.Warning, "refund deduction rollback failed")
-	require.Equal(t, 1, wallet.restoreCalls)
+	// SQL mock verifies the failed release and the retry reservation separately.
 	require.Equal(t, 40.0, wallet.balance)
 
 	reloaded, err := client.PaymentOrder.Get(ctx, order.ID)
@@ -227,9 +241,12 @@ func TestFinalizeRefundFailedRecordsRollbackFailureWhenHeldDeductionCannotBeRetu
 
 func TestFinalizeRefundFailedReturnsHeldDeductionAtomically(t *testing.T) {
 	ctx := context.Background()
-	client := newPaymentConfigServiceTestClient(t)
+	walletDB, walletSQL := newPaymentWalletSQLMock(t)
+	client := newPaymentConfigServiceTestClient(t, walletDB)
 	order := createPendingRefundOrderWithDetailForTest(t, ctx, client, "hold-return-atomic",
 		`{"refundID":"rf_test","deductionHeld":true,"deductionType":"balance","balanceDeducted":60}`)
+
+	walletSQL.ExpectExec(`^SELECT wallet_release_refund\(\$1,\$2,\$3\)$`).WithArgs(order.UserID, order.ID, 60.0).WillReturnResult(sqlmock.NewResult(0, 1))
 
 	wallet := &refundHoldWallet{}
 	restore := replacePaymentProviderFactoryForTest(t, &pendingRefundProviderTestDouble{queryStatus: payment.ProviderStatusFailed})
@@ -240,8 +257,8 @@ func TestFinalizeRefundFailedReturnsHeldDeductionAtomically(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, result.Success)
 	require.NotContains(t, result.Warning, "rollback failed")
-	require.Equal(t, 1, wallet.restoreCalls)
-	require.Equal(t, 60.0, wallet.balance)
+	require.NoError(t, walletSQL.ExpectationsWereMet())
+	// Actual wallet balances are checked by PostgreSQL E2E, not this SQL boundary fixture.
 	require.Equal(t, 1, countRefundAuditsForTest(t, ctx, client, order.ID, "REFUND_FAILED"))
 	require.Zero(t, countRefundAuditsForTest(t, ctx, client, order.ID, "REFUND_ROLLBACK_FAILED"))
 }

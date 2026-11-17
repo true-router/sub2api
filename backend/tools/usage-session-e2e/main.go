@@ -41,7 +41,7 @@ func main() {
 	ctx := context.Background()
 	db, err := sql.Open("postgres", dsn)
 	must(err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	client := dbent.NewClient(dbent.Driver(entsql.OpenDB(dialect.Postgres, db)))
 	must(repository.ApplyMigrations(ctx, db))
 	u1, err := client.User.Create().SetEmail("session-one@example.test").SetPasswordHash("fixture").Save(ctx)
@@ -116,7 +116,7 @@ func main() {
 	get := func(query string) page {
 		resp, err := http.Get(server.URL + "/api/v1/admin/usage?" + query)
 		must(err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		if resp.StatusCode != 200 {
 			panic(fmt.Sprintf("HTTP %d", resp.StatusCode))
 		}

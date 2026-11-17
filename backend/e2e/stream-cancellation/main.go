@@ -32,7 +32,9 @@ func main() {
 		log.Fatal(err)
 	}
 	if len(os.Args) > 1 && os.Args[1] == "--config-check" {
-		json.NewEncoder(os.Stdout).Encode(cfg.Gateway)
+		if err := json.NewEncoder(os.Stdout).Encode(cfg.Gateway); err != nil {
+			log.Fatal(err)
+		}
 		return
 	}
 	cfg.Gateway.MaxLineSize = 8 * 1024 * 1024
@@ -82,7 +84,7 @@ func main() {
 			c.Status(502)
 			return
 		}
-		defer response.Body.Close()
+		defer func() { _ = response.Body.Close() }()
 		_, _ = io.Copy(io.Discard, response.Body)
 		c.Status(204)
 	})
@@ -130,8 +132,12 @@ func main() {
 		if file := os.Getenv("E2E_RECEIPT"); file != "" {
 			f, e := os.OpenFile(file, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 			if e == nil {
-				json.NewEncoder(f).Encode(map[string]any{"path": c.Request.URL.Path, "result": result, "error": fmt.Sprint(err), "client_cancelled": c.Request.Context().Err() != nil})
-				f.Close()
+				if err := json.NewEncoder(f).Encode(map[string]any{"path": c.Request.URL.Path, "result": result, "error": fmt.Sprint(err), "client_cancelled": c.Request.Context().Err() != nil}); err != nil {
+					log.Printf("write fixture receipt: %v", err)
+				}
+				if err := f.Close(); err != nil {
+					log.Printf("close fixture receipt: %v", err)
+				}
 			}
 		}
 		log.Printf("SYNTHETIC_FORWARD stream=%v result=%v err=%v", fields.Stream, result != nil, err)

@@ -61,7 +61,7 @@ func main() {
 	}
 	db, err := sql.Open("postgres", dsn)
 	must(err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	ctx := context.Background()
 	client := dbent.NewClient(dbent.Driver(entsql.OpenDB(dialect.Postgres, db)))
 	must(client.Schema.Create(ctx))
@@ -92,8 +92,8 @@ func main() {
 
 	_, err = db.Exec(`INSERT INTO users (id,email,password_hash,role,status,balance,concurrency,created_at,updated_at) VALUES (1,'one@test.invalid','fixture','user','active',0,1,NOW(),NOW()),(2,'two@test.invalid','fixture','user','active',0,1,NOW(),NOW())`)
 	must(err)
-	os.Setenv("opcpay_api_key", "must-not-use-this-environment-key")
-	os.Setenv("OPCPAY_PUBLIC_ORIGIN", "https://app.example.test")
+	must(os.Setenv("opcpay_api_key", "must-not-use-this-environment-key"))
+	must(os.Setenv("OPCPAY_PUBLIC_ORIGIN", "https://app.example.test"))
 	var mu sync.Mutex
 	results := map[string]map[string]any{}
 	calls := 0
@@ -154,14 +154,14 @@ func main() {
 			}
 			send(map[string]any{"status": "READY", "idempotency_key": body["idempotency_key"], "purchase_url": "https://example.test/pay"})
 		case "/consumption":
-			if v := results[body["idempotency_key"].(string)]; v != nil {
+			if v := results[fixtureValue[string](body["idempotency_key"])]; v != nil {
 				send(v)
 			} else {
 				w.WriteHeader(404)
 				send(map[string]any{"error": "not found"})
 			}
 		case "/consume":
-			key := body["idempotency_key"].(string)
+			key := fixtureValue[string](body["idempotency_key"])
 			if results[key] == nil {
 				if (body["amount"] != float64(1) && body["amount"] != float64(10) && body["amount"] != float64(20)) || body["reason"] != "sub2api balance credit" {
 					panic("unexpected debit")
@@ -245,7 +245,7 @@ func main() {
 		req.Header.Set("X-Fixture-Session", session)
 		resp, e := httpClient.Do(req)
 		must(e)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		raw, e := io.ReadAll(resp.Body)
 		must(e)
 		if bytes.Contains(raw, []byte("synthetic-key")) {
@@ -275,7 +275,7 @@ func main() {
 		}
 		return request("one", "POST", "/operations", map[string]any{"kind": kind, "action_id": action, "sku_id": sku})
 	}
-	data := func(m map[string]any) map[string]any { return m["data"].(map[string]any) }
+	data := func(m map[string]any) map[string]any { return fixtureValue[map[string]any](m["data"]) }
 	status, unconfigured := request("one", "GET", "", nil)
 	check(status == 200 && data(unconfigured)["configured"] == false && calls == 0, "忽略环境变量中的 API Key")
 	status, _ = request("two", "POST", "/admin/payment/providers", map[string]any{"provider_key": "opcpay"})
@@ -288,13 +288,13 @@ func main() {
 	providerBody["config"] = map[string]string{"apiKey": "opcpay-e2e-synthetic-key", "publicOrigin": "https://app.example.test"}
 	status, created := request("one", "POST", "/admin/payment/providers", providerBody)
 	check(status == 201, "在现有服务商接口添加一人付")
-	providerID := int64(data(created)["id"].(float64))
+	providerID := int64(fixtureValue[float64](data(created)["id"]))
 	providerPath := fmt.Sprintf("/admin/payment/providers/%d", providerID)
 	var stored string
 	must(db.QueryRow(`SELECT config FROM payment_provider_instances WHERE id=$1`, providerID).Scan(&stored))
 	check(strings.HasPrefix(stored, "opcpay:v1:") && !strings.Contains(stored, "synthetic-key"), "API Key 加密保存且写响应不回显")
 	status, listed := request("one", "GET", "/admin/payment/providers", nil)
-	listedConfig := listed["data"].([]any)[0].(map[string]any)["config"].(map[string]any)
+	listedConfig := fixtureValue[map[string]any](fixtureValue[map[string]any](fixtureValue[[]any](listed["data"])[0])["config"])
 	check(status == 200 && listedConfig["apiKey"] == nil && listedConfig["apiKeyConfigured"] == "true", "服务商列表仅返回密钥配置状态")
 	status, _ = request("one", "PUT", providerPath, map[string]any{"config": map[string]string{"apiKey": ""}})
 	check(status == 200, "编辑时留空保留原密钥")
@@ -313,8 +313,8 @@ func main() {
 	check(status == 401, "拒绝匿名请求")
 	status, info := request("one", "GET", "", nil)
 	check(status == 200 && data(info)["credit_usd_per_unit"] == float64(1), "读取模拟能力、套餐与积分兑换规则")
-	cards := data(info)["product"].(map[string]any)["charging_options"].([]any)
-	check(len(cards) == 2 && cards[0].(map[string]any)["quota_amount"] == float64(10), "读取真实接口格式的充值卡并排除次数套餐")
+	cards := fixtureValue[[]any](fixtureValue[map[string]any](data(info)["product"])["charging_options"])
+	check(len(cards) == 2 && fixtureValue[map[string]any](cards[0])["quota_amount"] == float64(10), "读取真实接口格式的充值卡并排除次数套餐")
 	mu.Lock()
 	providerConfigured = false
 	mu.Unlock()
@@ -339,7 +339,7 @@ func main() {
 	lose = true
 	mu.Unlock()
 	status, lost := start("consume", "consume_lost_0001")
-	id := data(lost)["business_id"].(string)
+	id := fixtureValue[string](data(lost)["business_id"])
 	check(status == 200 && data(lost)["status"] == "UNKNOWN" && balance() == 0, "核销成功但响应丢失时不交付")
 	status, _ = start("consume", "consume_new_00001")
 	check(status == 409, "未完成核销阻止新编号")
@@ -363,7 +363,7 @@ func main() {
 	check(status == 409 && deductions == 1, "额度不足时拒绝核销")
 	unpaidAction := "unpaid_purchase_0001"
 	status, unpaidPurchase := start("purchase", unpaidAction)
-	unpaidID := data(unpaidPurchase)["business_id"].(string)
+	unpaidID := fixtureValue[string](data(unpaidPurchase)["business_id"])
 	check(status == 200, "未付款场景创建原购买入口")
 	status, unverified := request("one", "POST", "/operations", map[string]any{"kind": "consume", "action_id": unpaidAction, "sku_id": "actual-fixture-sku"})
 	check(status == 409 && unverified["reason"] == "OPCPAY_PAYMENT_UNVERIFIED" && unverified["message"] == "验证失败，请重试", "未付款确认返回明确的可重试验证失败")
@@ -374,7 +374,7 @@ func main() {
 	check(status == 200, "验证失败后可以关闭原购买入口")
 	status, retryPurchase := start("purchase", "unpaid_retry_00001")
 	check(status == 200 && data(retryPurchase)["business_id"] != unpaidID, "关闭后可以创建新的支付入口")
-	status, _ = request("one", "POST", "/operations/"+data(retryPurchase)["business_id"].(string)+"/close", nil)
+	status, _ = request("one", "POST", "/operations/"+fixtureValue[string](data(retryPurchase)["business_id"])+"/close", nil)
 	check(status == 200, "重新发起的支付入口也可以取消")
 	mu.Lock()
 	allow = true
@@ -411,7 +411,7 @@ func main() {
 	mu.Unlock()
 	status, bad := start("consume", "mismatch_0000001")
 	check(status == 200 && data(bad)["status"] == "UNKNOWN" && balance() == 3, "拒绝单位不一致的核销确认")
-	badID := data(bad)["business_id"].(string)
+	badID := fixtureValue[string](data(bad)["business_id"])
 	mu.Lock()
 	mismatch = false
 	results[badID]["quota_unit"] = "POINT"
@@ -442,7 +442,7 @@ func main() {
 	mu.Unlock()
 	status, bad = request("one", "POST", "/operations/"+badID+"/resume", nil)
 	check(status == 200 && data(bad)["status"] == "COMPLETED" && balance() == 4 && deductions == 4, "恢复原编号的有效确认")
-	status, _ = request("one", "POST", "/operations/"+data(purchase)["business_id"].(string)+"/close", nil)
+	status, _ = request("one", "POST", "/operations/"+fixtureValue[string](data(purchase)["business_id"])+"/close", nil)
 	check(status == 200, "允许结束未核销的购买入口")
 	status, unknownPaymentDashboard := request("one", "GET", "/admin/payment/dashboard?days=1", nil)
 	check(status == 200, "dashboard is readable while delivered payments have no known monetary amount")
@@ -456,6 +456,7 @@ func main() {
 	status, _ = request("one", "POST", "/operations", map[string]any{"kind": "consume", "action_id": "card_purchase_001", "sku_id": "actual-fixture-sku"})
 	check(status == 200 && balance() == 14 && deductions == 5, "重复确认充值卡不重复扣减或到账")
 	status, _ = request("one", "PUT", providerPath, map[string]any{"enabled": false})
+	check(status == 200, "后台成功停用")
 	beforeDisabled := calls
 	status, disabledInfo := request("one", "GET", "", nil)
 	check(status == 200 && data(disabledInfo)["enabled"] == false && calls == beforeDisabled, "后台停用后不查询上游或展示充值卡")
@@ -516,4 +517,13 @@ func main() {
 	}
 	must(os.MkdirAll(strings.TrimSuffix(out, "/checks.json"), 0755))
 	must(os.WriteFile(out, raw, 0644))
+}
+
+// fixtureValue 校验夹具响应类型。输入不匹配时立即失败，不使用零值继续验收。
+func fixtureValue[T any](value any) T {
+	result, ok := value.(T)
+	if !ok {
+		panic(fmt.Sprintf("unexpected fixture value type: %T", value))
+	}
+	return result
 }

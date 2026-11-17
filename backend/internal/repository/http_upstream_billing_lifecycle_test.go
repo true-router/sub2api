@@ -85,6 +85,7 @@ func TestHTTPUpstreamForwardDrainsUsageAfterClientDisconnect(t *testing.T) {
 	cfg.Security.URLAllowlist.AllowPrivateHosts = true
 	cfg.Security.URLAllowlist.AllowInsecureHTTP = true
 	cfg.Gateway.StreamKeepaliveInterval = 1
+	cfg.Gateway.ClientDisconnectDrainTimeout = 1
 	upstream := NewHTTPUpstream(cfg)
 	usageRepo := &lifecycleUsageLogRepo{}
 	billingRepo := &lifecycleBillingRepo{}

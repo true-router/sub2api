@@ -373,7 +373,7 @@ func writeNonRetryableUpstreamConflict(c *gin.Context, status int, body []byte) 
 		return nil, false
 	}
 	for _, char := range code.Str {
-		if !((char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || (char >= '0' && char <= '9') || char == '_' || char == '-' || char == '.') {
+		if !strings.ContainsRune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.", char) {
 			return nil, false
 		}
 	}

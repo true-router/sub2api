@@ -35,7 +35,8 @@ func (s *UserRepoSuite) SetupTest() {
 	_, _ = integrationDB.ExecContext(s.ctx, "DELETE FROM auth_identities")
 	_, _ = integrationDB.ExecContext(s.ctx, "DELETE FROM user_subscriptions")
 	_, _ = integrationDB.ExecContext(s.ctx, "DELETE FROM user_allowed_groups")
-	_, _ = integrationDB.ExecContext(s.ctx, "DELETE FROM users")
+	_, err := integrationDB.ExecContext(s.ctx, "TRUNCATE users CASCADE")
+	s.Require().NoError(err, "reset users and dependent wallet fixtures")
 }
 
 func TestUserRepoSuite(t *testing.T) {

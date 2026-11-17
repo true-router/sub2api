@@ -5,6 +5,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -325,6 +326,9 @@ func TestReserveUsageBillingBatchImageBalance_MovesAvailableToFrozen(t *testing.
 	mock.ExpectBegin()
 	tx, err := db.BeginTx(ctx, nil)
 	require.NoError(t, err)
+	mock.ExpectExec(regexp.QuoteMeta("SELECT wallet_prepare($1,jsonb_build_object('operation',$2::text,'hold_key',$3::text,'actual',$4::numeric))")).
+		WithArgs(int64(42), "reserve_batch", "batch:", 0).
+		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectQuery(reserveBatchImageHoldSQL).
 		WithArgs(2.5, int64(42)).
 		WillReturnRows(sqlmock.NewRows([]string{"balance", "frozen_balance"}).AddRow(7.5, 2.5))
@@ -349,6 +353,9 @@ func TestReserveUsageBillingBatchImageBalance_InsufficientBalance(t *testing.T) 
 	mock.ExpectBegin()
 	tx, err := db.BeginTx(ctx, nil)
 	require.NoError(t, err)
+	mock.ExpectExec(regexp.QuoteMeta("SELECT wallet_prepare($1,jsonb_build_object('operation',$2::text,'hold_key',$3::text,'actual',$4::numeric))")).
+		WithArgs(int64(42), "reserve_batch", "batch:", 0).
+		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectQuery(reserveBatchImageHoldSQL).
 		WithArgs(10.0, int64(42)).
 		WillReturnError(sql.ErrNoRows)
@@ -372,6 +379,9 @@ func TestCaptureUsageBillingBatchImageBalance_ReleasesRemainder(t *testing.T) {
 	mock.ExpectBegin()
 	tx, err := db.BeginTx(ctx, nil)
 	require.NoError(t, err)
+	mock.ExpectExec(regexp.QuoteMeta("SELECT wallet_prepare($1,jsonb_build_object('operation',$2::text,'hold_key',$3::text,'actual',$4::numeric))")).
+		WithArgs(int64(42), "settle_batch", "batch:", 0.25).
+		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectQuery(captureBatchImageHoldSQL).
 		WithArgs(1.0, 0.25, int64(42)).
 		WillReturnRows(sqlmock.NewRows([]string{"balance", "frozen_balance"}).AddRow(9.75, 0.0))
@@ -414,6 +424,9 @@ func TestReleaseUsageBillingBatchImageBalance_ReturnsFrozenToAvailable(t *testin
 	mock.ExpectQuery(`SELECT 1\s+FROM usage_billing_dedup\s+WHERE request_id = \$1 AND api_key_id = \$2`).
 		WithArgs(service.BatchImageHoldRequestID("imgbatch_release"), int64(7)).
 		WillReturnRows(sqlmock.NewRows([]string{"?column?"}).AddRow(1))
+	mock.ExpectExec(regexp.QuoteMeta("SELECT wallet_prepare($1,jsonb_build_object('operation',$2::text,'hold_key',$3::text,'actual',$4::numeric))")).
+		WithArgs(int64(42), "settle_batch", "batch:imgbatch_release", 0).
+		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectQuery(releaseBatchImageHoldSQL).
 		WithArgs(1.0, int64(42)).
 		WillReturnRows(sqlmock.NewRows([]string{"balance", "frozen_balance"}).AddRow(10.0, 0.0))
