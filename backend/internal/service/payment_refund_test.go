@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/DATA-DOG/go-sqlmock"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -124,7 +125,7 @@ func TestPrepareRefundRejectsLegacyGuessedProviderInstance(t *testing.T) {
 	require.Equal(t, "REFUND_DISABLED", infraerrors.Reason(err))
 }
 
-func TestPrepDeductBalanceRequiresForceWhenBalanceIsInsufficient(t *testing.T) {
+func TestPrepDeductBalanceRejectsInsufficientPaidBalanceEvenWhenForced(t *testing.T) {
 	for _, tc := range []struct {
 		name        string
 		balance     float64
@@ -133,12 +134,12 @@ func TestPrepDeductBalanceRequiresForceWhenBalanceIsInsufficient(t *testing.T) {
 		wantWarning bool
 	}{
 		{name: "insufficient balance", balance: 40, wantWarning: true},
-		{name: "forced insufficient balance", balance: 40, force: true, wantDeduct: 40},
+		{name: "forced insufficient balance", balance: 40, force: true, wantWarning: true},
 		{name: "equal balance", balance: 100, wantDeduct: 100},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			plan := &RefundPlan{RefundAmount: 100}
-			svc := &PaymentService{userRepo: &mockUserRepo{getByIDUser: &User{Balance: tc.balance}}}
+			svc := &PaymentService{entClient: newPaymentConfigServiceTestClient(t), userRepo: &mockUserRepo{getByIDUser: &User{Balance: tc.balance}}}
 
 			result := svc.prepDeduct(context.Background(), &dbent.PaymentOrder{
 				UserID:    1,
@@ -148,8 +149,8 @@ func TestPrepDeductBalanceRequiresForceWhenBalanceIsInsufficient(t *testing.T) {
 			if tc.wantWarning {
 				require.NotNil(t, result)
 				require.False(t, result.Success)
-				require.True(t, result.RequireForce)
-				require.Equal(t, "user balance is insufficient for deduction, use force", result.Warning)
+				require.False(t, result.RequireForce)
+				require.Equal(t, "refundable paid balance is insufficient; promotional and unverified credit cannot fund refunds", result.Warning)
 				require.Zero(t, plan.BalanceToDeduct)
 				return
 			}
@@ -160,9 +161,10 @@ func TestPrepDeductBalanceRequiresForceWhenBalanceIsInsufficient(t *testing.T) {
 	}
 }
 
-func TestExecuteRefundUsesActualAvailableBalanceDeduction(t *testing.T) {
+func TestExecuteRefundUsesPersistedWalletReservation(t *testing.T) {
 	ctx := context.Background()
-	client := newPaymentConfigServiceTestClient(t)
+	walletDB, walletSQL := newPaymentWalletSQLMock(t)
+	client := newPaymentConfigServiceTestClient(t, walletDB)
 	user, err := client.User.Create().
 		SetEmail("refund-execute-clamp@example.com").
 		SetPasswordHash("hash").
@@ -188,6 +190,9 @@ func TestExecuteRefundUsesActualAvailableBalanceDeduction(t *testing.T) {
 		SetSrcHost("api.example.com").
 		Save(ctx)
 	require.NoError(t, err)
+
+	walletSQL.ExpectQuery(`^SELECT wallet_reserve_refund\(\$1,\$2,\$3\)$`).WithArgs(order.UserID, order.ID, 100.0).WillReturnRows(sqlmock.NewRows([]string{"reserved"}).AddRow(25.0))
+	walletSQL.ExpectExec(`^SELECT wallet_capture_refund\(\$1,\$2\)$`).WithArgs(order.UserID, order.ID).WillReturnResult(sqlmock.NewResult(0, 1))
 
 	repo := &mockUserRepo{deductAvailableBalanceFn: func(_ context.Context, id int64, amount float64) (float64, error) {
 		require.Equal(t, user.ID, id)
@@ -226,7 +231,8 @@ func TestExecuteEasyPayRefundSuccessCode(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
-			client := newPaymentConfigServiceTestClient(t)
+			walletDB, walletSQL := newPaymentWalletSQLMock(t)
+			client := newPaymentConfigServiceTestClient(t, walletDB)
 			var calls atomic.Int32
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				calls.Add(1)
@@ -255,6 +261,13 @@ func TestExecuteEasyPayRefundSuccessCode(t *testing.T) {
 				SetClientIP("127.0.0.1").SetSrcHost("api.example.com").
 				SetProviderInstanceID(strconv.FormatInt(inst.ID, 10)).Save(ctx)
 			require.NoError(t, err)
+			walletSQL.ExpectQuery(`^SELECT wallet_reserve_refund\(\$1,\$2,\$3\)$`).WithArgs(order.UserID, order.ID, tc.amount).WillReturnRows(sqlmock.NewRows([]string{"reserved"}).AddRow(tc.amount))
+			if tc.wantSuccess {
+				walletSQL.ExpectExec(`^SELECT wallet_capture_refund\(\$1,\$2\)$`).WithArgs(order.UserID, order.ID).WillReturnResult(sqlmock.NewResult(0, 1))
+			} else {
+				walletSQL.ExpectExec(`^SELECT wallet_release_refund\(\$1,\$2,\$3\)$`).WithArgs(order.UserID, order.ID, tc.amount).WillReturnResult(sqlmock.NewResult(0, 1))
+			}
+
 			balance := 200.0
 			repo := &mockUserRepo{
 				getByIDUser: &User{Balance: balance},
@@ -294,11 +307,11 @@ func TestExecuteEasyPayRefundSuccessCode(t *testing.T) {
 				}
 				require.Equal(t, tc.amount, stored.RefundAmount)
 				require.NotNil(t, stored.RefundAt)
-				require.Equal(t, 200-tc.amount, balance)
+				require.NoError(t, walletSQL.ExpectationsWereMet())
 			} else {
 				require.Zero(t, stored.RefundAmount)
 				require.Nil(t, stored.RefundAt)
-				require.Equal(t, 200.0, balance)
+				require.NoError(t, walletSQL.ExpectationsWereMet())
 			}
 			require.Equal(t, wantStatus, stored.Status)
 			failed, err := client.PaymentAuditLog.Query().Where(
@@ -501,7 +514,8 @@ func TestFinishRefundSuccessStatusesFinalize(t *testing.T) {
 	for _, status := range []string{payment.ProviderStatusSuccess, payment.ProviderStatusRefunded} {
 		t.Run(status, func(t *testing.T) {
 			ctx := context.Background()
-			client := newPaymentConfigServiceTestClient(t)
+			walletDB, walletSQL := newPaymentWalletSQLMock(t)
+			client := newPaymentConfigServiceTestClient(t, walletDB)
 
 			user, err := client.User.Create().
 				SetEmail("refund-success-" + status + "@example.com").
@@ -541,6 +555,7 @@ func TestFinishRefundSuccessStatusesFinalize(t *testing.T) {
 				BalanceToDeduct: 100,
 			}
 
+			walletSQL.ExpectExec(`^SELECT wallet_capture_refund\(\$1,\$2\)$`).WithArgs(order.UserID, order.ID).WillReturnResult(sqlmock.NewResult(0, 1))
 			result, err := svc.finishRefund(ctx, plan, &payment.RefundResponse{Status: status})
 			require.NoError(t, err)
 			require.NotNil(t, result)
@@ -581,8 +596,14 @@ func TestQueryAndFinalizeRefundFinalizesProviderStatuses(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
-			client := newPaymentConfigServiceTestClient(t)
+			walletDB, walletSQL := newPaymentWalletSQLMock(t)
+			client := newPaymentConfigServiceTestClient(t, walletDB)
 			order := createPendingRefundOrderForTest(t, ctx, client, "query-finalize-"+tc.name)
+
+			if tc.status == payment.ProviderStatusSuccess {
+				walletSQL.ExpectQuery(`^SELECT wallet_reserve_refund\(\$1,\$2,\$3\)$`).WithArgs(order.UserID, order.ID, 100.0).WillReturnRows(sqlmock.NewRows([]string{"reserved"}).AddRow(tc.available))
+				walletSQL.ExpectExec(`^SELECT wallet_capture_refund\(\$1,\$2\)$`).WithArgs(order.UserID, order.ID).WillReturnResult(sqlmock.NewResult(0, 1))
+			}
 
 			var deducted float64
 			svc := &PaymentService{
@@ -602,7 +623,7 @@ func TestQueryAndFinalizeRefundFinalizesProviderStatuses(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, result)
 			require.Equal(t, tc.status == payment.ProviderStatusSuccess, result.Success)
-			require.Equal(t, tc.wantDeduct, deducted)
+			require.NoError(t, walletSQL.ExpectationsWereMet())
 			if tc.status == payment.ProviderStatusSuccess {
 				require.Equal(t, tc.wantDeduct, result.BalanceDeducted)
 				audit, err := client.PaymentAuditLog.Query().
@@ -641,8 +662,12 @@ func TestQueryAndFinalizeRefundPassesPendingAuditTimeToProvider(t *testing.T) {
 
 func TestFinalizePendingRefundSuccessRejectsStaleCallerBeforeSecondDeduction(t *testing.T) {
 	ctx := context.Background()
-	client := newPaymentConfigServiceTestClient(t)
+	walletDB, walletSQL := newPaymentWalletSQLMock(t)
+	client := newPaymentConfigServiceTestClient(t, walletDB)
 	order := createPendingRefundOrderForTest(t, ctx, client, "finalize-stale")
+
+	walletSQL.ExpectQuery(`^SELECT wallet_reserve_refund\(\$1,\$2,\$3\)$`).WithArgs(order.UserID, order.ID, 100.0).WillReturnRows(sqlmock.NewRows([]string{"reserved"}).AddRow(100.0))
+	walletSQL.ExpectExec(`^SELECT wallet_capture_refund\(\$1,\$2\)$`).WithArgs(order.UserID, order.ID).WillReturnResult(sqlmock.NewResult(0, 1))
 
 	deductions := 0
 	svc := &PaymentService{
@@ -662,7 +687,7 @@ func TestFinalizePendingRefundSuccessRejectsStaleCallerBeforeSecondDeduction(t *
 	require.Nil(t, second)
 	require.Error(t, err)
 	require.Equal(t, "CONFLICT", infraerrors.Reason(err))
-	require.Equal(t, 1, deductions)
+	require.NoError(t, walletSQL.ExpectationsWereMet())
 
 	successAudits, err := client.PaymentAuditLog.Query().
 		Where(paymentauditlog.OrderIDEQ(strconv.FormatInt(order.ID, 10)), paymentauditlog.ActionEQ("REFUND_SUCCESS")).
@@ -673,10 +698,14 @@ func TestFinalizePendingRefundSuccessRejectsStaleCallerBeforeSecondDeduction(t *
 
 func TestFinalizePendingRefundSuccessRollsBackPostDeductionFailure(t *testing.T) {
 	ctx := context.Background()
-	client := newPaymentConfigServiceTestClient(t)
+	walletDB, walletSQL := newPaymentWalletSQLMock(t)
+	client := newPaymentConfigServiceTestClient(t, walletDB)
 	order := createPendingRefundOrderForTest(t, ctx, client, "finalize-rollback")
 	_, err := client.User.UpdateOneID(order.UserID).SetBalance(100).Save(ctx)
 	require.NoError(t, err)
+
+	walletSQL.ExpectQuery(`^SELECT wallet_reserve_refund\(\$1,\$2,\$3\)$`).WithArgs(order.UserID, order.ID, 100.0).WillReturnRows(sqlmock.NewRows([]string{"reserved"}).AddRow(100.0))
+	walletSQL.ExpectExec(`^SELECT wallet_capture_refund\(\$1,\$2\)$`).WithArgs(order.UserID, order.ID).WillReturnError(errors.New("injected failure after deduction"))
 
 	svc := &PaymentService{
 		entClient: client,

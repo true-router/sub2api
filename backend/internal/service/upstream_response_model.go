@@ -26,9 +26,11 @@ const (
 // separate from the final outbound request tier until usage recording resolves
 // the billable tier for the selected credential protocol.
 type upstreamResponseModelObserver struct {
-	first    string
-	terminal string
-	conflict bool
+	inputUsageObserved bool
+	finalUsageObserved bool
+	first              string
+	terminal           string
+	conflict           bool
 
 	// firstTier holds the first non-terminal tier declaration; it is discarded
 	// when later non-terminal declarations disagree. terminalTier comes from a
@@ -69,6 +71,18 @@ func normalizeObservedUpstreamResponseModel(model string) string {
 }
 
 func (o *upstreamResponseModelObserver) ObserveOpenAI(payload []byte, eventType string) {
+	if o == nil {
+		return
+	}
+	if (eventType == "response.completed" || eventType == "response.done") && observedUsageCount(payload, "response.usage.input_tokens") && observedUsageCount(payload, "response.usage.output_tokens") {
+		o.inputUsageObserved = true
+		o.finalUsageObserved = true
+	}
+	if observedUsageCount(payload, "usage.prompt_tokens") && observedUsageCount(payload, "usage.completion_tokens") {
+		o.inputUsageObserved = true
+		o.finalUsageObserved = true
+	}
+
 	model := firstValidTrimmedGJSONString(payload, "response.model", "model")
 	terminal := isUpstreamResponseModelTerminalEvent(eventType)
 	o.Observe(model, terminal)
@@ -88,6 +102,21 @@ func (o *upstreamResponseModelObserver) ObserveOpenAI(payload []byte, eventType 
 }
 
 func (o *upstreamResponseModelObserver) ObserveAnthropic(payload []byte) {
+	if o == nil {
+		return
+	}
+	kind := gjson.GetBytes(payload, "type").String()
+	if kind == "message_start" && observedUsageCount(payload, "message.usage.input_tokens") {
+		o.inputUsageObserved = true
+	}
+	if kind == "message_delta" && gjson.GetBytes(payload, "delta.stop_reason").String() != "" && observedUsageCount(payload, "usage.output_tokens") {
+		o.finalUsageObserved = true
+	}
+	if kind == "message" && observedUsageCount(payload, "usage.input_tokens") && observedUsageCount(payload, "usage.output_tokens") {
+		o.inputUsageObserved = true
+		o.finalUsageObserved = true
+	}
+
 	model := firstValidTrimmedGJSONString(payload, "message.model", "model")
 	o.Observe(model, false)
 	// usage.speed travels with the message object (message_start in streams,
@@ -312,4 +341,18 @@ func upstreamSentModel(requestedModel, upstreamModel string) string {
 		sentModel = strings.TrimSpace(requestedModel)
 	}
 	return sentModel
+}
+
+// 完整性只来自字段存在与终止用量声明，不能从计数非零或仅有终止事件推断。
+func (o *upstreamResponseModelObserver) UsageComplete() bool {
+	return o != nil && o.inputUsageObserved && o.finalUsageObserved
+}
+func observedUpstreamUsageComplete(c *gin.Context) bool {
+	return upstreamResponseModelObserverFromContext(c).UsageComplete()
+}
+
+// JSON null 或缺失字段不构成已确认用量；零是有效计数。
+func observedUsageCount(payload []byte, path string) bool {
+	value := gjson.GetBytes(payload, path)
+	return value.Type == gjson.Number && value.Num >= 0
 }

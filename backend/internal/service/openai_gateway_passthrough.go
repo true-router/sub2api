@@ -353,6 +353,7 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 	rejectedFieldRetryState := openAIResponsesRejectedFieldRetryStateForRequest(c, body)
 	var resp *http.Response
 	var usage *OpenAIUsage
+	var usageIncomplete *bool
 	var firstTokenMs *int
 	responseID := ""
 	imageCount := 0
@@ -363,7 +364,7 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 			actualModel = reqModel
 		}
 		SetOpsUpstreamModel(c, actualModel)
-		upstreamCtx, releaseUpstreamCtx := detachUpstreamContext(ctx)
+		upstreamCtx, releaseUpstreamCtx := detachTextUpstreamContext(ctx, reqStream, s.cfg)
 		syncOpenAIResponsesInstructionsEcho(c, body)
 		upstreamReq, buildErr := s.buildUpstreamRequestOpenAIPassthrough(upstreamCtx, c, account, body, token)
 		releaseUpstreamCtx()
@@ -383,6 +384,10 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 			// Peek only to identify an invalid task. Restore the body so the existing
 			// passthrough error handling sees the same response after recovery fails.
 			probeBody := s.readUpstreamErrorBody(resp)
+			if err, handled := writeNonRetryableUpstreamConflict(c, resp.StatusCode, probeBody); handled {
+				_ = resp.Body.Close()
+				return nil, err
+			}
 			_ = resp.Body.Close()
 			resp.Body = io.NopCloser(bytes.NewReader(probeBody))
 			if retryBody, reason, changed, retryErr := normalizeOpenAIResponsesRejectedFieldRetryBody(resp.StatusCode, body, probeBody); retryErr != nil {
@@ -462,9 +467,19 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 					return nil, s.handleErrorResponsePassthrough(ctx, compactResp, c, account, body, compactBody)
 				}
 				_ = resp.Body.Close()
+				if result != nil && ctx.Err() != nil {
+					partial := partialOpenAIUsage(c, resp, result.usage, reqModel, upstreamPassthroughModel, startTime)
+					partial.FirstTokenMs = result.firstTokenMs
+					partial.ServiceTier = resolvedOpenAIUpstreamServiceTier(c, extractOpenAIServiceTierFromBody(body))
+					partial.ReasoningEffort = reasoningEffort
+					partial.ImageCount = result.imageCount
+					partial.ImageOutputSizes = result.imageOutputSizes
+					return partial, handleErr
+				}
 				return nil, handleErr
 			}
 			usage = result.usage
+			usageIncomplete = boolPointer(result.usageIncomplete)
 			firstTokenMs = result.firstTokenMs
 			responseID = strings.TrimSpace(result.responseID)
 			imageCount = result.imageCount
@@ -531,6 +546,9 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 		OpenAIWSMode:                  false,
 		Duration:                      time.Since(startTime),
 		FirstTokenMs:                  firstTokenMs,
+	}
+	if reqStream {
+		forwardResult.UsageIncomplete = usageIncomplete
 	}
 	if imageCount > 0 {
 		forwardResult.ImageCount = imageCount
@@ -904,6 +922,9 @@ func (s *OpenAIGatewayService) handleErrorResponsePassthrough(
 ) error {
 	MarkResponseCommitted(c)
 	body := s.redactAgentIdentitySensitiveBody(ctx, account, responseBody)
+	if err, handled := writeNonRetryableUpstreamConflict(c, resp.StatusCode, body); handled {
+		return err
+	}
 
 	// cyber_policy 仍按原始 body 打内部标记，供 handler 事后写风控/邮件；面向客户端的
 	// 错误体在下方统一重建。cyber 是上游网络安全策略拦截，不冷却账号，
@@ -1006,6 +1027,7 @@ func collectOpenAIPassthroughTimeoutHeaders(h http.Header) []string {
 }
 
 type openaiStreamingResultPassthrough struct {
+	usageIncomplete  bool
 	usage            *OpenAIUsage
 	firstTokenMs     *int
 	responseID       string
@@ -2014,6 +2036,7 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 	needModelReplace := strings.TrimSpace(originalModel) != "" && strings.TrimSpace(mappedModel) != "" && strings.TrimSpace(originalModel) != strings.TrimSpace(mappedModel)
 	resultWithUsage := func() *openaiStreamingResultPassthrough {
 		return &openaiStreamingResultPassthrough{
+			usageIncomplete:  (!sawDone && !sawTerminalEvent) || sawFailedEvent || !observer.UsageComplete(),
 			usage:            usage,
 			firstTokenMs:     firstTokenMs,
 			responseID:       responseID,

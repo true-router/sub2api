@@ -27,8 +27,10 @@ func (s *UserRepoAPIKeyGroupFilterSuite) SetupTest() {
 	_, _ = integrationDB.ExecContext(s.ctx, "DELETE FROM api_keys")
 	_, _ = integrationDB.ExecContext(s.ctx, "DELETE FROM user_allowed_groups")
 	_, _ = integrationDB.ExecContext(s.ctx, "DELETE FROM user_subscriptions")
-	_, _ = integrationDB.ExecContext(s.ctx, "DELETE FROM users")
-	_, _ = integrationDB.ExecContext(s.ctx, "DELETE FROM groups")
+	_, err := integrationDB.ExecContext(s.ctx, "TRUNCATE users CASCADE")
+	s.Require().NoError(err, "reset users and dependent wallet fixtures")
+	_, err = integrationDB.ExecContext(s.ctx, "DELETE FROM groups WHERE id NOT IN (SELECT group_id FROM unified_api_group)")
+	s.Require().NoError(err, "preserve the protected unified access group")
 }
 
 func TestUserRepoAPIKeyGroupFilterSuite(t *testing.T) {

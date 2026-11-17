@@ -580,14 +580,26 @@ func detachedBillingContext(ctx context.Context) (context.Context, context.Cance
 	return context.WithTimeout(base, postUsageBillingTimeout)
 }
 
-func detachStreamUpstreamContext(ctx context.Context, stream bool) (context.Context, context.CancelFunc) {
+func detachStreamUpstreamContext(ctx context.Context, stream bool, configurations ...*config.Config) (context.Context, context.CancelFunc) {
 	if ctx == nil {
 		return context.Background(), func() {}
 	}
 	if !stream {
 		return ctx, func() {}
 	}
-	return pkghttputil.DetachUpstreamContext(ctx), func() {}
+	var seconds int
+	if len(configurations) > 0 && configurations[0] != nil {
+		seconds = configurations[0].Gateway.ClientDisconnectDrainTimeout
+	}
+	return pkghttputil.ClientDisconnectContext(ctx, time.Duration(seconds)*time.Second), func() {}
+}
+
+// 普通文本采用独立策略；原有非流式调用保留自身生命周期。
+func detachTextUpstreamContext(ctx context.Context, stream bool, cfg *config.Config) (context.Context, context.CancelFunc) {
+	if !stream {
+		return detachUpstreamContext(ctx)
+	}
+	return detachStreamUpstreamContext(ctx, true, cfg)
 }
 
 func detachUpstreamContext(ctx context.Context, drainTimeout ...time.Duration) (context.Context, context.CancelFunc) {
@@ -1326,6 +1338,7 @@ func (s *GatewayService) buildRecordUsageLog(
 		)
 	}
 	usageLog := &UsageLog{
+		UsageIncomplete:          result.UsageIncomplete,
 		UserID:                   user.ID,
 		APIKeyID:                 apiKey.ID,
 		AccountID:                account.ID,
@@ -1408,3 +1421,5 @@ func optionalSubscriptionID(subscription *UserSubscription) *int64 {
 	}
 	return nil
 }
+
+func boolPointer(value bool) *bool { return &value }

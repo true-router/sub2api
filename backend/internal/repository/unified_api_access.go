@@ -22,7 +22,7 @@ func (r *apiKeyRepository) EnsureUnifiedAPIKey(ctx context.Context, userID int64
 	if err != nil {
 		return 0, err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 	var uid, id int64
 	if err = tx.QueryRowContext(ctx, `SELECT id FROM users WHERE id=$1 AND deleted_at IS NULL FOR UPDATE`, userID).Scan(&uid); err != nil {
 		return 0, err

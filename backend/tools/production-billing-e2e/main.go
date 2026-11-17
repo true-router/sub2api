@@ -122,7 +122,7 @@ func (f *fixture) request(method, path, bearer string, body any, key string) (re
 	if err != nil {
 		return response{}, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	raw, err := io.ReadAll(io.LimitReader(res.Body, 2<<20))
 	if err != nil {
 		return response{}, err
@@ -229,8 +229,12 @@ func (f *fixture) bootstrap() error {
 	if err != nil {
 		return err
 	}
-	port := listener.Addr().(*net.TCPAddr).Port
-	listener.Close()
+	address, ok := listener.Addr().(*net.TCPAddr)
+	if !ok {
+		return fmt.Errorf("unexpected listener address: %T", listener.Addr())
+	}
+	port := address.Port
+	_ = listener.Close()
 	f.origin = fmt.Sprintf("http://127.0.0.1:%d", port)
 	f.log, err = os.Create(filepath.Join(f.dir, "server.log"))
 	if err != nil {
@@ -281,7 +285,7 @@ func (f *fixture) external(w http.ResponseWriter, r *http.Request) {
 	f.mu.Unlock()
 	w.Header().Set("Content-Type", "application/json")
 	if r.URL.Path == "/prices.json" {
-		io.WriteString(w, `{"gpt-4o-mini":{"input_cost_per_token":0.000001,"output_cost_per_token":0.000002,"max_input_tokens":128000,"max_output_tokens":16000,"mode":"chat"}}`)
+		_, _ = io.WriteString(w, `{"gpt-4o-mini":{"input_cost_per_token":0.000001,"output_cost_per_token":0.000002,"max_input_tokens":128000,"max_output_tokens":16000,"mode":"chat"}}`)
 		return
 	}
 	if r.URL.Path == "/prices.sha256" {
@@ -299,7 +303,7 @@ func (f *fixture) external(w http.ResponseWriter, r *http.Request) {
 		f.mu.Unlock()
 		if failed {
 			w.WriteHeader(400)
-			io.WriteString(w, `{"error":{"message":"synthetic upstream rejected request","type":"invalid_request_error"}}`)
+			_, _ = io.WriteString(w, `{"error":{"message":"synthetic upstream rejected request","type":"invalid_request_error"}}`)
 			return
 		}
 		f.mu.Lock()
@@ -336,11 +340,11 @@ func (f *fixture) external(w http.ResponseWriter, r *http.Request) {
 		f.mu.Lock()
 		f.refunds = append(f.refunds, r.Form.Get("money"))
 		f.mu.Unlock()
-		io.WriteString(w, `{"code":1,"msg":"ok"}`)
+		_, _ = io.WriteString(w, `{"code":1,"msg":"ok"}`)
 		return
 	}
 	w.WriteHeader(404)
-	io.WriteString(w, `{"error":"unsupported fixture endpoint"}`)
+	_, _ = io.WriteString(w, `{"error":"unsupported fixture endpoint"}`)
 }
 func id(value any) int64 { n, _ := value.(float64); return int64(n) }
 func sign(values url.Values, key string) string {
@@ -359,7 +363,10 @@ func sign(values url.Values, key string) string {
 	return hex.EncodeToString(sum[:])
 }
 func (f *fixture) callback(order map[string]any, amount string, valid bool) (response, error) {
-	name := order["out_trade_no"].(string)
+	name, ok := order["out_trade_no"].(string)
+	if !ok || name == "" {
+		return response{}, fmt.Errorf("missing fixture order number")
+	}
 	values := url.Values{"pid": {"fixture-merchant"}, "out_trade_no": {name}, "trade_no": {"trade-" + name}, "trade_status": {"TRADE_SUCCESS"}, "money": {amount}, "type": {"alipay"}, "sign_type": {"MD5"}}
 	values.Set("sign", sign(values, "fixture-merchant-key"))
 	if !valid {
@@ -370,7 +377,11 @@ func (f *fixture) callback(order map[string]any, amount string, valid bool) (res
 func (f *fixture) markPaid(order map[string]any) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.orders[order["out_trade_no"].(string)].Set("fixture_paid", "true")
+	name, ok := order["out_trade_no"].(string)
+	if !ok || name == "" {
+		panic("missing fixture order number")
+	}
+	f.orders[name].Set("fixture_paid", "true")
 }
 func money(value any) decimal.Decimal {
 	d, err := decimal.NewFromString(fmt.Sprint(value))
@@ -410,7 +421,7 @@ func (f *fixture) migrations() error {
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	count := 0
 	for rows.Next() {
 		var name, digest string
@@ -534,7 +545,10 @@ func (f *fixture) scenario() error {
 		return err
 	}
 	memberID := id(member["id"])
-	apiKey := key["key"].(string)
+	apiKey, ok := key["key"].(string)
+	if !ok || apiKey == "" {
+		return fmt.Errorf("missing fixture API key")
+	}
 	f.secrets = append(f.secrets, apiKey)
 	if err = f.wallet("Created user has no paid or promotional funds", memberToken, memberID, "0", "0", "0"); err != nil {
 		return err
@@ -665,7 +679,10 @@ func (f *fixture) scenario() error {
 	if err != nil {
 		return err
 	}
-	secondAPIKey := secondKey["key"].(string)
+	secondAPIKey, ok := secondKey["key"].(string)
+	if !ok || secondAPIKey == "" {
+		return fmt.Errorf("missing second fixture API key")
+	}
 	f.secrets = append(f.secrets, secondAPIKey)
 	for _, path := range []string{orderPath, fmt.Sprintf("/api/v1/keys/%d", id(key["id"]))} {
 		r, err = f.request("GET", path, secondToken, nil, "")
@@ -877,13 +894,13 @@ func (f *fixture) stop() error {
 func (f *fixture) close() error {
 	cleanupErr := f.stop()
 	if f.db != nil {
-		f.db.Close()
+		_ = f.db.Close()
 	}
 	if f.mock != nil {
 		f.mock.Close()
 	}
 	if f.log != nil {
-		f.log.Close()
+		_ = f.log.Close()
 	}
 	for _, name := range []string{f.postgres, f.redis} {
 		if name != "" {
@@ -982,4 +999,13 @@ func main() {
 		os.Exit(1)
 	}
 	fmt.Println("PASS production billing acceptance")
+}
+
+// fixtureValue 校验夹具响应类型。输入不匹配时立即失败，不使用零值继续验收。
+func fixtureValue[T any](value any) T {
+	result, ok := value.(T)
+	if !ok {
+		panic(fmt.Sprintf("unexpected fixture value type: %T", value))
+	}
+	return result
 }

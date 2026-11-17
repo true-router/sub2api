@@ -158,7 +158,7 @@ func TestGatewayService_Forward_StreamReadErrorAfterOutputPreservesPartialUsage(
 	require.Equal(t, 4, result.Usage.CacheCreationInputTokens)
 }
 
-func TestGatewayService_Forward_StreamErrorWithoutUsageReturnsNilResult(t *testing.T) {
+func TestGatewayService_Forward_StreamErrorWithoutUsageRetainsIncompleteResult(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	rec := httptest.NewRecorder()
@@ -169,7 +169,7 @@ func TestGatewayService_Forward_StreamErrorWithoutUsageReturnsNilResult(t *testi
 	parsed, err := ParseGatewayRequest(NewRequestBodyRef(body), PlatformAnthropic)
 	require.NoError(t, err)
 
-	// 只有 ping、没有任何 usage 的流中断：不应产生零 usage 的幽灵账单记录。
+	// 只有 ping、没有用量声明的流中断：保留不完整状态，不能将未知记为完整零用量。
 	upstream := &anthropicHTTPUpstreamRecorder{resp: &http.Response{
 		StatusCode: http.StatusOK,
 		Header:     http.Header{"Content-Type": []string{"text/event-stream"}},
@@ -181,7 +181,11 @@ func TestGatewayService_Forward_StreamErrorWithoutUsageReturnsNilResult(t *testi
 	result, err := svc.Forward(context.Background(), c, account, parsed)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "missing terminal event")
-	require.Nil(t, result, "无已观测 usage 时不应返回部分结果")
+	require.NotNil(t, result)
+	require.NotNil(t, result.UsageIncomplete)
+	require.True(t, *result.UsageIncomplete)
+	require.Zero(t, result.Usage.InputTokens)
+	require.Zero(t, result.Usage.OutputTokens)
 }
 
 func TestGatewayService_Forward_FailoverErrorKeepsNilResult(t *testing.T) {

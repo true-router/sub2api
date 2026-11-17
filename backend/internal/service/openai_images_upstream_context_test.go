@@ -147,7 +147,7 @@ func TestDetachUpstreamContextSemantics(t *testing.T) {
 	t.Run("detachStreamUpstreamContext_detaches_when_streaming", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
-		detached, release := detachStreamUpstreamContext(ctx, true)
+		detached, release := detachStreamUpstreamContext(ctx, true, &config.Config{Gateway: config.GatewayConfig{ClientDisconnectDrainTimeout: 1}})
 		defer release()
 		require.NoError(t, detached.Err())
 	})

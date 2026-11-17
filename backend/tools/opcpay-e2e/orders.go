@@ -14,7 +14,7 @@ func verifyOrders(db *sql.DB, request func(string, string, string, any) (int, ma
 	get := func(session, path string) map[string]any {
 		status, body := request(session, http.MethodGet, path, nil)
 		check(status == 200, "order HTTP succeeds: "+path)
-		return body["data"].(map[string]any)
+		return fixtureValue[map[string]any](body["data"])
 	}
 	list := get("one", "/admin/payment/orders?payment_type=opcpay&user_id=1")
 	check(list["total"] == float64(6), "every delivered OPCPay consumption has exactly one managed order")
@@ -29,7 +29,7 @@ func verifyOrders(db *sql.DB, request func(string, string, string, any) (int, ma
 
 	var orderID int64
 	must(db.QueryRow(`SELECT id FROM payment_orders WHERE out_trade_no=(SELECT business_id FROM opcpay_operations WHERE user_id=1 AND action_id='card_purchase_001' AND kind='consume')`).Scan(&orderID))
-	detail := get("one", fmt.Sprintf("/admin/payment/orders/%d", orderID))["order"].(map[string]any)
+	detail := fixtureValue[map[string]any](get("one", fmt.Sprintf("/admin/payment/orders/%d", orderID))["order"])
 	check(detail["amount"] == float64(10) && detail["pay_amount"] == 9.9 && detail["currency"] == "CNY" && detail["pay_amount_known"] == true, "managed order preserves catalog price separately from USD credit")
 	check(detail["out_trade_no"] != "" && detail["provider_key"] == "opcpay" && detail["completed_at"] != nil, "order retains business identity, provider and delivery timestamp")
 	user := get("one", "/payment/orders/my?payment_type=opcpay")
@@ -61,29 +61,29 @@ func verifyOrders(db *sql.DB, request func(string, string, string, any) (int, ma
 	check(walletState(db) == before, "historical backfill and replay leave balances, wallet journal and operation timestamps unchanged")
 	historical := get("one", "/admin/payment/orders?payment_type=opcpay&user_id=3")
 	check(historical["total"] == float64(2), "backfill includes only completed historical consumption, exactly once")
-	for _, raw := range historical["items"].([]any) {
-		item := raw.(map[string]any)
+	for _, raw := range fixtureValue[[]any](historical["items"]) {
+		item := fixtureValue[map[string]any](raw)
 		check(item["pay_amount_known"] == false && item["pay_amount"] == float64(0), "historical payment amount is explicitly unknown")
 		check(item["completed_at"] == "2026-01-06T00:00:00Z" || item["completed_at"] == "2026-01-04T00:00:00Z", "backfill retains original delivery timestamp")
 	}
 	filtered := get("one", "/admin/payment/orders?keyword=history-credit-100&status=COMPLETED&order_type=balance&payment_type=opcpay")
 	check(filtered["total"] == float64(1), "managed orders support business ID, status, type and method filters")
 	page := get("one", "/admin/payment/orders?payment_type=opcpay&user_id=1&page=2&page_size=1")
-	check(page["total"] == float64(6) && len(page["items"].([]any)) == 1, "managed orders support pagination")
+	check(page["total"] == float64(6) && len(fixtureValue[[]any](page["items"])) == 1, "managed orders support pagination")
 	dashboard := get("one", "/admin/payment/dashboard?days=1")
 	check(dashboard["total_count"] == float64(6), "dashboard counts all completed current OPCPay orders")
-	check(dashboard["total_amount"].(map[string]any)["CNY"] == 9.9 && dashboard["avg_amount"].(map[string]any)["CNY"] == 9.9, "dashboard totals and averages exclude unknown payment amounts")
+	check(fixtureValue[map[string]any](dashboard["total_amount"])["CNY"] == 9.9 && fixtureValue[map[string]any](dashboard["avg_amount"])["CNY"] == 9.9, "dashboard totals and averages exclude unknown payment amounts")
 	// Reconciliation changes payment money, never the already delivered USD.
 	beforeCorrection := walletState(db)
 	_, err = db.Exec(`UPDATE payment_orders SET pay_amount=68,
 provider_snapshot=provider_snapshot||'{"currency":"CNY","pay_amount_known":true,"payment_amount_source":"owner_confirmed"}'::jsonb
 WHERE out_trade_no='history-credit-100'`)
 	must(err)
-	corrected := get("one", "/admin/payment/orders?keyword=history-credit-100")["items"].([]any)[0].(map[string]any)
+	corrected := fixtureValue[map[string]any](fixtureValue[[]any](get("one", "/admin/payment/orders?keyword=history-credit-100")["items"])[0])
 	check(corrected["amount"] == float64(100) && corrected["pay_amount"] == float64(68) && corrected["currency"] == "CNY" && corrected["pay_amount_known"] == true, "reconciled actual CNY payment stays separate from credited USD")
 	historyDays := max(365, int(time.Since(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)).Hours()/24)+2)
 	correctedStats := get("one", fmt.Sprintf("/admin/payment/dashboard?days=%d", historyDays))
-	check(correctedStats["total_amount"].(map[string]any)["CNY"] == 77.9 && correctedStats["avg_amount"].(map[string]any)["CNY"] == 38.95, "reconciled actual payment restores dashboard revenue and average")
+	check(fixtureValue[map[string]any](correctedStats["total_amount"])["CNY"] == 77.9 && fixtureValue[map[string]any](correctedStats["avg_amount"])["CNY"] == 38.95, "reconciled actual payment restores dashboard revenue and average")
 	check(walletState(db) == beforeCorrection, "payment amount reconciliation leaves delivered funds and operation records unchanged")
 	// A database failure must never deliver funds without the matching order.
 	_, err = db.Exec(`CREATE FUNCTION reject_opcpay_order() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'simulated order failure'; END; $$;

@@ -98,7 +98,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		defer response.Body.Close()
+		defer func() { _ = response.Body.Close() }()
 		if response.StatusCode != 200 {
 			panic(response.Status)
 		}
@@ -108,20 +108,20 @@ func main() {
 		}
 		return body
 	}
-	info := get("/api/v1/admin/system/check-updates")["data"].(map[string]any)
+	info := fixtureValue[map[string]any](get("/api/v1/admin/system/check-updates")["data"])
 	check("old upstream cache rejected", info["latest_version"] == "0.2.26" && info["has_update"] == true && info["cached"] == false)
-	check("fork cache reusable", get("/api/v1/admin/system/check-updates")["data"].(map[string]any)["cached"] == true)
-	versions := get("/api/v1/admin/system/rollback-versions")["data"].(map[string]any)["versions"].([]any)
-	check("fork and historical tags normalize for rollback", len(versions) == 2 && versions[0].(map[string]any)["version"] == "0.2.24" && versions[1].(map[string]any)["version"] == "0.2.23")
+	check("fork cache reusable", fixtureValue[map[string]any](get("/api/v1/admin/system/check-updates")["data"])["cached"] == true)
+	versions := fixtureValue[[]any](fixtureValue[map[string]any](get("/api/v1/admin/system/rollback-versions")["data"])["versions"])
+	check("fork and historical tags normalize for rollback", len(versions) == 2 && fixtureValue[map[string]any](versions[0])["version"] == "0.2.24" && fixtureValue[map[string]any](versions[1])["version"] == "0.2.23")
 	mu.Lock()
 	latest = "v0.2.26"
 	mu.Unlock()
-	info = get("/api/v1/admin/system/check-updates?force=true")["data"].(map[string]any)
+	info = fixtureValue[map[string]any](get("/api/v1/admin/system/check-updates?force=true")["data"])
 	check("historical fork latest remains readable", info["latest_version"] == "0.2.26")
 	mu.Lock()
 	latest = "upstream-unrelated"
 	mu.Unlock()
-	info = get("/api/v1/admin/system/check-updates?force=true")["data"].(map[string]any)
+	info = fixtureValue[map[string]any](get("/api/v1/admin/system/check-updates?force=true")["data"])
 	check("invalid release tag never becomes update", info["latest_version"] == "0.2.26" && info["warning"] != "")
 	mu.Lock()
 	observed := append([]string(nil), paths...)
@@ -137,4 +137,13 @@ func main() {
 		panic(err)
 	}
 	fmt.Println("PASS: update HTTP flow")
+}
+
+// fixtureValue 校验夹具响应类型。输入不匹配时立即失败，不使用零值继续验收。
+func fixtureValue[T any](value any) T {
+	result, ok := value.(T)
+	if !ok {
+		panic(fmt.Sprintf("unexpected fixture value type: %T", value))
+	}
+	return result
 }

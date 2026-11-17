@@ -91,10 +91,14 @@ func (f *fixture) unifiedScenario(admin string) error {
 	if err = f.checked("Default key reaches the real OpenAI gateway", r.Status == 200); err != nil {
 		return err
 	}
-	if err = f.wallet("Unified key spends signup/promotional funds first", jwt, int64(member["id"].(float64)), "4", "0", "4"); err != nil {
+	memberID, ok := member["id"].(float64)
+	if !ok {
+		return fmt.Errorf("missing unified fixture member id")
+	}
+	if err = f.wallet("Unified key spends signup/promotional funds first", jwt, int64(memberID), "4", "0", "4"); err != nil {
 		return err
 	}
-	if err = f.unifiedBillingScenario(admin, jwt, int64(member["id"].(float64)), secret, group); err != nil {
+	if err = f.unifiedBillingScenario(admin, jwt, int64(memberID), secret, group); err != nil {
 		return err
 	}
 	bad, e := f.request("PUT", fmt.Sprintf("/api/v1/keys/%v", keyID), jwt, map[string]any{"group_id": group["id"]}, "")
@@ -171,7 +175,7 @@ func (f *fixture) unifiedBillingScenario(admin, jwt string, userID int64, key st
 	if err != nil {
 		return err
 	}
-	legacySecret := legacy["key"].(string)
+	legacySecret := fixtureValue[string](legacy["key"])
 	f.secrets = append(f.secrets, legacySecret)
 	soon, err := f.unifiedGroup(admin, "Soon subscription", "openai", "subscription", "gpt-4o-mini", 2, .5, 1)
 	if err != nil {
@@ -329,7 +333,7 @@ func (f *fixture) unifiedBillingScenario(admin, jwt string, userID int64, key st
 	if err != nil {
 		return err
 	}
-	zk := zaccess["default_key"].(map[string]any)["key"].(string)
+	zk := fixtureValue[string](fixtureValue[map[string]any](zaccess["default_key"])["key"])
 	f.secrets = append(f.secrets, zk)
 	zs, err := f.api("POST", "/api/v1/admin/subscriptions/assign", admin, map[string]any{"user_id": zero["id"], "group_id": soon["id"], "validity_days": 1})
 	if err != nil {
@@ -386,7 +390,7 @@ func (f *fixture) unifiedBillingScenario(admin, jwt string, userID int64, key st
 	if err != nil {
 		return err
 	}
-	dk := da["default_key"].(map[string]any)["key"].(string)
+	dk := fixtureValue[string](fixtureValue[map[string]any](da["default_key"])["key"])
 	f.secrets = append(f.secrets, dk)
 	r, err = f.gateway(dk)
 	if err != nil {
@@ -395,10 +399,10 @@ func (f *fixture) unifiedBillingScenario(admin, jwt string, userID int64, key st
 	if err = f.checked("Unified key retains negotiated wallet discount", r.Status == 200); err != nil {
 		return err
 	}
-	if err = f.wallet("Discounted request uses existing user-specific rate", dj, int64(discounted["id"].(float64)), "1.5", "0", "1.5"); err != nil {
+	if err = f.wallet("Discounted request uses existing user-specific rate", dj, int64(fixtureValue[float64](discounted["id"])), "1.5", "0", "1.5"); err != nil {
 		return err
 	}
-	if err = f.unifiedPriceAndSocketChecks(admin, dj, dk, int64(discounted["id"].(float64))); err != nil {
+	if err = f.unifiedPriceAndSocketChecks(admin, dj, dk, int64(fixtureValue[float64](discounted["id"]))); err != nil {
 		return err
 	}
 
@@ -417,7 +421,7 @@ func (f *fixture) unifiedExternal(w http.ResponseWriter, r *http.Request) bool {
 		if err != nil {
 			return true
 		}
-		defer conn.CloseNow()
+		defer func() { _ = conn.CloseNow() }()
 		for {
 			_, raw, err := conn.Read(r.Context())
 			if err != nil {
@@ -497,8 +501,8 @@ func (f *fixture) waitBrowser() error {
 	if err := os.WriteFile(f.browserReady, body, 0600); err != nil {
 		return err
 	}
-	defer os.Remove(f.browserReady)
-	defer os.Remove(f.browserReady + ".done")
+	defer func() { _ = os.Remove(f.browserReady) }()
+	defer func() { _ = os.Remove(f.browserReady + ".done") }()
 	fmt.Println("READY browser fixture (private credentials file)")
 	deadline := time.Now().Add(15 * time.Minute)
 	for {
@@ -575,7 +579,7 @@ func (f *fixture) unifiedPriceAndSocketChecks(admin, jwt, key string, userID int
 	if err != nil {
 		return fmt.Errorf("unified WebSocket handshake: %w", err)
 	}
-	defer conn.CloseNow()
+	defer func() { _ = conn.CloseNow() }()
 	for turn := 1; turn <= 2; turn++ {
 		body, _ := json.Marshal(map[string]any{"type": "response.create", "model": "gpt-4o-mini", "input": "fixture", "store": false})
 		if err = conn.Write(ctx, websocket.MessageText, body); err != nil {
@@ -691,7 +695,7 @@ func (f *fixture) unifiedWebSocketTransition(admin string) error {
 	if err != nil {
 		return err
 	}
-	key := access["default_key"].(map[string]any)["key"].(string)
+	key := fixtureValue[string](fixtureValue[map[string]any](access["default_key"])["key"])
 	f.secrets = append(f.secrets, key)
 	var gid int64
 	if err = f.db.QueryRowContext(f.ctx, `SELECT id FROM groups WHERE name='Soon subscription'`).Scan(&gid); err != nil {
@@ -707,7 +711,7 @@ func (f *fixture) unifiedWebSocketTransition(admin string) error {
 	if err != nil {
 		return err
 	}
-	defer conn.CloseNow()
+	defer func() { _ = conn.CloseNow() }()
 	body := []byte(`{"type":"response.create","model":"gpt-4o-mini","input":"fixture","store":false}`)
 	if err = conn.Write(ctx, websocket.MessageText, body); err != nil {
 		return err
@@ -745,7 +749,7 @@ func (f *fixture) unifiedWebSocketTransition(admin string) error {
 	if err = f.checked("Same credential continues with wallet after WebSocket subscription exhaustion", r.Status == 200); err != nil {
 		return err
 	}
-	return f.wallet("Source transition charges the next request once to wallet", jwt, int64(member["id"].(float64)), "1", "0", "1")
+	return f.wallet("Source transition charges the next request once to wallet", jwt, id(member["id"]), "1", "0", "1")
 }
 
 func (f *fixture) unifiedAliasAndPermissionChecks(admin, jwt, key string, userID int64) error {

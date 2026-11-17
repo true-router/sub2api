@@ -58,7 +58,7 @@ func (s *ModelPlazaExchangeRateService) Get(ctx context.Context) *ModelPlazaExch
 		if err == nil {
 			res, fetchErr := s.client.Do(req)
 			if fetchErr == nil {
-				defer res.Body.Close()
+				defer func() { _ = res.Body.Close() }()
 				var body struct {
 					Base  string  `json:"base"`
 					Quote string  `json:"quote"`

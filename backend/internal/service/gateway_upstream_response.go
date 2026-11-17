@@ -361,11 +361,40 @@ func (s *GatewayService) readUpstreamErrorBody(resp *http.Response) ([]byte, err
 	return io.ReadAll(io.LimitReader(resp.Body, limit))
 }
 
+// writeNonRetryableUpstreamConflict preserves an explicit upstream safety boundary.
+// Only the bounded code and retry prohibition cross the gateway; arbitrary details do not.
+func writeNonRetryableUpstreamConflict(c *gin.Context, status int, body []byte) (error, bool) {
+	if status != http.StatusConflict || c == nil || !gjson.ValidBytes(body) {
+		return nil, false
+	}
+	code := gjson.GetBytes(body, "error.code")
+	retryable := gjson.GetBytes(body, "error.details.retryable")
+	if code.Type != gjson.String || len(code.Str) == 0 || len(code.Str) > 128 || retryable.Type != gjson.False {
+		return nil, false
+	}
+	for _, char := range code.Str {
+		if !strings.ContainsRune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.", char) {
+			return nil, false
+		}
+	}
+	message := "The upstream request state prevents safe retry."
+	setOpsUpstreamError(c, status, message, "")
+	MarkResponseCommitted(c)
+	c.JSON(status, gin.H{"error": gin.H{
+		"type": "conflict_error", "code": code.Str, "message": message,
+		"details": gin.H{"retryable": false},
+	}})
+	return fmt.Errorf("non-retryable upstream conflict: %s", code.Str), true
+}
+
 func (s *GatewayService) handleErrorResponse(ctx context.Context, resp *http.Response, c *gin.Context, account *Account, requestedModel ...string) (*ForwardResult, error) {
 	// Upstream returned a non-success HTTP status; count Ollama Cloud / OpenCode Go activity.
 	scheduleOllamaCloudUsageActivity(s.deferredService, account)
 	scheduleOpenCodeGoUsageActivity(s.deferredService, account)
 	body, readErr := s.readUpstreamErrorBody(resp)
+	if err, handled := writeNonRetryableUpstreamConflict(c, resp.StatusCode, body); handled {
+		return nil, err
+	}
 	if readErr != nil {
 		// 读取失败时 body 可能被截断，错误分类会基于不完整数据；记录日志以便排查，
 		// 避免静默吞掉导致误判。
@@ -683,8 +712,11 @@ func (u *ClaudeUsage) hasObservedTokens() bool {
 // 不变式：UpstreamFailoverError 必须保持 result=nil——failover 重试成功后按成功请求
 // 计费，若同时返回部分 usage 会造成双重计费，此处显式拦截兜底。
 func partialStreamUsageResult(c *gin.Context, resp *http.Response, streamResult *streamingResult, model, upstreamModel string, startTime time.Time, err error) *ForwardResult {
-	if streamResult == nil || !streamResult.usage.hasObservedTokens() {
+	if streamResult == nil {
 		return nil
+	}
+	if streamResult.usage == nil {
+		streamResult.usage = &ClaudeUsage{}
 	}
 	var failoverErr *UpstreamFailoverError
 	if errors.As(err, &failoverErr) {
@@ -703,6 +735,7 @@ func partialStreamUsageResult(c *gin.Context, resp *http.Response, streamResult 
 		Duration:                      time.Since(startTime),
 		FirstTokenMs:                  streamResult.firstTokenMs,
 		ClientDisconnect:              streamResult.clientDisconnect,
+		UsageIncomplete:               boolPointer(true),
 	}
 }
 

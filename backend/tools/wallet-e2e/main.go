@@ -68,7 +68,7 @@ func main() {
 	check(strings.Contains(dsn, "/wallet_e2e?"), "requires disposable wallet_e2e database")
 	db, err := sql.Open("postgres", dsn)
 	must(err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	client := dbent.NewClient(dbent.Driver(entsql.OpenDB(dialect.Postgres, db)))
 	must(client.Schema.Create(ctx))
 	// The SQL idempotency repository relies on database timestamp defaults from
@@ -128,12 +128,12 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		if strings.HasPrefix(r.URL.Path, "/api/v1/") {
 			if strings.HasSuffix(r.URL.Path, "/authentication/login") {
-				io.WriteString(w, `{"token":"fixture-token","expires_at":"2099-01-01T00:00:00Z"}`)
+				_, _ = io.WriteString(w, `{"token":"fixture-token","expires_at":"2099-01-01T00:00:00Z"}`)
 				return
 			}
 			if strings.HasSuffix(r.URL.Path, "/pa/refunds/create") {
 				calls.Add(1)
-				io.WriteString(w, `{"id":"refund-fixture","status":"ACCEPTED"}`)
+				_, _ = io.WriteString(w, `{"id":"refund-fixture","status":"ACCEPTED"}`)
 				return
 			}
 			if strings.Contains(r.URL.Path, "/pa/refunds/") {
@@ -146,9 +146,9 @@ func main() {
 		calls.Add(1)
 		money.Store(r.FormValue("money"))
 		if fail.Load() {
-			io.WriteString(w, `{"code":0,"msg":"declined"}`)
+			_, _ = io.WriteString(w, `{"code":0,"msg":"declined"}`)
 		} else {
-			io.WriteString(w, `{"code":1,"msg":"ok"}`)
+			_, _ = io.WriteString(w, `{"code":1,"msg":"ok"}`)
 		}
 	}))
 	defer gateway.Close()
@@ -205,7 +205,7 @@ func main() {
 		}
 		resp, err := http.DefaultClient.Do(req)
 		must(err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		raw, err := io.ReadAll(resp.Body)
 		must(err)
 		var out map[string]any
@@ -251,10 +251,10 @@ func main() {
 		must(settingsRepo.Set(ctx, service.SettingKeyDefaultBalance, strconv.FormatFloat(amount, 'f', -1, 64)))
 		out := request("POST", "/auth/register", map[string]any{"email": fmt.Sprintf("registered-%g@wallet.invalid", amount), "password": "WalletFixture123!"})
 		check(out["http_status"] == float64(200), fmt.Sprint(out))
-		data := out["data"].(map[string]any)
-		user := data["user"].(map[string]any)
+		data := fixtureValue[map[string]any](out["data"])
+		user := fixtureValue[map[string]any](data["user"])
 		check(user["balance"] == amount && user["bonus_balance"] == amount && user["paid_balance"] == float64(0) && user["unverified_balance"] == float64(0), fmt.Sprint("registration response misclassifies signup credit: ", user))
-		uid := int64(user["id"].(float64))
+		uid := int64(fixtureValue[float64](user["id"]))
 		expect(fmt.Sprintf("registration response and persisted signup gift %g", amount), uid, amount, 0, amount, 0)
 		if amount > 0 {
 			spend(uid, "signup-gift-spend", 2)
@@ -586,4 +586,13 @@ func main() {
 	must(os.MkdirAll("../.planning/2026-11-11-balance-sources/artifacts", 0755))
 	must(os.WriteFile("../.planning/2026-11-11-balance-sources/artifacts/wallet-e2e.json", append(data, '\n'), 0644))
 	fmt.Println(string(data))
+}
+
+// fixtureValue 校验夹具响应类型。输入不匹配时立即失败，不使用零值继续验收。
+func fixtureValue[T any](value any) T {
+	result, ok := value.(T)
+	if !ok {
+		panic(fmt.Sprintf("unexpected fixture value type: %T", value))
+	}
+	return result
 }

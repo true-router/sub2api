@@ -38,13 +38,13 @@ func (s *OPCPayService) Reconcile(ctx context.Context) (int, error) {
 	for rows.Next() {
 		var c candidate
 		if err = rows.Scan(&c.id, &c.user); err != nil {
-			rows.Close()
+			_ = rows.Close()
 			return 0, err
 		}
 		batch = append(batch, c)
 	}
 	err = rows.Err()
-	rows.Close()
+	_ = rows.Close()
 	if err != nil {
 		return 0, err
 	}

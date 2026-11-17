@@ -95,7 +95,7 @@ func (s *GatewayService) forwardAnthropicAPIKeyPassthroughWithInput(
 	var resp *http.Response
 	retryStart := time.Now()
 	for attempt := 1; attempt <= maxRetryAttempts; attempt++ {
-		upstreamCtx, releaseUpstreamCtx := detachStreamUpstreamContext(ctx, input.RequestStream)
+		upstreamCtx, releaseUpstreamCtx := detachStreamUpstreamContext(ctx, input.RequestStream, s.cfg)
 		upstreamReq, wireBody, err := s.buildUpstreamRequestAnthropicAPIKeyPassthrough(upstreamCtx, c, account, input.Body, token)
 		releaseUpstreamCtx()
 		if err != nil {
@@ -289,6 +289,7 @@ func (s *GatewayService) forwardAnthropicAPIKeyPassthroughWithInput(
 		Duration:                      time.Since(input.StartTime),
 		FirstTokenMs:                  firstTokenMs,
 		ClientDisconnect:              clientDisconnect,
+		UsageIncomplete:               boolPointer(!observedUpstreamUsageComplete(c)),
 	}, nil
 }
 

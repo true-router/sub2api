@@ -19,7 +19,8 @@ import (
 )
 
 // Forward forwards request to OpenAI API
-func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, account *Account, body []byte) (*OpenAIForwardResult, error) {
+func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, account *Account, body []byte) (forwarded *OpenAIForwardResult, forwardErr error) {
+	defer func() { finishOpenAIStreamUsage(ctx, c, forwarded, forwardErr) }()
 	beginUpstreamResponseModelObservation(c)
 	ClearActualOpenAIUpstreamEndpoint(c)
 	if shouldForwardOpenAIResponsesViaRawChatCompletions(account) {
@@ -1061,7 +1062,7 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 	rejectedFieldRetryState := openAIResponsesRejectedFieldRetryStateForRequest(c, body)
 	for {
 		// Build upstream request
-		upstreamCtx, releaseUpstreamCtx := detachUpstreamContext(ctx)
+		upstreamCtx, releaseUpstreamCtx := detachTextUpstreamContext(ctx, reqStream, s.cfg)
 		var headerGuard *openAIFirstOutputHeaderGuard
 		if firstOutputTimeout > 0 {
 			upstreamCtx, headerGuard = newOpenAIFirstOutputHeaderGuard(
@@ -1120,6 +1121,10 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 		// Handle error response
 		if resp.StatusCode >= 400 {
 			respBody := s.readUpstreamErrorBody(resp)
+			if err, handled := writeNonRetryableUpstreamConflict(c, resp.StatusCode, respBody); handled {
+				_ = resp.Body.Close()
+				return nil, err
+			}
 			_ = resp.Body.Close()
 			resp.Body = io.NopCloser(bytes.NewReader(respBody))
 
@@ -1243,6 +1248,7 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 
 		// Handle normal response
 		var usage *OpenAIUsage
+		var usageIncomplete *bool
 		var firstTokenMs *int
 		responseID := ""
 		imageCount := 0
@@ -1287,9 +1293,21 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 					}
 					return s.handleErrorResponse(ctx, compactResp, c, account, body, resolveOpenAIErrorSchedulingModel(billingModel, upstreamModel))
 				}
+				if streamResult != nil && ctx.Err() != nil {
+					partial := partialOpenAIUsage(c, resp, streamResult.usage, originalModel, upstreamModel, startTime)
+					partial.BillingModel = billingModel
+					partial.ServiceTier = resolvedOpenAIUpstreamServiceTier(c, serviceTier)
+					partial.ReasoningEffort = reasoningEffort
+					partial.ImageCount = streamResult.imageCount
+					partial.ImageOutputSizes = streamResult.imageOutputSizes
+					partial.SearchCount = streamResult.searchCount
+					partial.FirstTokenMs = streamResult.firstTokenMs
+					return partial, err
+				}
 				return nil, err
 			}
 			usage = streamResult.usage
+			usageIncomplete = boolPointer(streamResult.usageIncomplete)
 			firstTokenMs = streamResult.firstTokenMs
 			responseID = strings.TrimSpace(streamResult.responseID)
 			imageCount = streamResult.imageCount
@@ -1352,6 +1370,9 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 			OpenAIWSMode:                  false,
 			Duration:                      time.Since(startTime),
 			FirstTokenMs:                  firstTokenMs,
+		}
+		if reqStream {
+			forwardResult.UsageIncomplete = usageIncomplete
 		}
 		if imageCount > 0 {
 			forwardResult.ImageCount = imageCount

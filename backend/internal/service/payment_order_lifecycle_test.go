@@ -5,6 +5,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"github.com/DATA-DOG/go-sqlmock"
 	"testing"
 	"time"
 
@@ -164,7 +165,8 @@ func (r *paymentOrderLifecycleRedeemRepo) SumPositiveBalanceByUser(context.Conte
 
 func TestVerifyOrderByOutTradeNoBackfillsTradeNoFromPaidQuery(t *testing.T) {
 	ctx := context.Background()
-	client := newPaymentOrderLifecycleTestClient(t)
+	walletDB, walletSQL := newPaymentWalletSQLMock(t)
+	client := newPaymentOrderLifecycleTestClient(t, walletDB)
 
 	user, err := client.User.Create().
 		SetEmail("checkpaid@example.com").
@@ -192,6 +194,9 @@ func TestVerifyOrderByOutTradeNoBackfillsTradeNoFromPaidQuery(t *testing.T) {
 		Save(ctx)
 	require.NoError(t, err)
 
+	walletSQL.ExpectExec(`^SELECT wallet_credit_payment\(\$1,\$2,\$3,\$4\)$`).
+		WithArgs(order.UserID, order.Amount, order.Amount, order.ID).
+		WillReturnResult(sqlmock.NewResult(0, 1))
 	userRepo := &mockUserRepo{
 		getByIDUser: &User{
 			ID:       user.ID,
@@ -199,13 +204,6 @@ func TestVerifyOrderByOutTradeNoBackfillsTradeNoFromPaidQuery(t *testing.T) {
 			Username: user.Username,
 			Balance:  0,
 		},
-	}
-	userRepo.updateBalanceFn = func(ctx context.Context, id int64, amount float64) error {
-		require.Equal(t, user.ID, id)
-		if userRepo.getByIDUser != nil {
-			userRepo.getByIDUser.Balance += amount
-		}
-		return nil
 	}
 	redeemRepo := &paymentOrderLifecycleRedeemRepo{
 		codesByCode: map[string]*RedeemCode{
@@ -257,7 +255,7 @@ func TestVerifyOrderByOutTradeNoBackfillsTradeNoFromPaidQuery(t *testing.T) {
 	require.Equal(t, OrderStatusCompleted, reloaded.Status)
 	require.Equal(t, "upstream-trade-123", reloaded.PaymentTradeNo)
 
-	require.Equal(t, 88.0, userRepo.getByIDUser.Balance)
+	require.NoError(t, walletSQL.ExpectationsWereMet())
 	require.Len(t, redeemRepo.useCalls, 1)
 	require.Equal(t, int64(1), redeemRepo.useCalls[0].id)
 	require.Equal(t, user.ID, redeemRepo.useCalls[0].userID)
@@ -265,7 +263,8 @@ func TestVerifyOrderByOutTradeNoBackfillsTradeNoFromPaidQuery(t *testing.T) {
 
 func TestVerifyOrderByOutTradeNoRetriesZeroAmountPaidQueryOnce(t *testing.T) {
 	ctx := context.Background()
-	client := newPaymentOrderLifecycleTestClient(t)
+	walletDB, walletSQL := newPaymentWalletSQLMock(t)
+	client := newPaymentOrderLifecycleTestClient(t, walletDB)
 
 	user, err := client.User.Create().
 		SetEmail("checkpaid-retry@example.com").
@@ -293,6 +292,9 @@ func TestVerifyOrderByOutTradeNoRetriesZeroAmountPaidQueryOnce(t *testing.T) {
 		Save(ctx)
 	require.NoError(t, err)
 
+	walletSQL.ExpectExec(`^SELECT wallet_credit_payment\(\$1,\$2,\$3,\$4\)$`).
+		WithArgs(order.UserID, order.Amount, order.Amount, order.ID).
+		WillReturnResult(sqlmock.NewResult(0, 1))
 	userRepo := &mockUserRepo{
 		getByIDUser: &User{
 			ID:       user.ID,
@@ -300,13 +302,6 @@ func TestVerifyOrderByOutTradeNoRetriesZeroAmountPaidQueryOnce(t *testing.T) {
 			Username: user.Username,
 			Balance:  0,
 		},
-	}
-	userRepo.updateBalanceFn = func(ctx context.Context, id int64, amount float64) error {
-		require.Equal(t, user.ID, id)
-		if userRepo.getByIDUser != nil {
-			userRepo.getByIDUser.Balance += amount
-		}
-		return nil
 	}
 	redeemRepo := &paymentOrderLifecycleRedeemRepo{
 		codesByCode: map[string]*RedeemCode{
@@ -569,7 +564,8 @@ func TestCancelOrderStillClosesUnpaidUpstreamOrder(t *testing.T) {
 
 func TestReconcilePendingPaymentOrdersBackfillsPaidOrder(t *testing.T) {
 	ctx := context.Background()
-	client := newPaymentOrderLifecycleTestClient(t)
+	walletDB, walletSQL := newPaymentWalletSQLMock(t)
+	client := newPaymentOrderLifecycleTestClient(t, walletDB)
 
 	user, err := client.User.Create().
 		SetEmail("wxpay-reconcile@example.com").
@@ -597,6 +593,9 @@ func TestReconcilePendingPaymentOrdersBackfillsPaidOrder(t *testing.T) {
 		Save(ctx)
 	require.NoError(t, err)
 
+	walletSQL.ExpectExec(`^SELECT wallet_credit_payment\(\$1,\$2,\$3,\$4\)$`).
+		WithArgs(order.UserID, order.Amount, order.Amount, order.ID).
+		WillReturnResult(sqlmock.NewResult(0, 1))
 	userRepo := &mockUserRepo{
 		getByIDUser: &User{
 			ID:       user.ID,
@@ -604,13 +603,6 @@ func TestReconcilePendingPaymentOrdersBackfillsPaidOrder(t *testing.T) {
 			Username: user.Username,
 			Balance:  0,
 		},
-	}
-	userRepo.updateBalanceFn = func(ctx context.Context, id int64, amount float64) error {
-		require.Equal(t, user.ID, id)
-		if userRepo.getByIDUser != nil {
-			userRepo.getByIDUser.Balance += amount
-		}
-		return nil
 	}
 	redeemRepo := &paymentOrderLifecycleRedeemRepo{
 		codesByCode: map[string]*RedeemCode{
@@ -665,7 +657,7 @@ func TestReconcilePendingPaymentOrdersBackfillsPaidOrder(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, OrderStatusCompleted, reloaded.Status)
 	require.Equal(t, "wxpay-upstream-trade-123", reloaded.PaymentTradeNo)
-	require.Equal(t, 50.0, userRepo.getByIDUser.Balance)
+	require.NoError(t, walletSQL.ExpectationsWereMet())
 	require.Len(t, redeemRepo.useCalls, 1)
 }
 
@@ -849,7 +841,7 @@ func TestPaymentOrderQueryReferenceUsesOutTradeNoForOfficialProviders(t *testing
 	}))
 }
 
-func newPaymentOrderLifecycleTestClient(t *testing.T) *dbent.Client {
+func newPaymentOrderLifecycleTestClient(t *testing.T, walletSQL ...*sql.DB) *dbent.Client {
 	t.Helper()
 
 	db, err := sql.Open("sqlite", "file:payment_order_lifecycle?mode=memory&cache=shared&_fk=1")
@@ -859,7 +851,10 @@ func newPaymentOrderLifecycleTestClient(t *testing.T) *dbent.Client {
 	_, err = db.Exec("PRAGMA foreign_keys = ON")
 	require.NoError(t, err)
 
-	drv := entsql.OpenDB(dialect.SQLite, db)
+	var drv dialect.Driver = entsql.OpenDB(dialect.SQLite, db)
+	if len(walletSQL) > 0 {
+		drv = &paymentWalletFixtureDriver{Driver: drv, wallet: walletSQL[0]}
+	}
 	client := enttest.NewClient(t, enttest.WithOptions(dbent.Driver(drv)))
 	t.Cleanup(func() { _ = client.Close() })
 	return client

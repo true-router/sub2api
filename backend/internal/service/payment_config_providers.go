@@ -179,7 +179,7 @@ func (s *PaymentConfigService) countPendingOrders(ctx context.Context, providerI
 		if err != nil {
 			return 0, err
 		}
-		defer rows.Close()
+		defer func() { _ = rows.Close() }()
 		var count int
 		if rows.Next() {
 			err = rows.Scan(&count)

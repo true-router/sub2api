@@ -115,7 +115,7 @@ func (s *OpenAIGatewayService) forwardResponsesViaNativeAnthropic(
 		proxyURL = account.Proxy.URL()
 	}
 
-	upstreamCtx, releaseUpstreamCtx := detachStreamUpstreamContext(ctx, reqStream)
+	upstreamCtx, releaseUpstreamCtx := detachStreamUpstreamContext(ctx, reqStream, s.cfg)
 	upstreamReq, forwardedBody, err := s.buildNativeAnthropicUpstreamRequest(upstreamCtx, c, account, anthropicBody, apiKey, targetURL, body)
 	releaseUpstreamCtx()
 	if err != nil {
@@ -367,6 +367,7 @@ func (s *OpenAIGatewayService) handleResponsesStreamingFromNativeAnthropic(
 	scanner.Buffer(make([]byte, 0, 64*1024), maxLineSize)
 	scanner.Split(newBoundedSSESplit(s.cfg, maxLineSize, nil))
 
+	usageObserver := &upstreamResponseModelObserver{}
 	resultWithUsage := func() *OpenAIForwardResult {
 		return &OpenAIForwardResult{
 			RequestID:        requestID,
@@ -381,6 +382,7 @@ func (s *OpenAIGatewayService) handleResponsesStreamingFromNativeAnthropic(
 			Duration:         time.Since(startTime),
 			FirstTokenMs:     firstTokenMs,
 			ClientDisconnect: clientDisconnected,
+			UsageIncomplete:  boolPointer(!usageObserver.UsageComplete()),
 		}
 	}
 
@@ -489,6 +491,7 @@ func (s *OpenAIGatewayService) handleResponsesStreamingFromNativeAnthropic(
 		}
 
 		var event apicompat.AnthropicStreamEvent
+		usageObserver.ObserveAnthropic([]byte(payload))
 		if err := json.Unmarshal([]byte(payload), &event); err != nil {
 			continue
 		}

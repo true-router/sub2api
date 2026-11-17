@@ -42,6 +42,30 @@ jobs:
       - name: Integration tests
         working-directory: backend
         run: make test-integration
+      - name: Text stream cancellation E2E
+        working-directory: backend
+        run: |
+          go build -o "$RUNNER_TEMP/stream-cancellation-e2e" ./e2e/stream-cancellation
+          python3 e2e/stream-cancellation/check.py --binary "$RUNNER_TEMP/stream-cancellation-e2e" --out "$RUNNER_TEMP/stream-cancellation-anthropic" &
+          anthropic_pid=$!
+          python3 e2e/stream-cancellation/check.py --binary "$RUNNER_TEMP/stream-cancellation-e2e" --provider openai --out "$RUNNER_TEMP/stream-cancellation-openai" &
+          openai_pid=$!
+          result=0
+          wait "$anthropic_pid" || result=1
+          wait "$openai_pid" || result=1
+          exit "$result"
+      - name: PostgreSQL billing E2E
+        working-directory: backend
+        run: go run ./tools/production-billing-e2e --output "$RUNNER_TEMP/production-billing/receipt.json"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: stream-cancellation-${{ github.event_name }}
+          path: |
+            ${{ runner.temp }}/stream-cancellation-anthropic/
+            ${{ runner.temp }}/stream-cancellation-openai/
+            ${{ runner.temp }}/production-billing/receipt.json
+          if-no-files-found: ignore
 
   frontend:
     runs-on: ubuntu-latest

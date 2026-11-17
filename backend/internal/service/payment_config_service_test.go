@@ -382,7 +382,7 @@ func TestGetPaymentConfigKeepsStoredEnabledTypes(t *testing.T) {
 	}
 }
 
-func newPaymentConfigServiceTestClient(t *testing.T) *dbent.Client {
+func newPaymentConfigServiceTestClient(t *testing.T, walletSQL ...*sql.DB) *dbent.Client {
 	t.Helper()
 
 	dbName := fmt.Sprintf(
@@ -399,7 +399,10 @@ func newPaymentConfigServiceTestClient(t *testing.T) *dbent.Client {
 		t.Fatalf("enable foreign keys: %v", err)
 	}
 
-	drv := entsql.OpenDB(dialect.SQLite, db)
+	var drv dialect.Driver = entsql.OpenDB(dialect.SQLite, db)
+	if len(walletSQL) > 0 {
+		drv = &paymentWalletFixtureDriver{Driver: drv, wallet: walletSQL[0]}
+	}
 	client := enttest.NewClient(t, enttest.WithOptions(dbent.Driver(drv)))
 	t.Cleanup(func() { _ = client.Close() })
 	return client

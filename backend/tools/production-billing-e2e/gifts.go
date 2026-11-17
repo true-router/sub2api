@@ -32,7 +32,11 @@ func (f *fixture) giftScenario(admin string) error {
 	if err != nil {
 		return err
 	}
-	uid := int64(user["id"].(float64))
+	userID, ok := user["id"].(float64)
+	if !ok {
+		return fmt.Errorf("missing fixture user id")
+	}
+	uid := int64(userID)
 	jwt, _, err := f.login("discount-unified@example.test", "Discount-user-password-2026")
 	if err != nil {
 		return err

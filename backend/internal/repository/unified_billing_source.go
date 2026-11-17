@@ -12,7 +12,7 @@ func (r *usageLogRepository) UnifiedBillingSources(ctx context.Context, userID i
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := []service.UnifiedBillingSource{}
 	for rows.Next() {
 		var row service.UnifiedBillingSource

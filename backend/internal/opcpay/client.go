@@ -47,7 +47,7 @@ func (c *Client) Call(ctx context.Context, path string, body any, result any) er
 	if err != nil {
 		return errors.New("一人付请求未确认，请恢复原操作")
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	// Never include upstream bodies or transport errors in logs or responses.
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return errors.New("一人付请求未确认，请恢复原操作")

@@ -867,6 +867,8 @@ func TestOpenAIGatewayService_OAuthPassthrough_UpstreamRequestIgnoresClientCance
 		cfg:          &config.Config{Gateway: config.GatewayConfig{ForceCodexCLI: false}},
 		httpUpstream: upstream,
 	}
+	// 此用例验证显式继续读取模式；默认立即取消由 HTTP E2E 覆盖。
+	svc.cfg.Gateway.ClientDisconnectDrainTimeout = 1
 	account := &Account{
 		ID:             123,
 		Name:           "acc",

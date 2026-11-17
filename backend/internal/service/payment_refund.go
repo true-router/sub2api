@@ -785,7 +785,7 @@ func (s *PaymentService) markRefundOk(ctx context.Context, p *RefundPlan) (*Refu
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 	txCtx := dbent.NewTxContext(ctx, tx)
 	result, err := s.markRefundOkTx(txCtx, tx.Client(), p)
 	if err != nil {
