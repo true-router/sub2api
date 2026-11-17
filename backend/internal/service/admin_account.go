@@ -411,6 +411,11 @@ func normalizeOpenAILongContextBillingUpdateExtra(account *Account, input *Updat
 // Grok media eligibility helpers live in account_grok_media_eligibility.go.
 
 func buildAccountForCreate(input *CreateAccountInput, accountExtra map[string]any) (*Account, error) {
+	if input.Platform == PlatformOpenCodeGo && input.Type == AccountTypeOAuth {
+		if err := ValidateOpenCodeOAuthCredentials(input.Credentials); err != nil {
+			return nil, err
+		}
+	}
 	if input.Platform == PlatformTypeSafe && input.Type != AccountTypeAPIKey {
 		return nil, errors.New("typesafe accounts only support apikey credentials")
 	}
@@ -583,6 +588,18 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 	}
 	if account.Platform == PlatformTypeSafe && input.Type != "" && input.Type != AccountTypeAPIKey {
 		return nil, errors.New("typesafe accounts only support apikey credentials")
+	}
+	if account.Platform == PlatformOpenCodeGo {
+		effectiveType := account.Type
+		if input.Type != "" {
+			effectiveType = input.Type
+		}
+		if effectiveType == AccountTypeOAuth {
+			credentials := MergeCredentials(account.Credentials, input.Credentials)
+			if err := ValidateOpenCodeOAuthCredentials(credentials); err != nil {
+				return nil, err
+			}
+		}
 	}
 	var normalizedExtra map[string]any
 	if input.Extra != nil {

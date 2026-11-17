@@ -61,6 +61,14 @@ func (s *OpenAIGatewayService) ForwardAsChatCompletions(
 	promptCacheKey string,
 	defaultMappedModel string,
 ) (forwarded *OpenAIForwardResult, forwardErr error) {
+	if account.IsOpenCodeOAuth() {
+		fresh, err := s.openCodeOAuth.Resolve(ctx, account, false)
+		if err != nil {
+			return nil, err
+		}
+		account = fresh
+	}
+
 	defer func() { finishOpenAIStreamUsage(ctx, c, forwarded, forwardErr) }()
 	return s.forwardAsChatCompletions(ctx, c, account, body, promptCacheKey, defaultMappedModel, false)
 }
@@ -128,7 +136,7 @@ func (s *OpenAIGatewayService) forwardAsChatCompletions(
 	// ShouldUseResponsesAPI：Anthropic 协议账号经 probe 落标
 	// openai_responses_supported=false，否则会命中 CC 直转。
 	routingModel := upstreamRoutingModel(account, body, defaultMappedModel)
-	if account.IsOpenCodeGo() && IsOpenCodeUnsupportedModel(routingModel) {
+	if account.isUnsupportedOpenCodeModel(routingModel) {
 		return nil, writeOpenCodeUnsupportedModelError(c, false, routingModel)
 	}
 	switch s.resolveUpstreamProtocolFor(ctx, account, inbound, routingModel) {

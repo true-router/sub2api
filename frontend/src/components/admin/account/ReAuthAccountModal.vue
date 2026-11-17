@@ -33,7 +33,9 @@
             }}</span>
             <span class="text-body-regular text-text-secondary ">
               {{
-                isOpenAI
+                isOpenCodeOAuth
+                  ? 'OpenCode Go OAuth'
+                  : isOpenAI
                   ? t('admin.accounts.openaiAccount')
                   : isGemini
                     ? t('admin.accounts.geminiAccount')
@@ -48,6 +50,7 @@
         </div>
       </div>
 
+      <OpenCodeOAuthForm v-if="isOpenCodeOAuth && show" :key="account.id" :proxy-id="account.proxy_id ?? null" @credentials="openCodeCredentials = $event" />
       <!-- Add Method Selection (Claude only) -->
       <fieldset v-if="isAnthropic" class="border-0 p-0">
         <legend class="input-label">{{ t('admin.accounts.oauth.authMethod') }}</legend>
@@ -121,6 +124,7 @@
       </div>
 
       <OAuthAuthorizationFlow
+        v-if="!isOpenCodeOAuth"
         ref="oauthFlowRef"
         :add-method="addMethod"
         :auth-url="currentAuthUrl"
@@ -148,11 +152,12 @@
 
     <template #footer>
       <div v-if="account" class="flex justify-between gap-3">
+        <BoardButton v-if="isOpenCodeOAuth" :disabled="!openCodeCredentials || openCodeSaving" :loading="openCodeSaving" @click="saveOpenCodeAuthorization">{{ t('common.save') }}</BoardButton>
         <BoardButton type="button" variant="secondary" size="medium" @click="handleClose">
           {{ t('common.cancel') }}
         </BoardButton>
         <BoardButton
-          v-if="isManualInputMethod"
+          v-if="!isOpenCodeOAuth && isManualInputMethod"
           type="button"
           :disabled="!canExchangeCode"
           variant="primary" size="medium"
@@ -208,6 +213,8 @@ import type { Account } from '@/types'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
 import OAuthAuthorizationFlow from '@/components/account/OAuthAuthorizationFlow.vue'
+import OpenCodeOAuthForm from '@/components/account/OpenCodeOAuthForm.vue'
+import type { OpenCodeOAuthCredentials } from '@/api/admin/opencode'
 
 // Type for exposed OAuthAuthorizationFlow component
 // Note: defineExpose automatically unwraps refs, so we use the unwrapped types
@@ -249,6 +256,21 @@ const addMethod = ref<AddMethod>('oauth')
 const geminiOAuthType = ref<'code_assist' | 'google_one' | 'ai_studio'>('code_assist')
 
 // Computed - check platform
+const isOpenCodeOAuth = computed(() => props.account?.platform === 'opencode_go' && props.account.type === 'oauth')
+const openCodeCredentials = ref<OpenCodeOAuthCredentials | null>(null)
+const openCodeSaving = ref(false)
+watch(() => [props.show, props.account?.id], () => { openCodeCredentials.value = null })
+async function saveOpenCodeAuthorization() {
+  if (!props.account || !openCodeCredentials.value) return
+  openCodeSaving.value = true
+  try {
+    const updated = await adminAPI.accounts.applyOAuthCredentials(props.account.id, { type: 'oauth', credentials: openCodeCredentials.value })
+    emit('reauthorized', updated)
+    appStore.showSuccess(t('admin.accounts.reAuthorizedSuccess'))
+    handleClose()
+  } catch { appStore.showError(t('admin.accounts.opencodeGo.oauth.failed')) }
+  finally { openCodeSaving.value = false }
+}
 const isOpenAI = computed(() => props.account?.platform === 'openai')
 const isOpenAILike = computed(() => isOpenAI.value)
 const isGemini = computed(() => props.account?.platform === 'gemini')

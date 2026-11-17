@@ -448,6 +448,7 @@ var ErrNoAvailableCompactAccounts = errors.New("no available accounts support /r
 
 // OpenAIGatewayService handles OpenAI API gateway operations
 type OpenAIGatewayService struct {
+	openCodeOAuth         *OpenCodeOAuthService
 	accountRepo           AccountRepository
 	usageLogRepo          UsageLogRepository
 	usageBillingRepo      UsageBillingRepository
@@ -1228,6 +1229,16 @@ func (s *OpenAIGatewayService) GetAccessToken(ctx context.Context, account *Acco
 	}
 	switch account.Type {
 	case AccountTypeOAuth:
+		if account.IsOpenCodeOAuth() {
+			if !s.openCodeOAuth.NeedsRefresh(account, 2*time.Minute) {
+				return account.GetCredential("access_token"), "oauth", nil
+			}
+			fresh, err := s.openCodeOAuth.Resolve(ctx, account, false)
+			if err != nil {
+				return "", "", err
+			}
+			return fresh.GetCredential("access_token"), "oauth", nil
+		}
 		if account.IsOpenAIAgentIdentity() {
 			return "", OpenAIAuthModeAgentIdentity, nil
 		}

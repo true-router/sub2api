@@ -62,6 +62,9 @@ func RegisterAdminRoutes(
 
 		// Grok OAuth
 		registerGrokOAuthRoutes(admin, h)
+		admin.POST("/opencode/oauth/device", h.Admin.Account.OpenCodeAuthorize)
+		admin.POST("/opencode/oauth/poll", h.Admin.Account.OpenCodePoll)
+		admin.POST("/opencode/oauth/import", h.Admin.Account.OpenCodeImport)
 
 		// 国产供应商（kimi/zhipu/deepseek）额度与余额
 		registerCNProviderRoutes(admin, h)

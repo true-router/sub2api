@@ -592,7 +592,7 @@ function officialAccountAPISupported(account: CNUsageCellAccount, mode: string):
 export function cnQuotaCellVisible(account: CNUsageCellAccount): boolean {
   const { platform } = account
   const mode = cnUsageCellAccountMode(account)
-  if (platform === 'opencode_go') return mode !== 'zen'
+  if (platform === 'opencode_go') return account.type === 'apikey' && mode !== 'zen'
   // Command Code、Cline：订阅窗口与积分由一次探测同时刷新。
   if (OFFICIAL_ACCOUNT_API_PLATFORMS.includes(platform)) return officialAccountAPISupported(account, mode)
   return (platform === 'kimi' || platform === 'zhipu' || platform === 'minimax') && mode === 'coding'

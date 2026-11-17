@@ -514,8 +514,13 @@
         </div>
       </div>
 
+      <div v-if="isOpenCodeGoPlatform" class="space-y-3">
+        <label class="input-label">{{ t('admin.accounts.opencodeGo.oauth.method') }}</label>
+        <Select v-model="openCodeAuthMode" :options="[{ value: 'apikey', label: 'API Key' }, { value: 'oauth', label: 'OAuth · OpenCode Go' }]" data-testid="opencode-auth-method" />
+        <OpenCodeOAuthForm v-if="isOpenCodeOAuth" :proxy-id="form.proxy_id" @credentials="openCodeOAuthCredentials = $event" />
+      </div>
       <!-- OpenCode Zen vs Go -->
-      <div v-if="isOpenCodeGoPlatform">
+      <div v-if="isOpenCodeGoPlatform && !isOpenCodeOAuth">
         <label class="input-label">{{ t('admin.accounts.cnProviders.accountMode.title') }}</label>
         <div class="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <button
@@ -657,7 +662,7 @@
       </div>
 
       <!-- API Protocol Selection (Kimi / Zhipu / DeepSeek / OpenCode) -->
-      <div v-if="isMultiProtocolPlatform" class="mt-4">
+      <div v-if="isMultiProtocolPlatform && !isOpenCodeOAuth" class="mt-4">
         <label class="input-label">{{ t('admin.accounts.cnProviders.apiProtocol.title') }}</label>
         <div class="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <button
@@ -1500,7 +1505,7 @@
       </div>
 
       <!-- API Key input (only for apikey type, excluding Antigravity which has its own fields) -->
-      <div v-if="form.type === 'apikey' && form.platform !== 'antigravity'" class="space-y-4">
+      <div v-if="form.type === 'apikey' && form.platform !== 'antigravity' && !isOpenCodeOAuth" class="space-y-4">
         <div v-if="!isMultiProtocolPlatform || apiProtocol !== 'adaptive'">
           <label class="input-label">{{ t('admin.accounts.baseUrl') }}</label>
           <input
@@ -4232,6 +4237,8 @@ import {
   type OpenAIWSMode
 } from '@/utils/openaiWsMode'
 import OAuthAuthorizationFlow from './OAuthAuthorizationFlow.vue'
+import OpenCodeOAuthForm from './OpenCodeOAuthForm.vue'
+import type { OpenCodeOAuthCredentials } from '@/api/admin/opencode'
 
 // Type for exposed OAuthAuthorizationFlow component
 // Note: defineExpose automatically unwraps refs, so we use the unwrapped types
@@ -4432,6 +4439,13 @@ const adaptiveBaseUrls = ref<Record<CnNativeApiProtocol, string>>({
   responses: ''
 })
 const isCNPlatform = computed(() => isCNProviderPlatform(form.platform))
+const openCodeAuthMode = ref('apikey')
+const openCodeOAuthCredentials = ref<OpenCodeOAuthCredentials | null>(null)
+const isOpenCodeOAuth = computed(() => form.platform === 'opencode_go' && openCodeAuthMode.value === 'oauth')
+watch(openCodeAuthMode, () => {
+  openCodeOAuthCredentials.value = null
+  if (form.platform === 'opencode_go') form.type = openCodeAuthMode.value === 'oauth' ? 'oauth' : 'apikey'
+})
 const isOpenCodeGoPlatform = computed(() => form.platform === 'opencode_go')
 const isMultiProtocolPlatform = computed(() => isMultiProtocolApiKeyPlatform(form.platform))
 // 前端没有专属界面、走通用表单的多协议供应商：模式、协议、默认端点
@@ -4529,6 +4543,8 @@ function selectCNPlatform(platform: CnProviderPlatform) {
   resetAdaptiveBaseUrls(platform, accountMode.value)
 }
 function selectOpenCodeGoPlatform() {
+ openCodeAuthMode.value = 'apikey'
+ openCodeOAuthCredentials.value = null
   form.platform = 'opencode_go'
   form.type = 'apikey'
   accountCategory.value = 'apikey'
@@ -5627,6 +5643,8 @@ const submitCreateAccount = async (payload: CreateAccountRequest) => {
 
 // Methods
 const resetForm = () => {
+ openCodeAuthMode.value = 'apikey'
+ openCodeOAuthCredentials.value = null
   step.value = 1
   form.name = ''
   form.notes = ''
@@ -5959,6 +5977,15 @@ const handleVertexServiceAccountDrop = async (event: DragEvent) => {
 }
 
 const handleSubmit = async () => {
+  if (isOpenCodeOAuth.value) {
+    if (!form.name.trim()) { appStore.showError(t('admin.accounts.pleaseEnterAccountName')); return }
+    if (!openCodeOAuthCredentials.value) { appStore.showError(t('admin.accounts.opencodeGo.oauth.required')); return }
+    const credentials: Record<string, unknown> = { ...openCodeOAuthCredentials.value }
+    const modelMapping = buildModelMappingObject(modelRestrictionMode.value, allowedModels.value, modelMappings.value)
+    if (modelMapping) credentials.model_mapping = modelMapping
+    await createAccountAndFinish('opencode_go', 'oauth', credentials)
+    return
+  }
   // For OAuth-based type, handle OAuth flow (goes to step 2)
   if (isOAuthFlow.value) {
     if (!isGrokSSOInputMethod.value && !form.name.trim()) {
