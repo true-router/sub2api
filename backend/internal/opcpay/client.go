@@ -12,7 +12,7 @@ import (
 
 const BaseURL = "https://ai6666.com/opcpay/api/pay/v1"
 
-// Client implements the same server-only contract as opcpay 0.3.4.
+// Client implements the server-only OPCPay payment contract.
 type Client struct {
 	HTTP *http.Client
 	Base string
@@ -98,4 +98,14 @@ type Result struct {
 	QR        string  `json:"purchase_qr_code,omitempty"`
 	Consumed  float64 `json:"consumed"`
 	Unit      string  `json:"quota_unit,omitempty"`
+}
+
+// Transaction is a verified payment state, separate from a purchase entry or quota.
+type Transaction struct {
+	UserID    string `json:"user_id"`
+	Key       string `json:"idempotency_key"`
+	Status    string `json:"status"`
+	TradeNo   string `json:"trade_no"`
+	CheckedAt string `json:"checked_at"`
+	Source    string `json:"status_source"`
 }

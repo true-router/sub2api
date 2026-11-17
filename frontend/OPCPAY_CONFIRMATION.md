@@ -1,55 +1,47 @@
-# Customer-facing recharge confirmation
+# 支付自动核销与到账
 
-The checkout shows the payment currency and price, and the USD credit delivered
-after confirmation. Provider points, entitlement balances and redemption details
-are internal accounting concepts and are not displayed in the checkout.
-Merchant SKU names may contain internal units, so cards display the payment
-amount and credited USD amount instead of using those names as customer labels.
+付款成功后，服务端后台任务自动确认支付、核销权益并增加站内积分。用户不需要点击确认。关闭弹窗、离开页面或关闭浏览器不会终止到账流程。
 
-## Definitive verification failure
+## 服务端处理
 
-The server returns HTTP 409 with reason `OPCPAY_PAYMENT_UNVERIFIED` and the
-customer message `验证失败，请重试` when access verification rejects the request
-before creating or submitting a consumption operation.
+1. 复用每分钟执行的支付后台任务及多实例主锁。
+2. 从数据库读取到期的购买和未完成核销记录。`CLOSED` 只表示界面关闭，不表示取消支付。
+3. 调用 `/transactions/query`。仅接受原用户、原购买编号、非空交易单号、有效核验时间及 `ALIPAY_PURCHASE_QUERY_V3` 来源的 `PAID` 结果。
+4. 通过 `/access` 验证足够的 `POINT` 权益。权益余额本身不能证明某个购买入口已经付款。
+5. 先保存核销编号、用户、服务商凭据摘要、购买价格快照和支付交易单号，再提交核销。
+6. 仅在核销结果的编号、数量、单位匹配且 `SUCCEEDED`、`confirmed=true` 时交付。
+7. 在同一个数据库事务内完成订单、钱包入账、支付交易单号和操作状态更新。
 
-Only that structured reason restores the saved action to its purchase phase.
-The original action ID, SKU and payment entry remain available for retry.
-Closing the dialog then closes the purchase intent and permits a new checkout.
-A previously stuck session retries its original action before restoring the
-purchase dialog after the same definitive rejection.
+`UNKNOWN`、网络失败或入账失败会留待后续后台任务恢复。恢复使用原核销编号。已确认核销只恢复交付，不再次扣减。数据库唯一约束防止一个支付交易单号对应两次核销。
 
-Quantity access does not require the buyout-only `decision` field to be present.
-An explicit denial still rejects access. Granted access, consumption capability,
-the expected unit and sufficient remaining quantity are all required.
+迁移 `259_opcpay_reconciliation.sql` 保存重试时间和交易单号。每轮最多处理十个到期记录。每个记录使用十秒超时，整轮使用三十秒超时。记录在网络请求前更新重试时间。服务重启后继续读取数据库。未处理记录保留原重试时间。付款状态和权益出现延迟时，后续轮次继续检查。系统不承诺固定到账时限。
 
-## Uncertain results
+## 页面处理
 
-A timeout, generic conflict, unknown response or confirmed consumption awaiting
-delivery retains its consumption phase and original action ID. A pending purchase
-in the next information response is not sufficient evidence to abandon it.
-If the dialog is closed, the user can query the original recharge result.
-Confirmed consumption restores delivery through the existing idempotent path.
+页面每三秒查询一次本地操作状态。这个查询不会访问支付服务商，也不会核销或增加积分。到账后停止查询并刷新用户积分。关闭弹窗后仍能展示随后完成的到账结果。页面不再提供“我已支付，确认充值”按钮。
 
-## Repeatable acceptance
+保留原手动核销 API，以兼容旧客户端及其未完成操作。新页面不会创建手动核销请求。旧客户端与后台并发时，继续由原操作编号和数据库约束防止重复交付。
 
-From the repository root:
+## 端到端验证
+
+在仓库根目录运行：
 
 ```sh
-node frontend/e2e/opcpay-confirmation.mjs
-GOTOOLCHAIN=go1.27.4 backend/tools/opcpay-e2e/run.sh
+OPCPAY_E2E_AUTO_ONLY=1 sh backend/tools/opcpay-e2e/run.sh
+sh backend/tools/opcpay-e2e/run.sh
+node frontend/e2e/opcpay-automatic.mjs
 ```
 
-The browser fixture exercises the real Vue checkout with a synthetic session
-and provider. It checks payment/credit wording, unpaid confirmation and retry,
-stuck-session recovery, closing and new checkout, unknown responses, result
-queries and confirmed-delivery recovery. Results, source hashes and a screenshot
-are written to `output/opcpay-confirmation/after/`. Use the `before` argument to
-capture the pre-fix failure in a separate directory.
+后台验证使用独立 PostgreSQL、真实 HTTP 处理器、真实后台调度和钱包事务。仅模拟支付服务商。验证关闭后付款、无用户请求自动入账、响应丢失、重建服务、并发恢复、未付款、未知状态、退款状态、身份不匹配、付款证明缺失、入账失败和重复支付交易单号。
 
-The backend fixture uses real HTTP handlers and a disposable PostgreSQL database.
-It verifies the structured rejection, absence of a consumption row or credit on
-rejection, cancellation and a new purchase, and existing recovery, concurrency,
-delivery, provider-binding and credential-protection behavior. Its receipt is
-`output/opcpay-e2e/checks.json`.
+浏览器验证使用真实 Vue 页面和模拟接口。验证自动到账说明、移除确认按钮、无确认点击展示到账、关闭后展示到账及两笔支付不重复交付。原 `opcpay-confirmation.mjs` 入口转向自动到账验证。
 
-These fixtures do not perform real payments or consume real customer funds.
+工件位于 `output/opcpay-auto/checks.json`、`output/opcpay-e2e/checks.json` 和 `output/opcpay-automatic/after/`。收据包含源码摘要。浏览器工件还包含请求记录和截图。这些验证不代表真实支付宝付款或生产部署已经完成。
+
+## 首次上线前对账
+
+警告：新后台任务会处理历史已关闭且尚未核销的购买记录。先核对人工补入，避免重复增加积分。
+
+首次上线前必须将已经人工补入的支付记录逐笔对账。保留购买编号、人工补入记录及付款凭证。不能直接再次交付积分，也不能按金额和时间自动推定所有人工补入的归属。具体生产记录保留在本次调查工件中。本次代码变更没有修改生产记录。
+
+应用进程启动后即开始对账。蓝绿候选实例也会运行后台任务。首次启动候选实例前必须完成上述对账，不能等到流量切换后才处理。

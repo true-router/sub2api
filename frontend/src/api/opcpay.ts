@@ -31,6 +31,7 @@ export const opcpayAPI = {
   info: () => apiClient.get<OPCPayInfo>('/payment/opcpay'),
   start: (kind: 'purchase' | 'consume', action_id: string, sku_id = '') =>
     apiClient.post<OPCPayOperation>('/payment/opcpay/operations', { kind, action_id, sku_id }, { timeout: 65000 }),
+  status: (id: string) => apiClient.get<OPCPayOperation>(`/payment/opcpay/operations/${encodeURIComponent(id)}`),
   close: (id: string) => apiClient.post(`/payment/opcpay/operations/${encodeURIComponent(id)}/close`),
   resume: (id: string) => apiClient.post<OPCPayOperation>(`/payment/opcpay/operations/${encodeURIComponent(id)}/resume`, {}, { timeout: 65000 })
 }

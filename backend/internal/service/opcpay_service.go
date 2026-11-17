@@ -373,6 +373,11 @@ func (s *OPCPayService) credit(ctx context.Context, o *OPCPayOperation) error {
 		if err != nil {
 			return errors.New("核销待交付，请恢复原操作")
 		}
+		_, err = tx.ExecContext(ctx, `UPDATE payment_orders p SET payment_trade_no=o.payment_trade_no
+            FROM opcpay_operations o WHERE o.business_id=$1 AND p.out_trade_no=o.business_id AND o.payment_trade_no<>''`, o.ID)
+		if err != nil {
+			return errors.New("支付流水待保存，请恢复原操作")
+		}
 		_, err = tx.ExecContext(ctx, `UPDATE opcpay_operations SET status='CLOSED',updated_at=CURRENT_TIMESTAMP WHERE user_id=$1 AND action_id=$2 AND kind='purchase'`, o.UserID, o.Action)
 		if err != nil {
 			return errors.New("核销待交付，请恢复原操作")

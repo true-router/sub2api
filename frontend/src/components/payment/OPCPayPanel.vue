@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import QRCode from 'qrcode'
 import BoardButton from '@/components/boardui/Button.vue'
 import BoardBadge from '@/components/boardui/Badge.vue'
@@ -22,6 +22,10 @@ const operation = ref<OPCPayOperation>()
 const link = ref('')
 const qrImage = ref('')
 const modalOpen = ref(false)
+const trackedPurchaseID = ref('')
+let statusTimer: ReturnType<typeof setInterval> | undefined
+let checkingStatus = false
+let disposed = false
 const isMobile = isMobileDevice()
 type Action = { id: string; sku: string; phase: 'purchase' | 'consume' }
 const action = ref<Action>()
@@ -30,7 +34,7 @@ const cards = computed(() => info.value?.product.charging_options || [])
 const selectedCard = computed(() => cards.value.find(card => card.sku_id === selectedSku.value))
 const available = computed(() => info.value?.enabled && info.value.product.capability_status === 'ENABLED' && info.value.capabilities.provider_configured)
 const unresolved = computed(() => !!action.value || !!info.value?.pending)
-const canConfirm = computed(() => operation.value?.kind === 'purchase' && operation.value.status === 'READY')
+const hasPurchaseEntry = computed(() => operation.value?.kind === 'purchase' && operation.value.status === 'READY')
 function saveAction(value: Action) { action.value = value; sessionStorage.setItem(storageKey(), JSON.stringify(value)) }
 function clearAction() { action.value = undefined; sessionStorage.removeItem(storageKey()) }
 function safeURL(value?: string) {
@@ -49,19 +53,20 @@ async function refresh() {
   } catch (e) { error.value = (e as { message?: string }).message || '无法读取充值卡，请重试。'; emit('availability', false) }
   finally { loading.value = false }
 }
-async function accept(value: OPCPayOperation) {
+async function accept(value: OPCPayOperation, showDialog = true) {
   operation.value = value
-  modalOpen.value = true
+  modalOpen.value = showDialog
+  trackedPurchaseID.value = value.business_id
   if (value.kind === 'purchase' && value.status === 'READY') {
     link.value = safeURL(value.result?.purchase_url)
     qrImage.value = link.value ? await QRCode.toDataURL(link.value, { width: 224, margin: 2 }) : ''
-    message.value = `付款完成后确认充值，到账 ${value.credit_usd} 积分。`
+    message.value = `付款成功后将自动到账 ${value.credit_usd} 积分。`
   } else if (value.status === 'COMPLETED') {
     message.value = `充值成功，已到账 ${value.credit_usd} 积分。`
-    clearAction(); link.value = ''; qrImage.value = ''
+    clearAction(); trackedPurchaseID.value = ''; link.value = ''; qrImage.value = ''
     await auth.refreshUser()
   } else if (value.status === 'FAILED' || value.status === 'CLOSED') {
-    message.value = value.kind === 'purchase' ? '本次充值已取消，可重新发起支付。' : '验证失败，请重试。'
+    message.value = value.kind === 'purchase' ? '已关闭支付窗口。付款成功后仍会自动到账。' : '验证失败，请重试。'
     clearAction(); link.value = ''; qrImage.value = ''
   } else message.value = '充值结果确认中，请稍后重试。'
   await refresh()
@@ -95,7 +100,7 @@ function closeModal() {
   modalOpen.value = false
 }
 async function onModalClosed() {
-  if (canConfirm.value && action.value?.phase === 'purchase') {
+  if (hasPurchaseEntry.value && action.value?.phase === 'purchase') {
     if (!await finishPurchase()) modalOpen.value = true
   }
 }
@@ -104,7 +109,7 @@ async function finishPurchase() {
   busy.value = true; error.value = ''
   try {
     if (operation.value?.kind === 'purchase') await opcpayAPI.close(operation.value.business_id)
-    clearAction(); operation.value = undefined; link.value = ''; qrImage.value = ''; message.value = ''
+    clearAction(); operation.value = undefined; link.value = ''; qrImage.value = ''; message.value = '已关闭支付窗口。付款成功后仍会自动到账。'
     await refresh()
     return true
   } catch (e) {
@@ -113,6 +118,17 @@ async function finishPurchase() {
   }
   finally { busy.value = false }
 }
+async function refreshStatus() {
+  const id = trackedPurchaseID.value
+  if (!id || busy.value || checkingStatus) return
+  checkingStatus = true
+  try {
+    const value = (await opcpayAPI.status(id)).data
+    if (!disposed && !busy.value && trackedPurchaseID.value === id && value.status === 'COMPLETED') await accept(value, modalOpen.value)
+  } catch { /* The server continues reconciliation even when this page is offline. */ }
+  finally { checkingStatus = false }
+}
+onUnmounted(() => { disposed = true; if (statusTimer) clearInterval(statusTimer) })
 onMounted(async () => {
   const saved = sessionStorage.getItem(storageKey())
   if (saved) {
@@ -125,6 +141,8 @@ onMounted(async () => {
   const recoveringConfirmation = action.value?.phase === 'consume'
   if (unresolved.value) await restore()
   if (recoveringConfirmation && action.value?.phase === 'purchase') await restore()
+  await refreshStatus()
+  if (!disposed) statusTimer = setInterval(refreshStatus, 3000)
 })
 </script>
 
@@ -144,6 +162,7 @@ onMounted(async () => {
         刷新充值选项
       </BoardButton>
     </div>
+    <p v-if="message && !modalOpen" role="status" class="text-body-regular text-text-secondary">{{ message }}</p>
     <p v-if="loading" role="status" class="text-body-regular text-text-secondary">正在加载充值选项…</p>
     <p v-if="error" role="alert" class="rounded-2xl bg-background-error-subtle px-4 py-3 text-body-regular text-text-error-primary">{{ error }}</p>
     <template v-if="info?.enabled">
@@ -187,26 +206,26 @@ onMounted(async () => {
   </section>
   <BaseDialog :show="modalOpen" title="支付宝充值" :description="selectedCard ? `支付 ${selectedCard.currency} ${selectedCard.price} · 到账 ${operation?.credit_usd ?? selectedCard.quota_amount} 积分` : undefined" width="narrow" @close="closeModal" @after-leave="onModalClosed">
     <div class="flex flex-col items-center gap-4 text-center" data-testid="opcpay-modal">
-      <template v-if="canConfirm">
+      <template v-if="hasPurchaseEntry">
         <template v-if="isMobile">
           <span class="flex h-16 w-16 items-center justify-center rounded-2xl bg-background-secondary-default"><img :src="alipayIcon" alt="" aria-hidden="true" class="h-10 w-10" /></span>
-          <p class="text-body-regular text-text-secondary">打开支付宝完成付款后，返回本页点击“我已支付，确认充值”。</p>
+          <p class="text-body-regular text-text-secondary">打开支付宝完成付款。付款成功后将自动到账，关闭页面不影响到账。</p>
           <a v-if="link" :href="link" target="_blank" rel="noopener noreferrer" class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-background-accent-default to-background-accent-hover text-body-semibold text-text-white shadow-sm"><img :src="alipayIcon" alt="" aria-hidden="true" class="h-5 w-5" />打开支付宝支付</a>
         </template>
         <template v-else>
           <div class="rounded-2xl border border-border-button-default bg-white p-2">
             <img v-if="qrImage" :src="qrImage" alt="支付宝购买入口二维码" width="224" height="224" class="h-56 w-56" />
           </div>
-          <p class="text-body-regular text-text-secondary">请使用支付宝扫码付款。付款后点击“我已支付，确认充值”。</p>
+          <p class="text-body-regular text-text-secondary">请使用支付宝扫码付款。付款成功后将自动到账，关闭页面不影响到账。</p>
         </template>
-        <p class="text-caption-1-regular text-text-tertiary">付款完成并确认后，到账 {{ operation?.credit_usd }} 积分。</p>
+        <p class="text-caption-1-regular text-text-tertiary">付款成功后，系统自动处理 {{ operation?.credit_usd }} 积分到账。</p>
       </template>
       <p v-else-if="message" role="status" class="text-body-regular text-text-secondary">{{ message }}</p>
       <p v-if="error" role="alert" class="w-full rounded-2xl bg-background-error-subtle px-4 py-3 text-body-regular text-text-error-primary">{{ error }}</p>
       <p v-if="operation" class="break-all text-caption-1-medium text-text-tertiary">充值编号：{{ operation.business_id }}</p>
     </div>
     <template #footer>
-      <BoardButton v-if="canConfirm" :loading="busy" :disabled="!modalOpen" @click="run('consume')">我已支付，确认充值</BoardButton>
+      <BoardButton v-if="hasPurchaseEntry" variant="secondary" :disabled="busy" @click="refreshStatus">刷新到账状态</BoardButton>
       <BoardButton v-else variant="secondary" @click="closeModal">关闭</BoardButton>
     </template>
   </BaseDialog>
