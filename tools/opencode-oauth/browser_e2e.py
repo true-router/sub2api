@@ -35,16 +35,17 @@ try {
  await page.waitForSelector('text="添加账号"',{state:'visible',timeout:20000});
  if(await page.evaluate(()=>[...document.querySelectorAll('button')].some(x=>x.textContent.trim()==='稍后领取')))await page.click('text="稍后领取"');
  await page.click('text="添加账号"');
- await page.click('[data-testid="platform-button-opencode_go"]');
  const name='OpenCode OAuth browser '+Date.now();
  await page.fill('input[placeholder="请输入账号名称"]',name);
+ await page.click('[data-testid="platform-button-opencode_go"]');
+ await page.waitForSelector('[data-testid="opencode-auth-method"] button',{state:'visible',timeout:15000});
  await page.click('[data-testid="opencode-auth-method"] button');
  await page.click('text="OAuth · OpenCode Go"');
  check('OAuth selection hides API-key inputs',await page.evaluate(()=>!document.querySelector('[role=dialog] input[placeholder="sk-..."]')));
  await page.click('text="无代理"');await page.click('text="OAuth fixture"');
  await page.click('[data-testid="opencode-oauth-start"]');
  await page.waitForSelector('[data-testid=opencode-oauth-form] a',{state:'visible',timeout:15000});
- check('Device flow displays official verification URL',await page.evaluate(()=>document.querySelector('[data-testid=opencode-oauth-form] a')?.href.startsWith('https://opencode.ai/console/auth/device')));
+ check('Device flow displays official verification URL',await page.evaluate(()=>document.querySelector('[data-testid=opencode-oauth-form] a')?.href.startsWith('https://opencode.ai/console/device')));
  await page.waitForSelector('[data-testid="opencode-oauth-ready"]',{state:'visible',timeout:15000});
  check('Device authorization completes in the real account form',true);
  await page.click('[role=dialog] button[type=submit]');
@@ -61,6 +62,10 @@ try {
  await page.fill('[data-testid="opencode-oauth-json"]','invalid json');await page.click('text="导入凭据"');
  await page.waitForSelector('[role=alert]',{state:'visible'});
  check('Invalid import JSON produces a visible validation error',await page.evaluate(()=>document.querySelector('[role=alert]')?.textContent.includes('JSON')));
+ await page.fill('[data-testid="opencode-oauth-json"]','{}');await page.click('text="导入凭据"');
+ await page.waitForFunction(()=>{const message=document.querySelector('[data-testid=opencode-oauth-form] [role=alert]')?.textContent;return message?.includes('授权失败')||message?.includes('Paste an OpenCode Console OAuth credential object')},undefined,{timeout:15000});
+ await page.waitForSelector('[role=alert]',{state:'visible'});
+ check('API rejection displays the server message from the shared client',await page.evaluate(()=>document.querySelector('[data-testid=opencode-oauth-form] [role=alert]')?.textContent.includes('Paste an OpenCode Console OAuth credential object')));
  const credential=ready.fixture_credential ?? {type:'oauth',access:'fixture-access-2',refresh:'fixture-refresh-2',expires:Date.now()+3600000,metadata:{server:'https://opencode.ai/console',orgID:'org-rotated'}};
  credential.metadata.orgName='Browser reauthorized fixture';
  await page.fill('[data-testid="opencode-oauth-json"]',JSON.stringify(credential));await page.click('text="导入凭据"');
@@ -73,7 +78,7 @@ try {
  check('OAuth accounts do not display legacy quota probe failures',await page.evaluate(()=>!document.body.textContent.includes('account is not a kimi/zhipu/minimax')));
  console.log(JSON.stringify({taskSpaceID:task.spaceId,passed:true}));
 } finally {
- await fs.writeFile(config.output,JSON.stringify({taskSpaceID:task.spaceId,checks,passed:checks.length===9&&checks.every(x=>x.passed)},null,2)+'\n');
+ await fs.writeFile(config.output,JSON.stringify({taskSpaceID:task.spaceId,checks,passed:checks.length===10&&checks.every(x=>x.passed)},null,2)+'\n');
 }
 '''.replace('__CONFIG__',json.dumps(config))
 raise SystemExit(subprocess.run(['ego-browser','nodejs','-e',source]).returncode)

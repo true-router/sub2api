@@ -125,9 +125,15 @@ func (s *OpenCodeOAuthService) Authorize(ctx context.Context, proxyID *int64) (*
 		return nil, err
 	}
 	verification, err := url.Parse(device.VerificationURI)
-	if err != nil || verification.Scheme != "https" || verification.Host != "opencode.ai" || device.DeviceCode == "" || device.UserCode == "" || device.ExpiresIn <= 0 {
+	if err == nil {
+		// Console returns relative URLs; resolve them as the official CLI does.
+		base, _ := url.Parse(openCodeConsoleURL + "/")
+		verification = base.ResolveReference(verification)
+	}
+	if err != nil || strings.TrimSpace(device.VerificationURI) == "" || verification.Scheme != "https" || verification.Host != "opencode.ai" || verification.User != nil || device.DeviceCode == "" || device.UserCode == "" || device.ExpiresIn <= 0 {
 		return nil, fmt.Errorf("OpenCode returned invalid device authorization")
 	}
+	device.VerificationURI = verification.String()
 	if device.Interval < 1 {
 		device.Interval = 5
 	}
