@@ -50,7 +50,7 @@ class Fixture(http.server.BaseHTTPRequestHandler):
         body = json.loads(self.rfile.read(int(self.headers.get('Content-Length', 0))) or '{}')
         if self.path == '/console/auth/device/code':
             check('Device authorization uses official client and org scope', body == {'client_id': 'opencode-cli', 'supports_org_scope': True})
-            return self.answer({'device_code': 'fixture-device', 'user_code': 'TEST-CODE', 'verification_uri_complete': 'https://opencode.ai/console/auth/device?code=TEST-CODE', 'expires_in': 600, 'interval': 1})
+            return self.answer({'device_code': 'fixture-device', 'user_code': 'TEST-CODE', 'verification_uri_complete': state.get('verification_uri', '/console/device?user_code=TEST-CODE'), 'expires_in': 600, 'interval': 1})
         if self.path == '/console/auth/device/token':
             if body.get('grant_type') == 'refresh_token':
                 with lock:
@@ -162,7 +162,29 @@ try:
     proxy=api('POST','/api/v1/admin/proxies',{'name':'OAuth fixture','protocol':'http','host':'127.0.0.1','port':proxy_port},jwt)
     proxy_id=proxy['id']
     device=api('POST','/api/v1/admin/opencode/oauth/device',{'proxy_id':proxy_id},jwt)
-    check('Device authorization returns verification URL and user code',device['user_code']=='TEST-CODE')
+    check('Device authorization returns verification URL and user code',device['user_code']=='TEST-CODE' and device['verification_uri_complete']=='https://opencode.ai/console/device?user_code=TEST-CODE')
+    for label, value, resolved in [
+        ('path-relative', 'device?user_code=TEST-CODE', 'https://opencode.ai/console/device?user_code=TEST-CODE'),
+        ('absolute official', 'https://opencode.ai/console/device?user_code=TEST-CODE', 'https://opencode.ai/console/device?user_code=TEST-CODE'),
+        ('scheme-relative official', '//opencode.ai/console/device?user_code=TEST-CODE', 'https://opencode.ai/console/device?user_code=TEST-CODE'),
+    ]:
+        state['verification_uri'] = value
+        response = api('POST','/api/v1/admin/opencode/oauth/device',{'proxy_id':proxy_id},jwt)
+        check('Device authorization resolves '+label+' URL and preserves its query', response['verification_uri_complete'] == resolved)
+    for label, value in [
+        ('external host', 'https://attacker.invalid/device'),
+        ('scheme-relative external host', '//attacker.invalid/device'),
+        ('HTTP', 'http://opencode.ai/console/device'),
+        ('script scheme', 'javascript:alert(1)'),
+        ('userinfo', 'https://user@opencode.ai/console/device'),
+        ('unexpected port', 'https://opencode.ai:444/console/device'),
+        ('malformed URL', 'https://[invalid'),
+        ('empty URL', ''),
+    ]:
+        state['verification_uri'] = value
+        api('POST','/api/v1/admin/opencode/oauth/device',{'proxy_id':proxy_id},jwt,expected=500)
+        check('Device authorization rejects '+label, True)
+    state.pop('verification_uri', None)
     for expected_status in ['authorization_pending','slow_down','authorized']:
         result=api('POST','/api/v1/admin/opencode/oauth/poll',{'device_code':device['device_code'],'proxy_id':proxy_id},jwt)
         check('Device poll handles '+expected_status,result['status']==expected_status)

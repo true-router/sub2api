@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import BoardButton from '@/components/boardui/Button.vue'
 import BoardInput from '@/components/boardui/Input.vue'
 import Select from '@/components/common/Select.vue'
+import { extractApiErrorMessage } from '@/utils/apiError'
 import { authorizeOpenCode, pollOpenCode, importOpenCode, type OpenCodeDevice, type OpenCodeOAuthCredentials } from '@/api/admin/opencode'
 
 const props = defineProps<{ proxyId: number | null }>()
@@ -36,7 +37,7 @@ function reset() {
   emit('credentials', null)
 }
 function fail(cause: unknown) {
-  error.value = (cause as { response?: { data?: { message?: string } } })?.response?.data?.message || t(key + 'failed')
+  error.value = extractApiErrorMessage(cause, t(key + 'failed'))
   busy.value = false
 }
 function accept(credentials: OpenCodeOAuthCredentials) {
