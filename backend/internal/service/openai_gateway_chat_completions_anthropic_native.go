@@ -99,9 +99,9 @@ func (s *OpenAIGatewayService) forwardChatCompletionsViaNativeAnthropic(
 	anthropicBody = FilterWebSearchHistoryBlocks(anthropicBody, upstreamModel)
 	anthropicBody = enforceCacheControlLimit(anthropicBody)
 
-	apiKey := strings.TrimSpace(account.GetOpenAIProtocolAPIKey())
-	if apiKey == "" {
-		return nil, fmt.Errorf("account %d missing api_key", account.ID)
+	apiKey, _, err := s.GetAccessToken(ctx, account)
+	if err != nil {
+		return nil, err
 	}
 	targetURL, err := s.nativeAnthropicTargetURL(account)
 	if err != nil {

@@ -238,6 +238,9 @@ func (a *Account) providerProfile() *ProviderProfile {
 // defaultProviderBaseURL 按账号 account_mode 返回多协议供应商指定协议的官方默认基址；
 // 非多协议供应商或协议未知时为空串。
 func (a *Account) defaultProviderBaseURL(protocol string) string {
+	if a.IsOpenCodeOAuth() {
+		return a.openCodeOAuthBaseURL(protocol)
+	}
 	profile := a.providerProfile()
 	if profile == nil {
 		return ""

@@ -20,6 +20,14 @@ import (
 
 // Forward forwards request to OpenAI API
 func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, account *Account, body []byte) (forwarded *OpenAIForwardResult, forwardErr error) {
+	if account.IsOpenCodeOAuth() {
+		fresh, err := s.openCodeOAuth.Resolve(ctx, account, false)
+		if err != nil {
+			return nil, err
+		}
+		account = fresh
+	}
+
 	defer func() { finishOpenAIStreamUsage(ctx, c, forwarded, forwardErr) }()
 	beginUpstreamResponseModelObservation(c)
 	ClearActualOpenAIUpstreamEndpoint(c)
@@ -183,7 +191,7 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 	// 上游协议统一由 resolveUpstreamProtocol 判定（按模型分流时带上游模型目录）。OpenAI API Key 账号只会落到
 	// Responses / Chat Completions，上面的归一化对两条路径都生效。
 	routingModel := upstreamRoutingModel(account, body, "")
-	if account.IsOpenCodeGo() && IsOpenCodeUnsupportedModel(routingModel) {
+	if account.isUnsupportedOpenCodeModel(routingModel) {
 		return nil, writeOpenCodeUnsupportedModelError(c, false, routingModel)
 	}
 	switch s.resolveUpstreamProtocolFor(ctx, account, APIProtocolResponses, routingModel) {
@@ -1393,7 +1401,7 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 }
 
 func shouldForwardOpenAIResponsesViaRawChatCompletions(account *Account) bool {
-	if account == nil || account.Type != AccountTypeAPIKey {
+	if account == nil || (account.Type != AccountTypeAPIKey && !account.IsOpenCodeOAuth()) {
 		return false
 	}
 	if account.routesByModel() {
@@ -1422,8 +1430,12 @@ func (s *OpenAIGatewayService) buildUpstreamRequest(ctx context.Context, c *gin.
 	var targetURL string
 	switch account.Type {
 	case AccountTypeOAuth:
-		// OAuth accounts use ChatGPT internal API
-		targetURL = chatgptCodexURL
+		// OpenCode Console OAuth uses the Go gateway, not the Codex backend.
+		if account.IsOpenCodeOAuth() {
+			targetURL = buildOpenAIResponsesURLForPlatform(account.Platform, account.openCodeOAuthBaseURL(APIProtocolResponses))
+		} else {
+			targetURL = chatgptCodexURL
+		}
 	case AccountTypeSetupToken:
 		if account.IsOpenAIOAuthLike() {
 			targetURL = chatgptCodexURL

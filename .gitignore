@@ -180,3 +180,6 @@ issues/
 
 # The fork release policy must be version controlled.
 !/AGENTS.md
+
+# OpenCode Go OAuth integration documentation
+!docs/OPENCODE_GO_OAUTH.md

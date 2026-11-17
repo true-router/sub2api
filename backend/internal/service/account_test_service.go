@@ -368,6 +368,16 @@ func (s *AccountTestService) TestAccountConnection(c *gin.Context, accountID int
 	if err != nil {
 		return s.sendErrorAndEnd(c, "Account not found")
 	}
+	if account.IsOpenCodeOAuth() {
+		if s.openaiGatewayService == nil {
+			return fmt.Errorf("OpenCode OAuth is unavailable")
+		}
+		fresh, err := s.openaiGatewayService.openCodeOAuth.Resolve(c.Request.Context(), account, false)
+		if err != nil {
+			return err
+		}
+		account = fresh
+	}
 	bindAccountTestPlatform(c, account)
 
 	// Synthetic UI load-test accounts exercise the real SSE parsing and modal
@@ -444,7 +454,7 @@ func (s *AccountTestService) testModelRoutedAccountConnection(c *gin.Context, ac
 		testModelID = openai.DefaultTestModel
 	}
 	testModelID = account.GetMappedModel(testModelID)
-	if account.IsOpenCodeGo() && IsOpenCodeUnsupportedModel(testModelID) {
+	if account.isUnsupportedOpenCodeModel(testModelID) {
 		return fmt.Errorf("model %q is not supported on OpenCode standard gateway (gemini models require Google SDK endpoint, jev models require System One endpoint)", testModelID)
 	}
 	// 与网关同一判定（含上游模型目录）；测试没有入站协议，取模型的首选协议。

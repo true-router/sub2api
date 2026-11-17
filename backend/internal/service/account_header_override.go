@@ -174,6 +174,7 @@ func (a *Account) HeaderOverrideValue(lowerName string) (string, bool) {
 // 可能存在非 canonical key），再按已知 wire casing 写入，避免产生重复头。
 // 账号未启用或不符合条件时为 no-op，可安全地在 OAuth/api_key 共用的构建器中调用。
 func (a *Account) ApplyHeaderOverrides(h http.Header) {
+	defer applyOpenCodeOAuthHeaders(a, h)
 	if h == nil {
 		return
 	}

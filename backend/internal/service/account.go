@@ -359,7 +359,7 @@ func (a *Account) IsGeminiThirdPartyAPIKey() bool {
 }
 
 func (a *Account) CanGetUsage() bool {
-	return a.Type == AccountTypeOAuth
+	return a.Type == AccountTypeOAuth && !a.IsOpenCodeOAuth()
 }
 
 func (a *Account) GetCredential(key string) string {
@@ -1507,6 +1507,9 @@ func (a *Account) IsOpenAIApiKey() bool {
 // 适用 openai、国产 OpenAI 兼容供应商（kimi/zhipu/deepseek）与 OpenCode Go；
 // grok 走 GetGrokBaseURL，此处对 grok 返回 "" 以保持原有行为。
 func (a *Account) GetOpenAIBaseURL() string {
+	if a.IsOpenCodeOAuth() {
+		return a.openCodeOAuthBaseURL(APIProtocolChatCompletions)
+	}
 	if !a.IsOpenAI() && !a.IsMultiProtocolAPIKey() {
 		return ""
 	}
@@ -1604,6 +1607,9 @@ func (a *Account) IsAdaptiveAPIProtocol() bool {
 // adaptive 账号优先使用 api_base_urls 中的分协议地址，缺失时按平台和
 // account_mode 使用官方默认端点。base_url 继续作为 Chat Completions 地址兼容旧字段。
 func (a *Account) GetCNProtocolBaseURL(protocol string) string {
+	if a.IsOpenCodeOAuth() {
+		return a.openCodeOAuthBaseURL(protocol)
+	}
 	if a == nil || !a.IsMultiProtocolAPIKey() {
 		return ""
 	}
@@ -1664,6 +1670,9 @@ func (a *Account) GetOpenAIFormatBaseURL() string {
 // GetCNAPIKey 返回国产 OpenAI 兼容供应商账号的 api_key 凭据（kimi/zhipu/deepseek）。
 // 与 openai 的 GetOpenAIApiKey 区分：后者仅对 openai 平台返回。
 func (a *Account) GetCNAPIKey() string {
+	if a.IsOpenCodeOAuth() {
+		return a.GetCredential("access_token")
+	}
 	if a == nil || !a.IsMultiProtocolAPIKey() {
 		return ""
 	}
@@ -1675,6 +1684,9 @@ func (a *Account) GetCNAPIKey() string {
 // 用于路由到对应的额度查询端点。非 coding 模式或无法识别时返回空串。
 // 只认官方域名：自定义中转不得把第三方 Key 发往厂商官方额度端点。
 func (a *Account) GetCodingPlanProvider() string {
+	if a.IsOpenCodeOAuth() {
+		return ""
+	}
 	if a == nil {
 		return ""
 	}
@@ -1845,6 +1857,9 @@ func (a *Account) GetOpenAIApiKey() string {
 // 注意 IsOpenAIApiKey 语义上仅指 openai 平台账号，调度倍率/WS 能力门控
 // 继续以其为准，不受本方法影响。
 func (a *Account) GetOpenAIProtocolAPIKey() string {
+	if a.IsOpenCodeOAuth() {
+		return a.GetCredential("access_token")
+	}
 	if a == nil {
 		return ""
 	}

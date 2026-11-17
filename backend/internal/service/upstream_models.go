@@ -1162,7 +1162,7 @@ func (s *AccountTestService) buildAnthropicUpstreamModelsRequest(ctx context.Con
 }
 
 func (s *AccountTestService) buildAntigravityAPIKeyModelsRequest(ctx context.Context, account *Account) (*http.Request, error) {
-	if account.Type != AccountTypeAPIKey {
+	if account.Type != AccountTypeAPIKey && !account.IsOpenCodeOAuth() {
 		return nil, newUpstreamModelSyncUnsupportedError(
 			fmt.Sprintf("Unsupported Antigravity account type for upstream model sync: %s", account.Type), nil,
 		)
@@ -1202,6 +1202,16 @@ func (s *AccountTestService) buildAntigravityAPIKeyModelsRequest(ctx context.Con
 }
 
 func (s *AccountTestService) buildOpenAIUpstreamModelsRequest(ctx context.Context, account *Account) (*http.Request, error) {
+	if account.IsOpenCodeOAuth() {
+		if s.openaiGatewayService == nil {
+			return nil, fmt.Errorf("OpenCode OAuth is unavailable")
+		}
+		fresh, err := s.openaiGatewayService.openCodeOAuth.Resolve(ctx, account, false)
+		if err != nil {
+			return nil, err
+		}
+		account = fresh
+	}
 	if account.IsOpenAIOAuth() {
 		return s.buildOpenAIOAuthUpstreamModelsRequest(ctx, account)
 	}

@@ -33,6 +33,14 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 	promptCacheKey string,
 	defaultMappedModel string,
 ) (forwarded *OpenAIForwardResult, forwardErr error) {
+	if account.IsOpenCodeOAuth() {
+		fresh, err := s.openCodeOAuth.Resolve(ctx, account, false)
+		if err != nil {
+			return nil, err
+		}
+		account = fresh
+	}
+
 	defer func() { finishOpenAIStreamUsage(ctx, c, forwarded, forwardErr) }()
 	// 工具 Schema 清洗必须先于所有分流：下游每条路径（原生 Anthropic 直通、
 	// Chat Completions 转换、Responses 转换）都会把 tools 原样带给上游，而
@@ -68,7 +76,7 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 	// ShouldUseResponsesAPI：Anthropic 协议账号经 probe 落标
 	// openai_responses_supported=false，否则会命中 CC 直转。
 	routingModel := upstreamRoutingModel(account, body, defaultMappedModel)
-	if account.IsOpenCodeGo() && IsOpenCodeUnsupportedModel(routingModel) {
+	if account.isUnsupportedOpenCodeModel(routingModel) {
 		return nil, writeOpenCodeUnsupportedModelError(c, true, routingModel)
 	}
 	switch s.resolveUpstreamProtocolFor(ctx, account, APIProtocolAnthropic, routingModel) {

@@ -57,7 +57,7 @@ func openCodeInboundBodies(c *gin.Context) [][]byte {
 // probes and clients that omit every stable identifier — a new UUID each turn
 // would miss upstream prompt cache.
 func applyOpenCodeSessionHeader(c *gin.Context, account *Account, targetURL string, headers http.Header, bodies ...[]byte) {
-	if account == nil || account.Type != AccountTypeAPIKey || headers == nil {
+	if account == nil || (account.Type != AccountTypeAPIKey && !account.IsOpenCodeOAuth()) || headers == nil {
 		return
 	}
 	if !shouldSendOpenCodeSessionHeader(account, targetURL) {

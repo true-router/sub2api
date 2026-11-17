@@ -49,6 +49,7 @@ func NewOAuthHandler(oauthService *service.OAuthService) *OAuthHandler {
 
 // AccountHandler handles admin account management
 type AccountHandler struct {
+	openCodeOAuth           *service.OpenCodeOAuthService
 	claudeResetCredits      claudeResetReader
 	adminService            service.AdminService
 	oauthService            *service.OAuthService
@@ -1417,6 +1418,16 @@ func (h *AccountHandler) refreshSingleAccount(ctx context.Context, account *serv
 			"cannot refresh spark shadow account; its credentials are managed by the parent account")
 	}
 
+	if account.IsOpenCodeOAuth() {
+		updated, err := h.openCodeOAuth.Resolve(ctx, account, true)
+		if err != nil {
+			return nil, "", err
+		}
+		if _, err := h.adminService.ClearAccountError(ctx, account.ID); err != nil {
+			return nil, "", err
+		}
+		return updated, "", nil
+	}
 	var newCredentials map[string]any
 
 	if account.IsOpenAI() {
