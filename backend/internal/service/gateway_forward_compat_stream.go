@@ -20,15 +20,14 @@ import (
 	"go.uber.org/zap"
 )
 
-// anthropicCompatDisconnectDrainInterval 是 gateway.stream_data_interval_timeout
-// 未启用时，客户端断开后继续读取上游的读间隔上限，与该配置项的默认值一致。
+// 旧测试的兼容标识；生产断开时限由 HTTP 传输层独立管理。
 var anthropicCompatDisconnectDrainInterval = 180 * time.Second
 
 // anthropicCompatStream 是 Anthropic 上游经 chat/responses 兼容入口流式转发时的
-// 上游读取状态。上游请求 ctx 与客户端解绑，客户端断开后调用方停止向下游写入、
-// 继续读取上游以合并最终 usage。逐行读间隔受 gateway.stream_data_interval_timeout
-// 限制；该配置未启用时，客户端断开后以 anthropicCompatDisconnectDrainInterval 限制。
+// 上游读取状态。客户端断开后停止向下游写入，传输层按独立断开时限取消读取。
+// 逐行读间隔只受 gateway.stream_data_interval_timeout 限制。
 type anthropicCompatStream struct {
+	observer    *upstreamResponseModelObserver
 	pump        *anthropicNativeLinePump
 	body        io.Closer
 	maxLineSize int
@@ -66,7 +65,12 @@ func newAnthropicCompatStream(cfg *config.Config, c *gin.Context, resp *http.Res
 	}
 	scanner.Buffer(make([]byte, 0, 64*1024), maxLineSize)
 	scanner.Split(newBoundedSSESplit(cfg, maxLineSize, nil))
+	observer := upstreamResponseModelObserverFromContext(c)
+	if observer == nil {
+		observer = beginUpstreamResponseModelObservation(c)
+	}
 	stream := &anthropicCompatStream{
+		observer:    observer,
 		pump:        newAnthropicNativeLinePump(scanner, anthropicNativeStreamInterval(cfg), cfg),
 		body:        resp.Body,
 		maxLineSize: maxLineSize,
@@ -83,16 +87,14 @@ func (st *anthropicCompatStream) stop() {
 	st.pump.stop()
 }
 
-// markClientDisconnected 标记客户端已断开，此后调用方不再向下游写入；读间隔上限
-// 未启用时以 anthropicCompatDisconnectDrainInterval 启用。
+// markClientDisconnected 标记客户端已断开，此后调用方不再向下游写入。
 func (st *anthropicCompatStream) markClientDisconnected() {
 	if st.clientDisconnected {
 		return
 	}
 	st.clientDisconnected = true
 	st.clientGone = nil
-	st.pump.enableInterval(anthropicCompatDisconnectDrainInterval)
-	logger.L().Info(st.logPrefix+" stream: client disconnected, continuing to drain upstream for billing",
+	logger.L().Info(st.logPrefix+" stream: client disconnected; transport applies the configured cancellation deadline",
 		zap.String("request_id", st.requestID),
 	)
 }
@@ -145,6 +147,7 @@ func (st *anthropicCompatStream) nextLine() (string, bool) {
 // observe 记录决定收尾方式的上游事件。收到上游 error 事件时关闭上游 body，
 // 调用方不再处理该事件并结束读取。
 func (st *anthropicCompatStream) observe(event *apicompat.AnthropicStreamEvent, payload string) {
+	st.observer.ObserveAnthropic([]byte(payload))
 	switch event.Type {
 	case "message_start":
 		st.sawMessageStart = true

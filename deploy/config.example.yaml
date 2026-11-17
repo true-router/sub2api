@@ -526,6 +526,9 @@ gateway:
   # Stream data interval timeout (seconds), 0=disable
   # 流数据间隔超时（秒），0=禁用
   stream_data_interval_timeout: 180
+  # 普通文本流式请求：客户端断开后继续读取的总秒数；0=立即取消，合法范围 0-300。
+  # 独立于数据间隔超时。正数模式会继续消耗上游资源并延迟会话释放。
+  client_disconnect_drain_timeout: 0
   # Stream keepalive interval (seconds), 0=disable
   # 流式 keepalive 间隔（秒），0=禁用
   stream_keepalive_interval: 10

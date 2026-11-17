@@ -60,7 +60,8 @@ func (s *OpenAIGatewayService) ForwardAsChatCompletions(
 	body []byte,
 	promptCacheKey string,
 	defaultMappedModel string,
-) (*OpenAIForwardResult, error) {
+) (forwarded *OpenAIForwardResult, forwardErr error) {
+	defer func() { finishOpenAIStreamUsage(ctx, c, forwarded, forwardErr) }()
 	return s.forwardAsChatCompletions(ctx, c, account, body, promptCacheKey, defaultMappedModel, false)
 }
 
@@ -335,7 +336,7 @@ func (s *OpenAIGatewayService) forwardAsChatCompletions(
 	}
 
 	// 6. Build upstream request
-	upstreamCtx, releaseUpstreamCtx := detachUpstreamContext(ctx)
+	upstreamCtx, releaseUpstreamCtx := detachTextUpstreamContext(ctx, clientStream, s.cfg)
 	cancelUpstream := func() {}
 	if clientStream {
 		upstreamCtx, cancelUpstream = context.WithCancel(upstreamCtx)
@@ -373,6 +374,9 @@ func (s *OpenAIGatewayService) forwardAsChatCompletions(
 	// 8. Handle error response with failover
 	if resp.StatusCode >= 400 {
 		respBody, upstreamMsg, completeErrorBody := s.readOpenAIUpstreamErrorWithCompleteness(resp)
+		if err, handled := writeNonRetryableUpstreamConflict(c, resp.StatusCode, respBody); handled {
+			return nil, err
+		}
 		if !agentIdentityTaskRecoveryWasTried(ctx) && s.isAgentIdentityAccount(ctx, account) && isAgentIdentityTaskInvalidHTTPResponse(resp.StatusCode, respBody) {
 			expectedTaskID := account.GetCredential("task_id")
 			if err := s.recoverAgentIdentityTask(ctx, account, expectedTaskID); err != nil {
@@ -889,6 +893,8 @@ func (s *OpenAIGatewayService) handleChatStreamingResponse(
 			UpstreamResponseModel:         observedUpstreamResponseModel(c),
 			UpstreamResponseModelConflict: observedUpstreamResponseModelConflict(c),
 			UpstreamResponseServiceTier:   observedUpstreamResponseServiceTier(c),
+			UsageIncomplete:               boolPointer((terminalEventType != "response.completed" && terminalEventType != "response.done") || !observer.UsageComplete()),
+			ClientDisconnect:              clientDisconnected || c.Request.Context().Err() != nil,
 			Stream:                        true,
 			Duration:                      time.Since(startTime),
 			FirstTokenMs:                  firstTokenMs,

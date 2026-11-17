@@ -123,7 +123,7 @@ func (s *GatewayService) ForwardAsChatCompletions(
 	}
 
 	// 10. Build upstream request
-	upstreamCtx, releaseUpstreamCtx := detachStreamUpstreamContext(ctx, reqStream)
+	upstreamCtx, releaseUpstreamCtx := detachStreamUpstreamContext(ctx, reqStream, s.cfg)
 	upstreamReq, forwardedBody, err := s.buildUpstreamRequest(upstreamCtx, c, account, anthropicBody, token, tokenType, mappedModel, reqStream, shouldMimicClaudeCode)
 	releaseUpstreamCtx()
 	if err != nil {
@@ -149,6 +149,9 @@ func (s *GatewayService) ForwardAsChatCompletions(
 	// 12. Handle error response with failover
 	if resp.StatusCode >= 400 {
 		respBody, _ := s.readUpstreamErrorBody(resp)
+		if err, handled := writeNonRetryableUpstreamConflict(c, resp.StatusCode, respBody); handled {
+			return nil, err
+		}
 		_ = resp.Body.Close()
 		resp.Body = io.NopCloser(bytes.NewReader(respBody))
 
@@ -425,6 +428,7 @@ func (s *GatewayService) handleCCStreamingFromAnthropic(
 			Duration:         time.Since(startTime),
 			FirstTokenMs:     firstTokenMs,
 			ClientDisconnect: stream.clientDisconnected,
+			UsageIncomplete:  boolPointer(!stream.sawTerminal || !observedUpstreamUsageComplete(c)),
 		}
 	}
 

@@ -1161,6 +1161,8 @@ type GatewayConfig struct {
 
 	// StreamDataIntervalTimeout: 流数据间隔超时（秒），0表示禁用
 	StreamDataIntervalTimeout int `mapstructure:"stream_data_interval_timeout"`
+	// 客户端断开后的继续读取总时限；0 表示立即取消普通文本流式请求。
+	ClientDisconnectDrainTimeout int `mapstructure:"client_disconnect_drain_timeout"`
 	// StreamKeepaliveInterval: 流式 keepalive 间隔（秒），0表示禁用
 	StreamKeepaliveInterval int `mapstructure:"stream_keepalive_interval"`
 	// ImageStreamDataIntervalTimeout: 图片流数据间隔超时（秒），0表示禁用
@@ -1944,6 +1946,16 @@ func load(allowMissingJWTSecret bool) (*Config, error) {
 	trustedProxiesConfigured := viper.InConfig("server.trusted_proxies") ||
 		viper.IsSet("server.trusted_proxies") || trustedProxiesEnvConfigured
 
+	// 在弱类型解码前拒绝小数，避免被静默截断为秒数。
+	if raw := viper.Get("gateway.client_disconnect_drain_timeout"); raw != nil {
+		switch raw.(type) {
+		case float32, float64:
+			return nil, fmt.Errorf("gateway.client_disconnect_drain_timeout must be an integer between 0-300 seconds")
+		}
+		if _, err := strconv.Atoi(fmt.Sprint(raw)); err != nil {
+			return nil, fmt.Errorf("gateway.client_disconnect_drain_timeout must be an integer between 0-300 seconds")
+		}
+	}
 	var cfg Config
 	if err := viper.Unmarshal(&cfg); err != nil {
 		return nil, fmt.Errorf("unmarshal config error: %w", err)
@@ -2645,6 +2657,7 @@ func setDefaults() {
 	viper.SetDefault("gateway.client_idle_ttl_seconds", 900)
 	viper.SetDefault("gateway.concurrency_slot_ttl_minutes", 30) // 并发槽位过期时间（支持超长请求）
 	viper.SetDefault("gateway.stream_data_interval_timeout", 180)
+	viper.SetDefault("gateway.client_disconnect_drain_timeout", 0)
 	viper.SetDefault("gateway.stream_keepalive_interval", 10)
 	viper.SetDefault("gateway.image_stream_data_interval_timeout", 900)
 	viper.SetDefault("gateway.image_stream_keepalive_interval", 10)
@@ -3549,6 +3562,9 @@ func (c *Config) Validate() error {
 	}
 	if c.Gateway.ConcurrencySlotTTLMinutes <= 0 {
 		return fmt.Errorf("gateway.concurrency_slot_ttl_minutes must be positive")
+	}
+	if c.Gateway.ClientDisconnectDrainTimeout < 0 || c.Gateway.ClientDisconnectDrainTimeout > 300 {
+		return fmt.Errorf("gateway.client_disconnect_drain_timeout must be between 0-300 seconds")
 	}
 	if c.Gateway.StreamDataIntervalTimeout < 0 {
 		return fmt.Errorf("gateway.stream_data_interval_timeout must be non-negative")

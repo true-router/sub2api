@@ -27,6 +27,7 @@ import (
 
 // openaiStreamingResult streaming response result
 type openaiStreamingResult struct {
+	usageIncomplete  bool
 	usage            *OpenAIUsage
 	firstTokenMs     *int
 	responseID       string
@@ -353,6 +354,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 	streamSearchSeen := make(map[string]struct{})
 	resultWithUsage := func() *openaiStreamingResult {
 		return &openaiStreamingResult{
+			usageIncomplete:  !(sawTerminalEvent && !sawFailedEvent && observer.UsageComplete()),
 			usage:            usage,
 			firstTokenMs:     firstTokenMs,
 			responseID:       responseID,

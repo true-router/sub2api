@@ -32,7 +32,8 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 	body []byte,
 	promptCacheKey string,
 	defaultMappedModel string,
-) (*OpenAIForwardResult, error) {
+) (forwarded *OpenAIForwardResult, forwardErr error) {
+	defer func() { finishOpenAIStreamUsage(ctx, c, forwarded, forwardErr) }()
 	// 工具 Schema 清洗必须先于所有分流：下游每条路径（原生 Anthropic 直通、
 	// Chat Completions 转换、Responses 转换）都会把 tools 原样带给上游，而
 	// xAI / Moonshot 等严格校验方会因 input_schema 里的 required:null 或
@@ -368,7 +369,7 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 		// 既有 body/session/conversation 行为。身份头在 post-build 阶段统一恢复。
 		setOpenAICompatMessagesBridgeContext(c, true)
 	}
-	upstreamCtx, releaseUpstreamCtx := detachUpstreamContext(ctx)
+	upstreamCtx, releaseUpstreamCtx := detachTextUpstreamContext(ctx, clientStream, s.cfg)
 	var upstreamReq *http.Request
 	if account.Platform == PlatformGrok {
 		upstreamReq, err = buildGrokResponsesRequest(upstreamCtx, c, account, responsesBody, token, grokCacheIdentity, s.cfg, s.settingService)
@@ -422,7 +423,7 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 			if account.Platform != PlatformGrok {
 				break
 			}
-			upstreamCtxRetry, releaseRetry := detachUpstreamContext(ctx)
+			upstreamCtxRetry, releaseRetry := detachTextUpstreamContext(ctx, clientStream, s.cfg)
 			upstreamReq, err = buildGrokResponsesRequest(upstreamCtxRetry, c, account, responsesBody, token, grokCacheIdentity, s.cfg, s.settingService)
 			releaseRetry()
 			if err != nil {
@@ -469,6 +470,9 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 	// 8. Handle error response with failover
 	if resp.StatusCode >= 400 {
 		respBody, upstreamMsg := s.readOpenAIUpstreamError(resp)
+		if err, handled := writeNonRetryableUpstreamConflict(c, resp.StatusCode, respBody); handled {
+			return nil, err
+		}
 		if !agentIdentityTaskRecoveryWasTried(ctx) && s.isAgentIdentityAccount(ctx, account) && isAgentIdentityTaskInvalidHTTPResponse(resp.StatusCode, respBody) {
 			expectedTaskID := account.GetCredential("task_id")
 			if err := s.recoverAgentIdentityTask(ctx, account, expectedTaskID); err != nil {

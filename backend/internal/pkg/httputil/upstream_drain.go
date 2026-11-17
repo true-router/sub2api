@@ -4,14 +4,17 @@ import (
 	"context"
 	"sync"
 	"time"
+
+	"github.com/Wei-Shaw/sub2api/internal/pkg/observability"
 )
 
 const DefaultUpstreamDrainTimeout = 180 * time.Second
 
 type upstreamDrainKey struct{}
 type upstreamDrainPolicy struct {
-	client  context.Context
-	timeout time.Duration
+	client   context.Context
+	timeout  time.Duration
+	explicit bool
 }
 
 // DetachUpstreamContext keeps billing reads alive after the client leaves. It
@@ -32,6 +35,18 @@ func DetachUpstreamContext(ctx context.Context, timeout ...time.Duration) contex
 	return context.WithValue(context.WithoutCancel(ctx), upstreamDrainKey{}, policy)
 }
 
+// ClientDisconnectContext 为普通文本请求设置明确的断开时限，0 不回退到旧默认值。
+func ClientDisconnectContext(ctx context.Context, timeout time.Duration) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	policy := upstreamDrainPolicy{client: ctx, timeout: timeout, explicit: true}
+	if timeout > 0 {
+		ctx = context.WithoutCancel(ctx)
+	}
+	return context.WithValue(ctx, upstreamDrainKey{}, policy)
+}
+
 // NewUpstreamAttemptContext starts a total drain budget when the original client
 // context is cancelled. Incoming bytes do not extend this budget. Until then the
 // request may stream for arbitrarily long, and late usage remains readable
@@ -43,10 +58,10 @@ func NewUpstreamAttemptContext(parent context.Context, defaultTimeout time.Durat
 		return ctx, cancel
 	}
 	timeout := policy.timeout
-	if timeout <= 0 {
+	if !policy.explicit && timeout <= 0 {
 		timeout = defaultTimeout
 	}
-	if timeout <= 0 {
+	if !policy.explicit && timeout <= 0 {
 		timeout = DefaultUpstreamDrainTimeout
 	}
 	var mu sync.Mutex
@@ -56,7 +71,16 @@ func NewUpstreamAttemptContext(parent context.Context, defaultTimeout time.Durat
 		mu.Lock()
 		defer mu.Unlock()
 		if !closed {
-			timer = time.AfterFunc(timeout, cancel)
+			observability.Event(policy.client, "client_disconnected", "drain_timeout_ms", timeout.Milliseconds())
+			if timeout <= 0 {
+				observability.Event(policy.client, "upstream_cancel_requested", "reason", "client_disconnected")
+				cancel()
+			} else {
+				timer = time.AfterFunc(timeout, func() {
+					observability.Event(policy.client, "upstream_cancel_requested", "reason", "client_disconnect_drain_expired")
+					cancel()
+				})
+			}
 		}
 	}
 	stop := context.AfterFunc(policy.client, startDrain)
