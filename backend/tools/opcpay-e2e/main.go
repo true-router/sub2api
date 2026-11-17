@@ -78,7 +78,7 @@ func main() {
 	_, err = db.Exec(string(auditSchema))
 	must(err)
 	// Payment credits now share the wallet accounting migration.
-	for _, name := range []string{"071_add_usage_billing_dedup.sql", "073_add_usage_billing_dedup_archive.sql", "131_affiliate_rebate_hardening.sql", "253_wallet_balance_sources.sql", "255_opcpay_payment_orders.sql"} {
+	for _, name := range []string{"071_add_usage_billing_dedup.sql", "073_add_usage_billing_dedup_archive.sql", "131_affiliate_rebate_hardening.sql", "253_wallet_balance_sources.sql", "255_opcpay_payment_orders.sql", "259_opcpay_reconciliation.sql"} {
 		data, err := os.ReadFile("migrations/" + name)
 		must(err)
 		_, err = db.Exec(string(data))
@@ -99,6 +99,8 @@ func main() {
 	calls := 0
 	deductions := 0
 	providerConfigured := true
+	autoMode := os.Getenv("OPCPAY_E2E_AUTO_ONLY") == "1"
+	autoMerchant := newAutomaticMerchant()
 	quantity := true
 	cardPrice := "9.90"
 	allow := true
@@ -122,6 +124,9 @@ func main() {
 			}
 		}
 		send := func(v any) { must(json.NewEncoder(w).Encode(v)) }
+		if autoMode && autoMerchant.serve(w, r, body) {
+			return
+		}
 		switch strings.TrimPrefix(r.URL.Path, "/opcpay/api/pay/v1") {
 		case "/capabilities":
 			send(map[string]any{"provider_configured": providerConfigured, "capabilities": map[string]bool{"purchase_entry": opened, "entitlement_query": true, "consumption": opened}})
@@ -222,6 +227,7 @@ func main() {
 		admin.GET("/users/:id/balance-history", userH.GetBalanceHistory)
 		router.GET("/payment/opcpay", h.OPCPayInfo)
 		router.POST("/payment/opcpay/operations", h.OPCPayStart)
+		router.GET("/payment/opcpay/operations/:business_id", h.OPCPayStatus)
 		router.POST("/payment/opcpay/operations/:business_id/resume", h.OPCPayResume)
 		router.POST("/payment/opcpay/operations/:business_id/close", h.OPCPayClosePurchase)
 		return httptest.NewServer(router)
@@ -296,6 +302,10 @@ func main() {
 	check(status == 409, "阻止同时启用多个一人付项目")
 	status, _ = request("one", "PUT", providerPath, map[string]any{"refund_enabled": true})
 	check(status == 400, "不开放一人付退款开关")
+	if autoMode {
+		verifyAutomaticRecharge(db, client, configSvc, request, check, autoMerchant)
+		return
+	}
 	limits, err := configSvc.GetAvailableMethodLimits(ctx)
 	must(err)
 	check(len(limits.Methods) == 0, "充值卡不进入自定义金额支付方式")

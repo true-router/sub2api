@@ -83,3 +83,18 @@ func (h *PaymentHandler) OPCPayClosePurchase(c *gin.Context) {
 	}
 	response.Success(c, gin.H{"closed": true})
 }
+
+// OPCPayStatus returns local delivery state without provider calls or wallet writes.
+func (h *PaymentHandler) OPCPayStatus(c *gin.Context) {
+	subject, ok := requireAuth(c)
+	if !ok {
+		return
+	}
+	c.Header("Cache-Control", "private, no-store")
+	result, err := h.paymentService.OPCPay().Status(c.Request.Context(), subject.UserID, c.Param("business_id"))
+	if err != nil {
+		response.Error(c, 404, err.Error())
+		return
+	}
+	response.Success(c, result)
+}

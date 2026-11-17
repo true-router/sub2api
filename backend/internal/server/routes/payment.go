@@ -45,6 +45,7 @@ func RegisterPaymentRoutes(
 	{
 		authenticated.GET("/opcpay", paymentHandler.OPCPayInfo)
 		authenticated.POST("/opcpay/operations", paymentHandler.OPCPayStart)
+		authenticated.GET("/opcpay/operations/:business_id", paymentHandler.OPCPayStatus)
 		authenticated.POST("/opcpay/operations/:business_id/resume", paymentHandler.OPCPayResume)
 		authenticated.POST("/opcpay/operations/:business_id/close", paymentHandler.OPCPayClosePurchase)
 		authenticated.GET("/config", paymentHandler.GetPaymentConfig)
