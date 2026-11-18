@@ -1,0 +1,61 @@
+{
+  "command": "cd frontend && node e2e/preview-admin.mjs --account & node e2e/check-preview.mjs users-filters",
+  "input": "Local fixture API (e2e/fixtures/admin-api.mjs), synthetic users, zh locale, 1440x900 and 390x844",
+  "source": {
+    "branch": "feat/user-recharge-filter",
+    "head": "babbe6ca14801257ca7041e26c45aa564c394c3e",
+    "note": "screenshots taken from the identical tree before rebase onto origin/main 161816f67; rebase touched no overlapping files"
+  },
+  "results": [
+    {
+      "name": "The toolbar shows search, recharge, role, and status filters in one row",
+      "passed": true
+    },
+    {
+      "name": "Search, filters, and toolbar buttons share a 36px height",
+      "passed": true
+    },
+    {
+      "name": "The toolbar sits inside the table card above the table",
+      "passed": true
+    },
+    {
+      "name": "The create action is on the toolbar row, right aligned in the panel",
+      "passed": true
+    },
+    {
+      "name": "Selecting a row shows the bulk bar between toolbar and table",
+      "passed": true
+    },
+    {
+      "name": "Choosing \"never recharged\" sends has_recharged=false and resets to page 1",
+      "passed": true
+    },
+    {
+      "name": "An active filter shows a reset action on the same toolbar row",
+      "passed": true
+    },
+    {
+      "name": "Reset sends a request without has_recharged",
+      "passed": true
+    },
+    {
+      "name": "No horizontal page overflow on narrow screens",
+      "passed": true
+    }
+  ],
+  "all_passed": true,
+  "screenshots": [
+    "desktop-dark.png",
+    "desktop-filter-active.png",
+    "desktop-light.png",
+    "desktop-recharge-open.png",
+    "desktop-selection.png",
+    "mobile-light.png"
+  ],
+  "regression": {
+    "command": "node e2e/check-preview.mjs table",
+    "users_page_checks": "6/6 passed",
+    "unrelated_failure": "/keys has no data table after console redesign; pre-existing drift"
+  }
+}
