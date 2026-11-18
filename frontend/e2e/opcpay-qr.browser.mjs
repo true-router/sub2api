@@ -38,7 +38,7 @@ async function decode() {
   await page.waitForFunction(() => document.querySelector('img[alt="支付宝购买入口二维码"]')?.naturalWidth > 0)
   return page.evaluate(async () => {
     const image = document.querySelector('img[alt="支付宝购买入口二维码"]')
-    const codes = await new BarcodeDetector({ formats: ['qr_code'] }).detect(image)
+    const codes = await new window.BarcodeDetector({ formats: ['qr_code'] }).detect(image)
     if (codes.length !== 1) throw new Error('Expected one readable checkout QR')
     return codes[0].rawValue
   })

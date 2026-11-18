@@ -1,4 +1,3 @@
-/* global taskSpace */
 const fs = await import('node:fs/promises'), crypto = await import('node:crypto')
 const task = await taskSpace('sub2api-opcpay-automatic'), page = task.page('p1')
 console.log({ taskSpaceId: task.spaceId })

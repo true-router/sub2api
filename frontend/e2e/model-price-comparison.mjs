@@ -37,7 +37,13 @@ await new Promise(resolve=>server.listen(18110,'127.0.0.1',resolve))
 const vite=spawn('pnpm',['exec','vite','--host','127.0.0.1','--port','13110','--strictPort'],{cwd:root,env:{...process.env,VITE_ACCOUNT_PREVIEW:'true',VITE_DEV_PROXY_TARGET:'http://127.0.0.1:18110'},stdio:['ignore','pipe','pipe']})
 let log='';vite.stdout.on('data',x=>{log+=x});vite.stderr.on('data',x=>{log+=x})
 try{
- for(let i=0;i<120;i++){try{if((await fetch('http://127.0.0.1:13110')).ok)break}catch{};if(vite.exitCode!==null||i===119)throw Error(log);await new Promise(r=>setTimeout(r,250))}
+ for (let i = 0; i < 120; i++) {
+   try {
+     if ((await fetch('http://127.0.0.1:13110')).ok) break
+   } catch { /* Vite may not be listening yet. */ }
+   if (vite.exitCode !== null || i === 119) throw Error(log)
+   await new Promise(resolve => setTimeout(resolve, 250))
+ }
  const source=(await readFile(resolve(import.meta.dirname,'model-price-comparison.browser.mjs'),'utf8')).replace('"__OUTPUT__"',JSON.stringify(output))
  const child=spawn('ego-browser',['nodejs','-e',source],{stdio:'inherit'})
  const code=await new Promise((resolve,reject)=>{child.once('error',reject);child.once('exit',resolve)})

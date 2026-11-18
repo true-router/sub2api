@@ -1,5 +1,4 @@
 /** Run with the account preview: node e2e/check-preview.mjs login-redirect. */
-/* global taskSpace */
 const fs = await import('node:fs/promises')
 const task = await taskSpace('sub2api-login-redirect')
 const page = task.page('p1')
