@@ -89,7 +89,7 @@ func (s *OpenCodeOAuthService) request(ctx context.Context, proxyID *int64, meth
 	if err != nil {
 		return fmt.Errorf("OpenCode OAuth request failed")
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	raw, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
 		return fmt.Errorf("OpenCode OAuth response could not be read")

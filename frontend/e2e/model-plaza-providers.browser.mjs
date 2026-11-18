@@ -1,4 +1,3 @@
-/* global taskSpace */
 const fs = await import('node:fs/promises')
 const task = await taskSpace('sub2api-model-plaza-console')
 console.log({ spaceId: task.spaceId })

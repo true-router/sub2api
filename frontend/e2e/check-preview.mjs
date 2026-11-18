@@ -11,7 +11,8 @@ const scenarios = {
   table: ['boardui-table', 'boardui-table'],
   login: ['boardui-login', 'boardui-login'],
   'login-redirect': ['login-redirect', 'login-redirect'],
-  settings: ['preview-settings', 'preview-settings']
+  settings: ['preview-settings', 'preview-settings'],
+  'users-filters': ['users-filter-layout', 'users-filter-layout']
 }
 const name = process.argv[2] || 'components'
 const scenario = scenarios[name]

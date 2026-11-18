@@ -1,6 +1,9 @@
+import { defineComponent } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, shallowMount } from '@vue/test-utils'
 import PaymentView from '../PaymentView.vue'
+import BillingCheckout from '@/components/user/console/BillingCheckout.vue'
+import PillTabs from '@/components/boardui/PillTabs.vue'
 import { PAYMENT_RECOVERY_STORAGE_KEY } from '@/components/payment/paymentFlow'
 import { formatPaymentAmount } from '@/components/payment/currency'
 import AmountInput from '@/components/payment/AmountInput.vue'
@@ -8,6 +11,15 @@ import SubscriptionPlanCard from '@/components/payment/SubscriptionPlanCard.vue'
 import en from '@/i18n/locales/en'
 import zh from '@/i18n/locales/zh'
 import type { CheckoutInfoResponse, MethodLimit, SubscriptionPlan } from '@/types/payment'
+
+const checkoutStubs = {
+  RouterLink: true,
+  ConsolePage: { template: '<main><slot /></main>' },
+  BillingCheckout,
+  BoardPillTabs: PillTabs,
+  BoardButton: { template: '<button><slot /></button>' },
+  OPCPayPanel: defineComponent({ emits: ['availability'], template: '<div />', mounted() { this.$emit('availability', false) } }),
+}
 
 const routeState = vi.hoisted(() => ({
   path: '/purchase',
@@ -85,6 +97,7 @@ vi.mock('@/stores', async () => {
     state.cachedPublicSettings = value
   }
   return {
+    useAuthStore: (await import('@/stores/auth')).useAuthStore,
     useAppStore: () => ({
       showError,
       showInfo,
@@ -99,6 +112,7 @@ vi.mock('@/stores', async () => {
 vi.mock('@/api/payment', () => ({
   paymentAPI: {
     getCheckoutInfo,
+    getOrder: vi.fn().mockResolvedValue({ data: { status: 'COMPLETED' } }),
   },
 }))
 
@@ -243,6 +257,7 @@ async function mountSubscriptionConfirm(options: Parameters<typeof checkoutInfoW
   const wrapper = shallowMount(PaymentView, {
     global: {
       stubs: {
+          ...checkoutStubs,
         AppLayout: {
           template: '<div><slot /></div>',
         },
@@ -283,6 +298,7 @@ async function mountSubscriptionPlanList(planCount: number) {
   const wrapper = shallowMount(PaymentView, {
     global: {
       stubs: {
+          ...checkoutStubs,
         AppLayout: {
           template: '<div><slot /></div>',
         },
@@ -310,6 +326,7 @@ describe('PaymentView help text', () => {
     const wrapper = shallowMount(PaymentView, {
       global: {
         stubs: {
+          ...checkoutStubs,
           AppLayout: { template: '<div><slot /></div>' },
           Teleport: true,
           Transition: false,
@@ -392,6 +409,7 @@ describe('PaymentView recharge rate preview', () => {
     const wrapper = shallowMount(PaymentView, {
       global: {
         stubs: {
+          ...checkoutStubs,
           AppLayout: { template: '<div><slot /></div>' },
           Teleport: true,
           Transition: false,
@@ -406,8 +424,8 @@ describe('PaymentView recharge rate preview', () => {
       currency: 'USD',
       usd: '0.50',
     })
-    expect(en.payment.rechargeRatePreview).toBe('Current rate: 1 {currency} = {usd} USD')
-    expect(zh.payment.rechargeRatePreview).toBe('当前倍率：1 {currency} = {usd} USD')
+    expect(en.payment.rechargeRatePreview).toBe('Current rate: 1 {currency} = {usd} points')
+    expect(zh.payment.rechargeRatePreview).toBe('当前倍率：1 {currency} = {usd} 积分')
   })
 })
 
@@ -559,6 +577,7 @@ describe('PaymentView payment recovery', () => {
     const wrapper = shallowMount(PaymentView, {
       global: {
         stubs: {
+          ...checkoutStubs,
           AppLayout: {
             template: '<div><slot /></div>',
           },
@@ -616,6 +635,7 @@ describe('PaymentView WeChat JSAPI flow', () => {
     shallowMount(PaymentView, {
       global: {
         stubs: {
+          ...checkoutStubs,
           Teleport: true,
           Transition: false,
         },
@@ -645,6 +665,7 @@ describe('PaymentView WeChat JSAPI flow', () => {
     shallowMount(PaymentView, {
       global: {
         stubs: {
+          ...checkoutStubs,
           Teleport: true,
           Transition: false,
         },
@@ -666,6 +687,7 @@ describe('PaymentView WeChat JSAPI flow', () => {
     const wrapper = shallowMount(PaymentView, {
       global: {
         stubs: {
+          ...checkoutStubs,
           Teleport: true,
           Transition: false,
         },
@@ -710,6 +732,7 @@ describe('PaymentView WeChat JSAPI flow', () => {
     shallowMount(PaymentView, {
       global: {
         stubs: {
+          ...checkoutStubs,
           Teleport: true,
           Transition: false,
         },
@@ -748,6 +771,7 @@ describe('PaymentView WeChat JSAPI flow', () => {
     shallowMount(PaymentView, {
       global: {
         stubs: {
+          ...checkoutStubs,
           Teleport: true,
           Transition: false,
         },
@@ -796,6 +820,7 @@ describe('PaymentView WeChat JSAPI flow', () => {
     shallowMount(PaymentView, {
       global: {
         stubs: {
+          ...checkoutStubs,
           Teleport: true,
           Transition: false,
         },
@@ -827,15 +852,15 @@ describe('PaymentView subscription feature flag', () => {
 
   function tabLabels(wrapper: Awaited<ReturnType<typeof mountSubscriptionPlanList>>) {
     return wrapper
-      .findAll('button')
+      .findAll('[role=tab]')
       .map((button) => button.text())
-      .filter((text) => text === 'payment.tabTopUp' || text === 'payment.tabSubscribe')
+      .filter((text) => text === 'console.addFunds' || text === 'console.plans')
   }
 
   it('keeps the top-up / subscribe switcher when subscription_enabled is absent (opt-out default)', async () => {
     const wrapper = await mountSubscriptionPlanList(2)
 
-    expect(tabLabels(wrapper)).toEqual(['payment.tabTopUp', 'payment.tabSubscribe'])
+    expect(tabLabels(wrapper)).toEqual(['console.addFunds', 'console.plans'])
     expect(wrapper.findAllComponents(SubscriptionPlanCard)).toHaveLength(2)
   })
 
@@ -843,19 +868,19 @@ describe('PaymentView subscription feature flag', () => {
     appStoreState.setPublicSettings({ subscription_enabled: false })
     const wrapper = await mountSubscriptionPlanList(2)
 
-    expect(tabLabels(wrapper)).toEqual([])
+    expect(tabLabels(wrapper)).toEqual(['console.addFunds'])
     expect(wrapper.findAllComponents(SubscriptionPlanCard)).toHaveLength(0)
-    expect(wrapper.text()).toContain('payment.rechargeAccount')
+    expect(wrapper.findComponent(AmountInput).exists()).toBe(true)
   })
 
   it('shows an unavailable notice instead of a doomed top-up form when balance recharge is disabled too', async () => {
     appStoreState.setPublicSettings({ subscription_enabled: false })
     const wrapper = await mountSubscriptionConfirm({ checkout: { balance_disabled: true } })
 
-    expect(tabLabels(wrapper)).toEqual([])
+    expect(tabLabels(wrapper)).toEqual(['console.addFunds'])
     expect(wrapper.findAllComponents(SubscriptionPlanCard)).toHaveLength(0)
     expect(wrapper.text()).not.toContain('payment.confirmSubscription')
-    expect(wrapper.text()).not.toContain('payment.rechargeAccount')
+    expect(wrapper.findComponent(AmountInput).exists()).toBe(false)
     expect(wrapper.text()).toContain('payment.billingUnavailable')
     wrapper.unmount()
   })
@@ -867,9 +892,9 @@ describe('PaymentView subscription feature flag', () => {
     appStoreState.setPublicSettings({ subscription_enabled: false })
     await flushPromises()
 
-    expect(tabLabels(wrapper)).toEqual([])
+    expect(tabLabels(wrapper)).toEqual(['console.addFunds'])
     expect(wrapper.findAllComponents(SubscriptionPlanCard)).toHaveLength(0)
-    expect(wrapper.text()).toContain('payment.rechargeAccount')
+    expect(wrapper.findComponent(AmountInput).exists()).toBe(true)
     wrapper.unmount()
   })
 
@@ -882,7 +907,7 @@ describe('PaymentView subscription feature flag', () => {
     await flushPromises()
 
     expect(wrapper.text()).not.toContain('payment.billingUnavailable')
-    expect(wrapper.text()).not.toContain('payment.rechargeAccount')
+    expect(wrapper.findComponent(AmountInput).exists()).toBe(false)
     expect(wrapper.findAllComponents(SubscriptionPlanCard).length).toBeGreaterThan(0)
     wrapper.unmount()
   })

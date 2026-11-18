@@ -5,6 +5,9 @@ module.exports = {
     es2021: true,
     node: true,
   },
+  overrides: [
+    { files: ["e2e/*.browser.mjs"], globals: { taskSpace: "readonly" } },
+  ],
   parser: "vue-eslint-parser",
   parserOptions: {
     parser: "@typescript-eslint/parser",
