@@ -1,20 +1,38 @@
 <template>
   <AppLayout>
     <TablePageLayout>
-      <!-- Single Row: Search, Filters, and Actions -->
-      <template #filters>
-        <div class="flex flex-wrap items-center gap-3">
-          <!-- Left: Search + Active Filters -->
-          <div class="flex flex-1 flex-wrap items-center gap-3">
-            <!-- Search Box -->
-            <div class="relative w-full md:w-64">
-              <BoardSearchField v-model="searchQuery" :placeholder="t('admin.users.searchUsers')" :clear-label="t('boardui.clearSearch')" @search="handleSearch" />
+      <!-- Users Table: toolbar, optional bulk bar, and table share one panel -->
+      <template #table>
+        <div class="users-toolbar" data-users-toolbar>
+          <!-- Left: search and filters -->
+          <div class="users-toolbar-filters" role="search" :aria-label="t('admin.users.filterSettings')">
+            <BoardSearchField
+              v-model="searchQuery"
+              data-users-filter="search"
+              shape="rounded"
+              class="users-toolbar-search"
+              :placeholder="t('admin.users.searchUsers')"
+              :clear-label="t('boardui.clearSearch')"
+              @search="handleSearch"
+            />
+
+            <div class="users-toolbar-field" data-users-filter="recharge">
+              <Select
+                v-model="filters.recharge"
+                :aria-label="t('admin.users.rechargeFilter')"
+                :options="[
+                  { value: '', label: t('admin.users.allRechargeHistory') },
+                  { value: 'yes', label: t('admin.users.hasRecharged') },
+                  { value: 'no', label: t('admin.users.neverRecharged') }
+                ]"
+                @change="applyFilter"
+              />
             </div>
 
-            <!-- Role Filter (visible when enabled) -->
-            <div v-if="visibleFilters.has('role')" class="w-full sm:w-32">
+            <div v-if="visibleFilters.has('role')" class="users-toolbar-field" data-users-filter="role">
               <Select
                 v-model="filters.role"
+                :aria-label="t('admin.users.roleFilter')"
                 :options="[
                   { value: '', label: t('admin.users.allRoles') },
                   { value: 'admin', label: t('admin.users.admin') },
@@ -24,10 +42,10 @@
               />
             </div>
 
-            <!-- Status Filter (visible when enabled) -->
-            <div v-if="visibleFilters.has('status')" class="w-full sm:w-32">
+            <div v-if="visibleFilters.has('status')" class="users-toolbar-field" data-users-filter="status">
               <Select
                 v-model="filters.status"
+                :aria-label="t('admin.users.allStatus')"
                 :options="[
                   { value: '', label: t('admin.users.allStatus') },
                   { value: 'active', label: t('common.active') },
@@ -37,8 +55,7 @@
               />
             </div>
 
-            <!-- Group Filter (visible when enabled) -->
-            <div v-if="visibleFilters.has('group')" class="w-full sm:w-44">
+            <div v-if="visibleFilters.has('group')" class="users-toolbar-field users-toolbar-field-wide" data-users-filter="group">
               <Select
                 v-model="filters.group"
                 :options="groupFilterOptions"
@@ -50,8 +67,7 @@
               />
             </div>
 
-            <!-- API Key Group Filter (visible when enabled) -->
-            <div v-if="visibleFilters.has('apiKeyGroup')" class="w-full sm:w-44">
+            <div v-if="visibleFilters.has('apiKeyGroup')" class="users-toolbar-field users-toolbar-field-wide" data-users-filter="apiKeyGroup">
               <Select
                 v-model="filters.apiKeyGroup"
                 :options="apiKeyGroupFilterOptions"
@@ -65,201 +81,180 @@
             <template v-for="(value, attrId) in activeAttributeFilters" :key="attrId">
               <div
                 v-if="visibleFilters.has(`attr_${attrId}`)"
-                class="relative w-full sm:w-36"
+                class="users-toolbar-field"
+                :data-users-filter="`attr_${attrId}`"
               >
-                <!-- Text/Email/URL/Textarea/Date type: styled input -->
-                <input
-                  v-if="['text', 'textarea', 'email', 'url', 'date'].includes(getAttributeDefinition(Number(attrId))?.type || 'text')"
-                  :value="value"
-                  @input="(e) => updateAttributeFilter(Number(attrId), (e.target as HTMLInputElement).value)"
-                  @keyup.enter="applyFilter"
-                  :placeholder="getAttributeDefinitionName(Number(attrId))"
-                  class="input w-full"
+                <Select
+                  v-if="['select', 'multi_select'].includes(getAttributeDefinition(Number(attrId))?.type || '')"
+                  :model-value="value"
+                  :options="[
+                    { value: '', label: getAttributeDefinitionName(Number(attrId)) },
+                    ...(getAttributeDefinition(Number(attrId))?.options || [])
+                  ]"
+                  @update:model-value="(val) => { updateAttributeFilter(Number(attrId), String(val ?? '')); applyFilter() }"
                 />
-                <!-- Number type: number input -->
-                <input
-                  v-else-if="getAttributeDefinition(Number(attrId))?.type === 'number'"
-                  :value="value"
-                  type="number"
-                  @input="(e) => updateAttributeFilter(Number(attrId), (e.target as HTMLInputElement).value)"
-                  @keyup.enter="applyFilter"
-                  :placeholder="getAttributeDefinitionName(Number(attrId))"
-                  class="input w-full"
-                />
-                <!-- Select/Multi-select type -->
-                <template v-else-if="['select', 'multi_select'].includes(getAttributeDefinition(Number(attrId))?.type || '')">
-                  <div class="w-full">
-                    <Select
-                      :model-value="value"
-                      :options="[
-                        { value: '', label: getAttributeDefinitionName(Number(attrId)) },
-                        ...(getAttributeDefinition(Number(attrId))?.options || [])
-                      ]"
-                      @update:model-value="(val) => { updateAttributeFilter(Number(attrId), String(val ?? '')); applyFilter() }"
-                    />
-                  </div>
-                </template>
-                <!-- Fallback -->
                 <input
                   v-else
                   :value="value"
+                  :type="getAttributeDefinition(Number(attrId))?.type === 'number' ? 'number' : 'text'"
+                  :placeholder="getAttributeDefinitionName(Number(attrId))"
+                  :aria-label="getAttributeDefinitionName(Number(attrId))"
+                  class="users-toolbar-input"
                   @input="(e) => updateAttributeFilter(Number(attrId), (e.target as HTMLInputElement).value)"
                   @keyup.enter="applyFilter"
-                  :placeholder="getAttributeDefinitionName(Number(attrId))"
-                  class="input w-full"
                 />
               </div>
             </template>
+
+            <BoardButton
+              v-if="hasActiveFilters"
+              data-users-reset-filters
+              variant="ghost"
+              size="medium"
+              @click="resetFilters"
+            >
+              <Icon name="x" size="sm" />
+              {{ t('admin.users.clearFilters') }}
+            </BoardButton>
           </div>
 
-          <!-- Right: Actions and Settings -->
-          <div class="flex flex-wrap items-center justify-end gap-2">
-            <!-- Mobile: Secondary buttons (icon only) -->
-            <div class="flex items-center gap-2 md:contents">
-              <!-- Refresh Button -->
-              <BoardButton type="submit"
-                @click="loadUsers"
-                :disabled="loading"
-                class="px-2 md:px-3" variant="secondary" size="medium"
-                :title="t('common.refresh')"
+          <!-- Right: view tools and primary action -->
+          <div class="users-toolbar-actions">
+            <BoardButton
+              variant="ghost"
+              size="medium"
+              icon-only
+              :disabled="loading"
+              :title="t('common.refresh')"
+              :aria-label="t('common.refresh')"
+              @click="loadUsers"
+            >
+              <Icon name="refresh" size="sm" :class="loading ? 'animate-spin motion-reduce:animate-none' : ''" />
+            </BoardButton>
+
+            <div ref="filterDropdownRef">
+              <BoardButton
+                data-testid="filter-drawer-trigger"
+                variant="ghost"
+                size="medium"
+                icon-only
+                :title="t('admin.users.filterSettings')"
+                :aria-label="t('admin.users.filterSettings')"
+                @click="showFilterDropdown = !showFilterDropdown"
               >
-                <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
+                <Icon name="filter" size="sm" />
               </BoardButton>
-              <!-- Filter Settings Dropdown -->
-              <div class="relative" ref="filterDropdownRef">
-                <BoardButton type="submit"
-                  data-testid="filter-drawer-trigger" @click="showFilterDropdown = !showFilterDropdown"
-                  class="px-2 md:px-3" variant="secondary" size="medium"
-                  :title="t('admin.users.filterSettings')"
+              <BoardDrawer :show="showFilterDropdown" :title="t('admin.users.filterSettings')" @close="showFilterDropdown = false">
+                <button
+                  v-for="filter in builtInFilters"
+                  :key="filter.key"
+                  type="button"
+                  class="flex w-full items-center justify-between rounded-[10px] px-3 py-2 text-left text-body-regular text-text-primary hover:bg-background-secondary-default"
+                  @click="toggleBuiltInFilter(filter.key)"
                 >
-                  <Icon name="filter" size="sm" class="md:mr-1.5" />
-                  <span class="hidden md:inline">{{ t('admin.users.filterSettings') }}</span>
-                </BoardButton>
-                <!-- Dropdown menu -->
-                <BoardDrawer :show="showFilterDropdown" :title="t('admin.users.filterSettings')" @close="showFilterDropdown = false">
-                  <!-- Built-in filters -->
-                  <button
-                    v-for="filter in builtInFilters"
-                    :key="filter.key"
-                    @click="toggleBuiltInFilter(filter.key)"
-                    class="flex w-full items-center justify-between px-4 py-2 text-left text-body-regular text-text-primary hover:bg-background-secondary-default "
-                  >
-                    <span>{{ filter.name }}</span>
-                    <Icon
-                      v-if="visibleFilters.has(filter.key)"
-                      name="check"
-                      size="sm"
-                      class="text-text-accent"
-                      :stroke-width="2"
-                    />
-                  </button>
-                  <!-- Divider if custom attributes exist -->
-                  <div
-                    v-if="filterableAttributes.length > 0"
-                    class="my-1 border-t border-border-button-default "
-                  ></div>
-                  <!-- Custom attribute filters -->
-                  <button
-                    v-for="attr in filterableAttributes"
-                    :key="attr.id"
-                    @click="toggleAttributeFilter(attr)"
-                    class="flex w-full items-center justify-between px-4 py-2 text-left text-body-regular text-text-primary hover:bg-background-secondary-default "
-                  >
-                    <span>{{ attr.name }}</span>
-                    <Icon
-                      v-if="visibleFilters.has(`attr_${attr.id}`)"
-                      name="check"
-                      size="sm"
-                      class="text-text-accent"
-                      :stroke-width="2"
-                    />
-                  </button>
-                <template #footer><BoardButton type="button" @click="showFilterDropdown = false">{{ t('common.confirm') }}</BoardButton></template></BoardDrawer>
-              </div>
-              <!-- Column Settings Dropdown -->
-              <div class="relative" ref="columnDropdownRef">
-                <BoardButton type="submit"
-                  @click="showColumnDropdown = !showColumnDropdown"
-                  class="px-2 md:px-3" variant="secondary" size="medium"
-                  :title="t('admin.users.columnSettings')"
+                  <span>{{ filter.name }}</span>
+                  <Icon v-if="visibleFilters.has(filter.key)" name="check" size="sm" class="text-text-accent" :stroke-width="2" />
+                </button>
+                <div v-if="filterableAttributes.length > 0" class="my-1 border-t border-separator-border"></div>
+                <button
+                  v-for="attr in filterableAttributes"
+                  :key="attr.id"
+                  type="button"
+                  class="flex w-full items-center justify-between rounded-[10px] px-3 py-2 text-left text-body-regular text-text-primary hover:bg-background-secondary-default"
+                  @click="toggleAttributeFilter(attr)"
                 >
-                  <svg class="h-4 w-4 md:mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z" />
-                  </svg>
-                  <span class="hidden md:inline">{{ t('admin.users.columnSettings') }}</span>
-                </BoardButton>
-                <!-- Dropdown menu -->
-                <div
-                  v-if="showColumnDropdown"
-                  class="absolute right-0 top-full z-50 mt-1 max-h-80 w-48 overflow-y-auto rounded-lg border border-border-button-default bg-background-primary-default py-1 shadow-lg "
-                >
-                  <button
-                    v-for="col in toggleableColumns"
-                    :key="col.key"
-                    :disabled="isForcedVisibleColumn(col.key)"
-                    @click="toggleColumn(col.key)"
-                    :class="[
-                      'flex w-full items-center justify-between px-4 py-2 text-left text-body-regular',
-                      isForcedVisibleColumn(col.key)
-                        ? 'cursor-not-allowed text-text-tertiary '
-                        : 'text-text-primary hover:bg-background-secondary-default '
-                    ]"
-                    :title="isForcedVisibleColumn(col.key) ? t('admin.users.columnAlwaysVisible') : ''"
-                  >
-                    <span>{{ col.label }}</span>
-                    <Icon
-                      v-if="isColumnVisible(col.key)"
-                      name="check"
-                      size="sm"
-                      :class="isForcedVisibleColumn(col.key) ? 'text-text-tertiary ' : 'text-text-accent'"
-                      :stroke-width="2"
-                    />
-                  </button>
-                </div>
-              </div>
-              <!-- Attributes Config Button -->
-              <BoardButton type="submit"
-                @click="showAttributesModal = true"
-                class="px-2 md:px-3" variant="secondary" size="medium"
-                :title="t('admin.users.attributes.configButton')"
-              >
-                <Icon name="cog" size="sm" class="md:mr-1.5" />
-                <span class="hidden md:inline">{{ t('admin.users.attributes.configButton') }}</span>
-              </BoardButton>
+                  <span>{{ attr.name }}</span>
+                  <Icon v-if="visibleFilters.has(`attr_${attr.id}`)" name="check" size="sm" class="text-text-accent" :stroke-width="2" />
+                </button>
+                <template #footer><BoardButton type="button" @click="showFilterDropdown = false">{{ t('common.confirm') }}</BoardButton></template>
+              </BoardDrawer>
             </div>
 
-            <BoardButton type="submit"
-              v-if="selectedCount > 0"
-              class="flex-1 md:flex-initial" variant="secondary" size="medium"
-              data-test="bulk-edit-limits"
-              @click="showBulkEditModal = true"
+            <div class="relative" ref="columnDropdownRef">
+              <BoardButton
+                variant="ghost"
+                size="medium"
+                icon-only
+                :title="t('admin.users.columnSettings')"
+                :aria-label="t('admin.users.columnSettings')"
+                :aria-expanded="showColumnDropdown"
+                @click="showColumnDropdown = !showColumnDropdown"
+              >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z" />
+                </svg>
+              </BoardButton>
+              <div
+                v-if="showColumnDropdown"
+                class="absolute right-0 top-full z-50 mt-1 max-h-80 w-52 overflow-y-auto rounded-xl border border-border-button-default bg-background-primary-default p-1 shadow-lg"
+              >
+                <button
+                  v-for="col in toggleableColumns"
+                  :key="col.key"
+                  type="button"
+                  :disabled="isForcedVisibleColumn(col.key)"
+                  :class="[
+                    'flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-body-regular',
+                    isForcedVisibleColumn(col.key)
+                      ? 'cursor-not-allowed text-text-tertiary'
+                      : 'text-text-primary hover:bg-background-secondary-default'
+                  ]"
+                  :title="isForcedVisibleColumn(col.key) ? t('admin.users.columnAlwaysVisible') : ''"
+                  @click="toggleColumn(col.key)"
+                >
+                  <span>{{ col.label }}</span>
+                  <Icon
+                    v-if="isColumnVisible(col.key)"
+                    name="check"
+                    size="sm"
+                    :class="isForcedVisibleColumn(col.key) ? 'text-text-tertiary' : 'text-text-accent'"
+                    :stroke-width="2"
+                  />
+                </button>
+              </div>
+            </div>
+
+            <BoardButton
+              variant="ghost"
+              size="medium"
+              icon-only
+              :title="t('admin.users.attributes.configButton')"
+              :aria-label="t('admin.users.attributes.configButton')"
+              @click="showAttributesModal = true"
             >
-              <Icon name="users" size="md" class="mr-2" />
-              {{ t('admin.users.bulkLimits.action', { count: selectedCount }) }}
+              <Icon name="cog" size="sm" />
             </BoardButton>
 
-            <BoardButton type="submit"
-              v-if="selectedCount > 0"
-              class="flex-1 md:flex-initial" variant="danger" size="medium"
-              data-test="bulk-delete-users"
-              :disabled="bulkDeleting"
-              @click="bulkDeleteIds = [...selectedIds]"
-            >
-              <Icon name="trash" size="md" class="mr-2" />
-              {{ t('admin.users.bulkDelete.action', { count: selectedCount }) }}
-            </BoardButton>
+            <span class="mx-1 hidden h-5 w-px bg-separator-border sm:block" aria-hidden="true" />
 
-            <!-- Create User Button (full width on mobile, auto width on desktop) -->
-            <BoardButton type="submit" data-testid="create-user-trigger" @click="showCreateModal = true" class="flex-1 md:flex-initial" variant="primary" size="medium">
-              <Icon name="plus" size="md" class="mr-2" />
+            <BoardButton data-testid="create-user-trigger" variant="primary" size="medium" class="users-toolbar-create" @click="showCreateModal = true">
+              <Icon name="plus" size="sm" />
               {{ t('admin.users.createUser') }}
             </BoardButton>
           </div>
         </div>
-      </template>
 
-      <!-- Users Table -->
-      <template #table>
+        <!-- Bulk actions for the current selection -->
+        <div v-if="selectedCount > 0" class="users-bulk-bar" data-users-bulk-bar>
+          <span class="text-body-medium text-text-primary">{{ t('admin.users.bulkLimits.selectedCount', { count: selectedCount }) }}</span>
+          <div class="flex flex-wrap items-center gap-2">
+            <BoardButton variant="secondary" size="small" data-test="bulk-edit-limits" @click="showBulkEditModal = true">
+              <Icon name="users" size="sm" />
+              {{ t('admin.users.bulkLimits.action', { count: selectedCount }) }}
+            </BoardButton>
+            <BoardButton
+              variant="danger"
+              size="small"
+              data-test="bulk-delete-users"
+              :disabled="bulkDeleting"
+              @click="bulkDeleteIds = [...selectedIds]"
+            >
+              <Icon name="trash" size="sm" />
+              {{ t('admin.users.bulkDelete.action', { count: selectedCount }) }}
+            </BoardButton>
+            <BoardButton variant="ghost" size="small" @click="clearSelection">{{ t('common.cancel') }}</BoardButton>
+          </div>
+        </div>
         <DataTable
           :columns="columns"
           :data="sortedUsers"
@@ -1122,6 +1117,7 @@ const apiKeyGroupFilterOptions = computed(() =>
 
 // Filter values (role, status, and custom attributes)
 const filters = reactive({
+  recharge: '',
   role: '',
   status: '',
   group: '', // group name for fuzzy match, '' = all
@@ -1166,11 +1162,15 @@ const loadSavedFilters = () => {
     if (savedVisible) {
       const parsed = JSON.parse(savedVisible) as string[]
       parsed.forEach(key => visibleFilters.add(key))
+    } else {
+      visibleFilters.add('status')
+      visibleFilters.add('role')
     }
     // Load filter values
     const savedValues = localStorage.getItem(FILTER_VALUES_KEY)
     if (savedValues) {
       const parsed = JSON.parse(savedValues)
+      if (parsed.recharge === 'yes' || parsed.recharge === 'no') filters.recharge = parsed.recharge
       if (parsed.role) filters.role = parsed.role
       if (parsed.status) filters.status = parsed.status
       if (parsed.group) filters.group = parsed.group
@@ -1191,6 +1191,7 @@ const saveFiltersToStorage = () => {
     localStorage.setItem(VISIBLE_FILTERS_KEY, JSON.stringify([...visibleFilters]))
     // Save filter values
     const values = {
+      recharge: filters.recharge,
       role: filters.role,
       status: filters.status,
       group: filters.group,
@@ -1600,6 +1601,7 @@ const loadUsers = async () => {
         role: filters.role as any,
         status: filters.status as any,
         search: searchQuery.value || undefined,
+        has_recharged: filters.recharge ? filters.recharge === 'yes' : undefined,
         group_name: filters.group || undefined,
         api_key_group_id: filters.apiKeyGroup ?? undefined,
         attributes: Object.keys(attrFilters).length > 0 ? attrFilters : undefined,
@@ -1724,8 +1726,27 @@ const updateAttributeFilter = (attrId: number, value: string) => {
 
 // Apply filter and save to localStorage
 const applyFilter = () => {
+  pagination.page = 1
   saveFiltersToStorage()
   loadUsers()
+}
+
+const hasActiveFilters = computed(() =>
+  Boolean(searchQuery.value || filters.recharge || filters.role || filters.status || filters.group || filters.apiKeyGroup !== null) ||
+  Object.values(activeAttributeFilters).some(Boolean)
+)
+
+// Clear filter values and search; keep which filters are visible.
+const resetFilters = () => {
+  clearTimeout(searchTimeout)
+  searchQuery.value = ''
+  filters.recharge = ''
+  filters.role = ''
+  filters.status = ''
+  filters.group = ''
+  filters.apiKeyGroup = null
+  Object.keys(activeAttributeFilters).forEach(id => { activeAttributeFilters[Number(id)] = '' })
+  applyFilter()
 }
 
 const handleEdit = (user: AdminUser) => {
@@ -1912,3 +1933,61 @@ onUnmounted(() => {
   abortController?.abort()
 })
 </script>
+
+<style scoped>
+.users-toolbar {
+  @apply flex shrink-0 flex-wrap items-center gap-3 border-b border-separator-border p-3;
+}
+
+.users-toolbar-filters {
+  @apply grid min-w-0 flex-1 grid-cols-2 items-center gap-2 sm:flex sm:flex-wrap;
+}
+
+.users-toolbar-search {
+  @apply col-span-2 sm:min-w-40 sm:max-w-64 sm:flex-[1_1_10rem];
+}
+
+.users-toolbar-field {
+  @apply min-w-0 sm:w-36;
+}
+
+.users-toolbar-field-wide {
+  @apply sm:w-44;
+}
+
+/* Match BoardUI field geometry: 36px height, 10px radius. */
+.users-toolbar-field :deep(.select-trigger) {
+  @apply h-9 rounded-[10px] px-3 py-0 shadow-sm;
+}
+
+.users-toolbar-input {
+  @apply h-9 w-full rounded-[10px] border border-border-button-default bg-background-primary-default px-3 text-body-regular text-text-primary shadow-sm outline-none placeholder:text-text-placeholder focus:border-border-focus-ring focus:ring-2 focus:ring-border-focus-ring/20;
+}
+
+.users-toolbar-actions {
+  @apply ml-auto flex shrink-0 items-center gap-1;
+}
+
+.users-bulk-bar {
+  @apply flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-separator-border bg-background-accent-subtle px-4 py-2;
+}
+
+@media (max-width: 1023px) {
+  /* The table card loses its border on narrow screens; keep the toolbar as its own panel. */
+  .users-toolbar {
+    @apply mb-3 rounded-2xl border border-border-button-default bg-background-primary-default;
+  }
+
+  .users-bulk-bar {
+    @apply mb-3 rounded-2xl border;
+  }
+
+  .users-toolbar-actions {
+    @apply ml-0 w-full;
+  }
+
+  .users-toolbar-create {
+    @apply ml-auto;
+  }
+}
+</style>
