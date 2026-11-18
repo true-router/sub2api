@@ -567,6 +567,32 @@ func (r *userRepository) ListWithFilters(ctx context.Context, params pagination.
 		)
 	}
 
+	if filters.HasRecharged != nil {
+		q = q.Where(func(s *entsql.Selector) {
+			// Completed balance orders include historical OPCPay deliveries. Manual
+			// verified payments have a wallet journal entry without an order.
+			orders := entsql.Table("payment_orders")
+			manual := entsql.Table("wallet_journal")
+			paid := entsql.Or(
+				entsql.Exists(entsql.Select(orders.C("id")).From(orders).Where(entsql.And(
+					entsql.ColumnsEQ(orders.C("user_id"), s.C(dbuser.FieldID)),
+					entsql.EQ(orders.C("order_type"), "balance"),
+					entsql.NotNull(orders.C("completed_at")),
+					entsql.ColumnsGT(orders.C("amount"), orders.C("bonus_amount")),
+				))),
+				entsql.Exists(entsql.Select(manual.C("id")).From(manual).Where(entsql.And(
+					entsql.ColumnsEQ(manual.C("user_id"), s.C(dbuser.FieldID)),
+					entsql.EQ(manual.C("operation"), "payment"),
+					entsql.IsNull(manual.C("order_id")),
+					entsql.GT(manual.C("delta"), 0),
+				))),
+			)
+			if !*filters.HasRecharged {
+				paid = entsql.Not(paid)
+			}
+			s.Where(paid)
+		})
+	}
 	if filters.GroupName != "" {
 		q = q.Where(dbuser.HasAllowedGroupsWith(
 			dbgroup.NameContainsFold(filters.GroupName),

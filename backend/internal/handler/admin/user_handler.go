@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -152,6 +153,18 @@ func (h *UserHandler) List(c *gin.Context) {
 		filters.IncludeSubscriptions = &includeSubscriptions
 	}
 	principal := adminaccess.RestrictedFromContext(c.Request.Context())
+	if raw, ok := c.GetQuery("has_recharged"); ok {
+		if principal != nil && !slices.Contains(principal.Policy.GlobalPermissions, "users.balance.read") {
+			response.Forbidden(c, "Balance read permission required")
+			return
+		}
+		if raw != "true" && raw != "false" {
+			response.BadRequest(c, "has_recharged must be true or false")
+			return
+		}
+		value := raw == "true"
+		filters.HasRecharged = &value
+	}
 	if principal != nil {
 		includeSubscriptions := false
 		filters.IncludeSubscriptions = &includeSubscriptions
