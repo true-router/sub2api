@@ -3,6 +3,7 @@ package routes
 
 import (
 	"github.com/Wei-Shaw/sub2api/internal/handler"
+	adminhandler "github.com/Wei-Shaw/sub2api/internal/handler/admin"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -89,6 +90,8 @@ func RegisterAdminRoutes(
 
 		// 运维监控（Ops）
 		registerOpsRoutes(admin, h)
+		admin.GET("/seat-terminals", requireSeatTerminalJWT, adminhandler.ListSeatTerminals)
+		admin.GET("/seat-terminals/:id/stream", requireSeatTerminalJWT, adminhandler.StreamSeatTerminal)
 
 		// 系统管理
 		registerSystemRoutes(admin, h)
@@ -911,4 +914,12 @@ func channelMonitorModeV2Guard(settingService *service.SettingService) gin.Handl
 		}
 		c.Next()
 	}
+}
+
+func requireSeatTerminalJWT(c *gin.Context) {
+	if c.GetString("auth_method") != "jwt" {
+		c.AbortWithStatus(403)
+		return
+	}
+	c.Next()
 }

@@ -39,6 +39,11 @@ func jwtAuth(
 	return func(c *gin.Context) {
 		// 从Authorization header中提取token
 		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" && c.FullPath() == "/api/v1/seat-terminals/:id/stream" && isWebSocketUpgradeRequest(c) {
+			if token := extractJWTFromWebSocketSubprotocol(c); token != "" {
+				authHeader = "Bearer " + token
+			}
+		}
 		if authHeader == "" {
 			AbortWithError(c, 401, "UNAUTHORIZED", "Authorization header is required")
 			return

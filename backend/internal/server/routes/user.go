@@ -139,6 +139,9 @@ func RegisterUserRoutes(
 			redeem.GET("/history", h.Redeem.GetHistory)
 		}
 
+		authenticated.GET("/seat-terminals", h.Subscription.ListSeatTerminals)
+		authenticated.GET("/seat-terminals/:id/stream", h.Subscription.StreamSeatTerminal)
+
 		// 用户订阅
 		subscriptions := authenticated.Group("/subscriptions")
 		{

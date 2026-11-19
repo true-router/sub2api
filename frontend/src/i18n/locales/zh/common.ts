@@ -163,7 +163,28 @@ export default {
   },
 
   // Navigation
+  seatTerminals: {
+    session: '原始会话 ID',
+    slotColumn: '槽位',
+    status: '状态',
+    action: '操作',
+    sessionMissing: '未提供',
+    open: '查看终端',
+    terminal: '会话终端',
+    title: '席位终端',
+    refresh: '刷新席位',
+    empty: '暂无可查看的席位',
+    listError: '无法读取席位',
+    connecting: '正在连接',
+    live: '实时',
+    disconnected: '连接已断开',
+    reconnect: '重新连接',
+    active: '运行中',
+    waiting_tools: '等待工具结果',
+    idle: '空闲',
+  },
   nav: {
+    seatTerminals: '席位终端',
     dashboard: '仪表盘',
     announcements: '公告',
     apiKeys: 'API 密钥',
