@@ -18,7 +18,7 @@ try {
   await page.goto(fixture.base + '/profile')
   await page.waitForSelector('a[href="/subscriptions/seat-terminals"]', { timeout: 10000 })
   await page.click('a[href="/subscriptions/seat-terminals"]', { label: 'Open seat terminal page' })
-  await page.waitForSelector('[data-boardui="table"] tbody tr:nth-child(2)', { timeout: 12000 })
+  await page.waitForSelector('[data-boardui="table"] tbody tr[data-row-id]:nth-child(2)', { timeout: 12000 })
   await page.evaluate(() => {
     const consolePage = document.querySelector('.boardui-admin-layout [data-testid="console-page"]')
     if (consolePage?.querySelector('h1')?.textContent !== '席位终端') {
