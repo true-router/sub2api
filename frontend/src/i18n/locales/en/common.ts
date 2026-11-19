@@ -163,7 +163,28 @@ export default {
   },
 
   // Navigation
+  seatTerminals: {
+    session: 'Original session ID',
+    slotColumn: 'Slot',
+    status: 'Status',
+    action: 'Actions',
+    sessionMissing: 'Not provided',
+    open: 'View terminal',
+    terminal: 'Session terminal',
+    title: 'Seat terminals',
+    refresh: 'Refresh seats',
+    empty: 'No seats are available',
+    listError: 'Unable to load seats',
+    connecting: 'Connecting',
+    live: 'Live',
+    disconnected: 'Disconnected',
+    reconnect: 'Reconnect',
+    active: 'Active',
+    waiting_tools: 'Waiting for tools',
+    idle: 'Idle',
+  },
   nav: {
+    seatTerminals: 'Seat terminals',
     dashboard: 'Dashboard',
     announcements: 'Announcements',
     apiKeys: 'API Keys',

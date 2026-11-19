@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 
@@ -83,6 +84,11 @@ func (s *GatewayService) buildUpstreamRequest(ctx context.Context, c *gin.Contex
 	clientHeaders := http.Header{}
 	if c != nil && c.Request != nil {
 		clientHeaders = c.Request.Header
+	}
+
+	originalSession := ""
+	if baseURL != "" && strings.TrimRight(baseURL, "/") == strings.TrimRight(os.Getenv("VM2API_INTEGRATION_URL"), "/") {
+		originalSession = terminalCallerSession(body, clientHeaders)
 	}
 
 	// OAuth账号：应用统一指纹和metadata重写（受设置开关控制）
@@ -233,6 +239,10 @@ func (s *GatewayService) buildUpstreamRequest(ctx context.Context, c *gin.Contex
 	// 账号级请求头覆写（仅 anthropic/openai api_key 账号启用时生效；OAuth 路径 no-op）。
 	// 放在所有 header 逻辑之后，确保配置值对同名头拥有最终决定权。
 	account.ApplyHeaderOverrides(req.Header)
+	if originalSession != "" {
+		deleteHeaderAllForms(req.Header, "x-hermit-original-session-id")
+		req.Header.Set("x-hermit-original-session-id", originalSession)
+	}
 	filterSonnet55ToolsetBetaHeader(req.Header, body, modelID)
 
 	// === DEBUG: 打印上游转发请求（headers + body 摘要），与 CLIENT_ORIGINAL 对比 ===
@@ -307,6 +317,30 @@ func filterVertexBetaTokens(header string, drop map[string]struct{}) string {
 		out = append(out, t)
 	}
 	return strings.Join(out, ",")
+}
+
+// terminalCallerSession follows the upstream gateway's caller session precedence.
+func terminalCallerSession(body []byte, headers http.Header) string {
+	value := ""
+	if user := ParseMetadataUserID(gjson.GetBytes(body, "metadata.user_id").String()); user != nil {
+		value = user.SessionID
+	}
+	for _, name := range []string{"x-session-id", "x-conversation-id", "x-claude-code-session-id", "session-id", "thread-id"} {
+		if value != "" {
+			break
+		}
+		value = strings.TrimSpace(headers.Get(name))
+	}
+	for _, field := range []string{"conversation_id", "session_id", "thread_id", "prompt_cache_key"} {
+		if value != "" {
+			break
+		}
+		value = gjson.GetBytes(body, field).String()
+	}
+	if len(value) > 256 || strings.ContainsAny(value, "\x00\r\n") {
+		return ""
+	}
+	return value
 }
 
 func (s *GatewayService) buildUpstreamRequestAnthropicVertex(

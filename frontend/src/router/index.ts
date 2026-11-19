@@ -333,6 +333,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/subscriptions/seat-terminals',
+    name: 'SubscriptionSeatTerminals',
+    component: () => import('@/views/SeatTerminalsView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresSubscription: true,
+      workspace: 'account',
+      title: 'Seat terminals',
+      titleKey: 'nav.seatTerminals'
+    }
+  },
+  {
     path: '/subscriptions',
     name: 'Subscriptions',
     component: () => import('@/views/user/SubscriptionsView.vue'),
@@ -459,6 +471,18 @@ const routes: RouteRecordRaw[] = [
       title: 'Admin Dashboard',
       titleKey: 'admin.dashboard.title',
       descriptionKey: 'admin.dashboard.description'
+    }
+  },
+  {
+    path: '/admin/seat-terminals',
+    name: 'AdminSeatTerminals',
+    props: { admin: true },
+    component: () => import('@/views/SeatTerminalsView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Seat terminals',
+      titleKey: 'nav.seatTerminals'
     }
   },
   {

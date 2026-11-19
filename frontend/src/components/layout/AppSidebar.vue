@@ -786,6 +786,7 @@ function buildSelfNavItems(withDashboard: boolean): NavItem[] {
     { path: '/account/model-plaza', label: t('nav.modelPlaza'), icon: GlobeIcon },
     { path: '/available-channels', label: t('nav.availableChannels'), icon: ChannelIcon, hideInSimpleMode: true, featureFlag: flagAvailableChannels },
     { path: '/monitor', label: t('nav.channelStatus'), icon: SignalIcon, featureFlag: flagChannelMonitor },
+    { path: '/subscriptions/seat-terminals', label: t('nav.seatTerminals'), icon: ChartIcon, hideInSimpleMode: true, featureFlag: flagSubscription },
     { path: '/subscriptions', label: t('nav.mySubscriptions'), icon: CreditCardIcon, hideInSimpleMode: true, featureFlag: flagSubscription },
     { path: '/purchase', label: purchaseNavLabel.value, icon: RechargeSubscriptionIcon, hideInSimpleMode: true, featureFlag: flagPayment },
     { path: '/orders', label: t('nav.myOrders'), icon: OrderListIcon, hideInSimpleMode: true, featureFlag: flagPayment },
@@ -814,6 +815,7 @@ const userNavItems = computed((): NavItem[] => finalizeNav([
   { path: '/dashboard', label: t('console.home'), icon: DashboardIcon },
   { path: '/keys', label: t('console.keys'), icon: KeyIcon },
   { path: '/account/model-plaza', label: t('console.models'), icon: GlobeIcon },
+  { path: '/subscriptions/seat-terminals', label: t('nav.seatTerminals'), icon: ChartIcon, hideInSimpleMode: true, featureFlag: flagSubscription },
   { path: '/usage', label: t('console.usage'), icon: ChartIcon, hideInSimpleMode: true },
   { path: '/purchase', label: t('console.billing'), icon: CreditCardIcon, hideInSimpleMode: true },
   { path: '/profile', label: t('console.account'), icon: UserIcon },
@@ -842,6 +844,7 @@ const customMenuItemsForAdmin = computed(() => {
 const adminNavItems = computed((): NavItem[] => {
   const baseItems: NavItem[] = [
     { path: '/admin/dashboard', label: t('nav.dashboard'), icon: DashboardIcon },
+    { path: '/admin/seat-terminals', label: t('nav.seatTerminals'), icon: ChartIcon },
     { path: '/admin/ops', label: t('nav.ops'), icon: ChartIcon, featureFlag: flagOpsMonitoring },
     { path: '/admin/users', label: t('nav.users'), icon: UsersIcon, hideInSimpleMode: true },
     { path: '/admin/groups', label: t('nav.groups'), icon: FolderIcon },
@@ -928,7 +931,7 @@ const adminNavItems = computed((): NavItem[] => {
 
 const adminNavSections = computed(() => {
   const groups = [
-    { label: t('boardui.overview'), paths: ['/admin/dashboard', '/admin/ops'] },
+    { label: t('boardui.overview'), paths: ['/admin/dashboard', '/admin/ops', '/admin/seat-terminals'] },
     { label: t('boardui.resources'), paths: ['/admin/accounts', '/admin/groups', '/admin/channels', '/admin/proxies', '/admin/plugins'] },
     { label: t('boardui.business'), paths: ['/admin/users', '/admin/subscriptions', '/admin/orders', '/admin/redeem', '/admin/promo-codes', '/admin/affiliates'] },
     { label: t('boardui.system'), paths: [] as string[] }

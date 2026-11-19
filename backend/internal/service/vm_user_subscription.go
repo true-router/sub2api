@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/user"
@@ -265,4 +266,22 @@ func (s *SubscriptionService) LoadSlotUsage(ctx context.Context, subs []UserSubs
 	close(queue)
 	workers.Wait()
 	return nil
+}
+
+// TerminalSubscription resolves the live subscription against its server-side binding.
+func (s *SubscriptionService) TerminalSubscription(ctx context.Context, id int64, origin string) (string, time.Time, error) {
+	binding, err := findVMBinding(ctx, s.entClient, id)
+	if err != nil || binding.remote == "" || binding.origin != origin {
+		return "", time.Time{}, err
+	}
+	subscriptions, err := s.ListActiveUserSubscriptions(ctx, id)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	for _, sub := range subscriptions {
+		if sub.GroupID == binding.groupID && sub.Group != nil && sub.Group.SubscriptionUsageSource == "vm2api" {
+			return binding.remote, sub.ExpiresAt, nil
+		}
+	}
+	return "", time.Time{}, nil
 }
