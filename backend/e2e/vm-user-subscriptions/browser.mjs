@@ -30,7 +30,7 @@ try {
     step(`await p.goto(${JSON.stringify(panel)}+'/#/login');
     await p.fill('#login-username','admin');await p.fill('#login-password','testpass');
     await p.click('button[type=submit]');await p.waitForFunction(()=>!location.hash.includes('/login'));
-    await p.goto(${JSON.stringify(panel)}+'/#/users');
+    await p.goto('about:blank');await p.goto(${JSON.stringify(panel)}+'/#/users');
     await p.waitForSelector('text="changed@fixture.invalid"');
     await p.click('loc=role:button[name="新建用户"]');await p.waitForSelector('#new-email');
     await p.fill('#new-email','new-user@fixture.invalid');
