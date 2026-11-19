@@ -49,7 +49,7 @@ func (c *Client) TerminalSeats(ctx context.Context, userID string) ([]Seat, erro
 	if err != nil {
 		return nil, err
 	}
-	defer upstream.Body.Close()
+	defer func() { _ = upstream.Body.Close() }()
 	var body struct {
 		Seats []Seat `json:"seats"`
 	}
@@ -84,7 +84,7 @@ func (c *Client) OpenTerminal(ctx context.Context, userID, id string) (io.ReadCl
 		columns > 0 && columns <= 512 && rows > 0 && rows <= 256 {
 		return upstream.Body, columns, rows, http.StatusOK
 	}
-	upstream.Body.Close()
+	_ = upstream.Body.Close()
 	if upstream.StatusCode == http.StatusNotFound || upstream.StatusCode == http.StatusTooManyRequests {
 		return nil, 0, 0, upstream.StatusCode
 	}

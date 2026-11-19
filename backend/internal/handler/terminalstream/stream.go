@@ -21,7 +21,7 @@ func Serve(c *gin.Context, protocol string, expires time.Time, authorized func(c
 	if err != nil {
 		return
 	}
-	defer connection.CloseNow()
+	defer func() { _ = connection.CloseNow() }()
 	connection.SetReadLimit(32)
 	ctx, cancel := context.WithCancel(c.Request.Context())
 	defer cancel()
@@ -73,10 +73,10 @@ func Serve(c *gin.Context, protocol string, expires time.Time, authorized func(c
 		if status == http.StatusNotFound {
 			code = websocket.StatusPolicyViolation
 		}
-		connection.Close(code, "terminal unavailable")
+		_ = connection.Close(code, "terminal unavailable")
 		return
 	}
-	defer upstream.Close()
+	defer func() { _ = upstream.Close() }()
 	initial, _ := json.Marshal(gin.H{"columns": columns, "rows": rows})
 	if writeTerminalFrame(ctx, connection, websocket.MessageText, initial) != nil {
 		return
@@ -108,7 +108,7 @@ func Serve(c *gin.Context, protocol string, expires time.Time, authorized func(c
 			}
 		}
 		if readErr != nil {
-			connection.Close(websocket.StatusNormalClosure, "")
+			_ = connection.Close(websocket.StatusNormalClosure, "")
 			return
 		}
 	}
