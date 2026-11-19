@@ -18,6 +18,7 @@ import (
 var vmUsername = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9._-]{1,31}$`)
 
 type VMUserPreview struct {
+	Email    string            `json:"email"`
 	UserID   int64             `json:"user_id"`
 	Username string            `json:"username"`
 	Remote   *vmusers.Identity `json:"remote"`
@@ -55,10 +56,10 @@ func (s *SubscriptionService) vmPreview(ctx context.Context, c *dbent.Client, cl
 		return nil, b, err
 	}
 	name := strings.TrimSpace(u.Username)
-	if b.remote == "" {
-		if !vmUsername.MatchString(name) {
-			return nil, b, infraerrors.BadRequest("VM_SUBSCRIPTION_INVALID", "请先设置符合 vm2api 要求的用户名")
-		}
+	if !vmUsername.MatchString(name) {
+		name = ""
+	}
+	if b.remote == "" && name != "" {
 		rows, e := c.QueryContext(ctx, "SELECT 1 FROM users WHERE id<>$1 AND deleted_at IS NULL AND lower(trim(username))=lower($2) LIMIT 1", id, name)
 		if e != nil {
 			return nil, b, e
@@ -70,10 +71,10 @@ func (s *SubscriptionService) vmPreview(ctx context.Context, c *dbent.Client, cl
 		if e = rows.Err(); e != nil {
 			return nil, b, e
 		}
-	} else if b.origin != client.Origin {
+	} else if b.remote != "" && b.origin != client.Origin {
 		return nil, b, infraerrors.BadRequest("VM_SUBSCRIPTION_INVALID", "vm2api 实例与已绑定实例不符")
 	}
-	remote, err := client.Lookup(ctx, b.remote, name)
+	remote, err := client.Lookup(ctx, b.remote, name, u.Email)
 	if err != nil {
 		return nil, b, err
 	}
@@ -90,7 +91,7 @@ func (s *SubscriptionService) vmPreview(ctx context.Context, c *dbent.Client, cl
 			return nil, b, e
 		}
 	}
-	return &VMUserPreview{id, name, remote, b.remote != ""}, b, nil
+	return &VMUserPreview{u.Email, id, name, remote, b.remote != ""}, b, nil
 }
 func (s *SubscriptionService) PreviewVMUser(ctx context.Context, id int64) (*VMUserPreview, error) {
 	client, err := vmusers.Configured()
@@ -101,7 +102,7 @@ func (s *SubscriptionService) PreviewVMUser(ctx context.Context, id int64) (*VMU
 	return p, err
 }
 
-func (s *SubscriptionService) AssignVMUser(ctx context.Context, id, admin int64, days int, name, confirmed string) (*UserSubscription, error) {
+func (s *SubscriptionService) AssignVMUser(ctx context.Context, id, admin int64, days int, name, email, confirmed string) (*UserSubscription, error) {
 	if days < 1 || days > MaxValidityDays {
 		return nil, infraerrors.BadRequest("VM_SUBSCRIPTION_INVALID", "订阅有效期无效")
 	}
@@ -123,7 +124,7 @@ func (s *SubscriptionService) AssignVMUser(ctx context.Context, id, admin int64,
 	if p.Remote != nil {
 		expected = p.Remote.ID
 	}
-	if name != p.Username || (confirmed != expected && !(confirmed == "" && p.Bound)) {
+	if email != p.Email || name != p.Username || (confirmed != expected && !(confirmed == "" && p.Bound)) {
 		return nil, infraerrors.Conflict("VM_IDENTITY_CHANGED", "用户身份已变更，请重新核对")
 	}
 	remoteName := name
@@ -141,7 +142,10 @@ func (s *SubscriptionService) AssignVMUser(ctx context.Context, id, admin int64,
 			return nil, infraerrors.Conflict("VM_SUBSCRIPTION_INACTIVE", "原订阅已失效，请在订阅管理中恢复或续期")
 		}
 	}
-	issued, err := client.Enable(ctx, p.Remote, remoteName)
+	if p.Bound && p.Remote.Email != "" {
+		email = p.Remote.Email
+	}
+	issued, err := client.Enable(ctx, p.Remote, remoteName, email)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +165,7 @@ func (s *SubscriptionService) AssignVMUser(ctx context.Context, id, admin int64,
 		}
 		return existing, tx.Commit()
 	}
-	label := fmt.Sprintf("Claude · %s · %d", remoteName, id)
+	label := fmt.Sprintf("Claude · %s · %d", issued.Item.Username, id)
 	a, err := c.Account.Create().SetName(label).SetPlatform(PlatformAnthropic).SetType(AccountTypeAPIKey).SetCredentials(map[string]any{"base_url": client.Origin, "api_key": issued.Key}).Save(ctx)
 	if err != nil {
 		return nil, err

@@ -18,7 +18,7 @@ export default {
     inactive: 'Disabled',
     bound: 'Linked by user ID.',
     checkIdentity: 'Verify both identities. Confirm to link and activate this vm2api user.',
-    createIdentity: 'Confirm to create a vm2api user with this username.',
+    createIdentity: 'Confirm to create a vm2api user with this email address.',
     loading: 'Checking user identity',
     noData: 'No data',
     unavailable: 'Usage unavailable',

@@ -583,8 +583,8 @@
         <div v-if="dedicated && selectedUser" class="space-y-2 text-body-regular text-text-secondary" aria-live="polite">
           <p v-if="previewError" role="alert">{{ previewError }}</p>
           <template v-else-if="preview">
-            <p>sub2api · {{ selectedUser.email }} · {{ preview.username }} (#{{ preview.user_id }})</p>
-            <p v-if="preview.remote">vm2api · {{ preview.remote.username }} (#{{ preview.remote.id }}) · {{ t(preview.remote.enabled ? 'vmUser.active' : 'vmUser.inactive') }}</p>
+            <p>sub2api · {{ preview.email }} · {{ preview.username }} (#{{ preview.user_id }})</p>
+            <p v-if="preview.remote">vm2api · {{ preview.remote.email }} {{ preview.remote.username }} (#{{ preview.remote.id }}) · {{ t(preview.remote.enabled ? 'vmUser.active' : 'vmUser.inactive') }}</p>
             <p>{{ t(preview.bound ? 'vmUser.bound' : preview.remote ? 'vmUser.checkIdentity' : 'vmUser.createIdentity') }}</p>
           </template>
           <p v-else>{{ t('vmUser.loading') }}</p>
@@ -1344,7 +1344,7 @@ const handleSort = (key: string, order: 'asc' | 'desc') => {
 
 const assignMode = ref<'dedicated' | 'existing'>('dedicated')
 const dedicated = computed(() => !batchAssignEnabled.value && assignMode.value === 'dedicated')
-type VMPreview = { user_id: number; username: string; bound: boolean; remote: { id: string; username: string; enabled: boolean } | null }
+type VMPreview = { email: string; user_id: number; username: string; bound: boolean; remote: { email: string; id: string; username: string; enabled: boolean } | null }
 const preview = ref<VMPreview | null>(null)
 const previewError = ref('')
 const previewVersion = ref(0)
@@ -1413,7 +1413,7 @@ const handleAssignSubscription = async () => {
     }
     if (dedicated.value) {
       if (!preview.value || preview.value.user_id !== assignForm.user_id) return
-      await apiClient.post('/admin/subscriptions/assign-vm-user', { user_id: preview.value.user_id, validity_days: assignForm.validity_days, username: preview.value.username, confirmed_remote_id: preview.value.remote?.id ?? '' })
+      await apiClient.post('/admin/subscriptions/assign-vm-user', { user_id: preview.value.user_id, validity_days: assignForm.validity_days, username: preview.value.username, email: preview.value.email, confirmed_remote_id: preview.value.remote?.id ?? '' })
     } else await adminAPI.subscriptions.assign({
       user_id: assignForm.user_id!,
       group_id: assignForm.group_id!,

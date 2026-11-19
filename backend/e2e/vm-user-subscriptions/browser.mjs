@@ -1,6 +1,6 @@
 // All logins below are disposable users created by check.py.
 import { spawnSync } from "node:child_process";
-const [origin, evidence] = process.argv.slice(2);
+const [origin, evidence, panel] = process.argv.slice(2);
 function run(code) {
 	const r = spawnSync("ego-browser", ["nodejs", "-e", code], {
 		encoding: "utf8",
@@ -27,6 +27,14 @@ function login(email, path) {
   },{email:${JSON.stringify(email)}});await p.goto(origin+${JSON.stringify(path)});`);
 }
 try {
+    step(`await p.goto(${JSON.stringify(panel)}+'/login');
+    await p.fill('#login-username','admin');await p.fill('#login-password','testpass');
+    await p.click('button[type=submit]');await p.waitForFunction(()=>location.pathname!='/login');
+    await p.goto(${JSON.stringify(panel)}+'/users');
+    await p.waitForSelector('text="changed@fixture.invalid"');
+    await p.click('loc=role:button[name="新建用户"]');await p.waitForSelector('#new-email');
+    await p.fill('#new-email','new-user@fixture.invalid');
+    await p.screenshot({path:out+'/vm-user-email.png'});`);
 	login("admin@fixture.invalid", "/admin/subscriptions");
 	step(`await p.click('loc=role:button[name="分配订阅"]');await p.waitForSelector('#subscription-assign-mode');
  await p.fill('[data-assign-user-search] input','ui-member');await p.click('text="ui-member@fixture.invalid"');

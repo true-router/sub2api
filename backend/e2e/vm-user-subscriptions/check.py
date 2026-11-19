@@ -264,17 +264,83 @@ with tempfile.TemporaryDirectory(prefix="vm-sub-") as tmp, ExitStack() as stack:
             {
                 "user_id": p["user_id"],
                 "username": p["username"],
+                "email": p["email"],
                 "confirmed_remote_id": (p["remote"] or {}).get("id", ""),
                 "validity_days": 30,
             },
         )
 
+    mail_id, _ = member("mail-only")
+    pgcmd("-d", "sub", "-c", f"update users set username='' where id={int(mail_id)}")
+    mail_preview = preview(mail_id)
+    assign(mail_preview)
+    mail_remote = preview(mail_id)["remote"]
+    check(
+        "email-only user provisioned",
+        mail_remote["email"] == "mail-only@fixture.invalid"
+        and bool(mail_remote["username"]),
+    )
+    email_id, _ = member("mail-match")
+    profile = http(
+        vmurl,
+        "POST",
+        "/api/panel/users",
+        key,
+        {
+            "email": "Mail-Match@fixture.invalid",
+            "username": "different-login",
+            "password": pwd,
+            "enabled": False,
+        },
+        201,
+    )["item"]
+    match = preview(email_id)
+    check(
+        "match existing account by normalized email",
+        match["remote"]["id"] == profile["id"],
+    )
+    assign(match)
+    check("activate same email account", preview(email_id)["remote"]["enabled"])
+    http(
+        vmurl,
+        "PATCH",
+        "/api/panel/users/" + profile["id"],
+        key,
+        {"email": "changed@fixture.invalid"},
+    )
+    check(
+        "admin email edit preserves binding",
+        preview(email_id)["remote"]["email"] == "changed@fixture.invalid",
+    )
+    http(
+        vmurl,
+        "POST",
+        "/api/panel/users",
+        key,
+        {"username": "member-a", "email": "conflict@fixture.invalid", "password": pwd},
+        201,
+    )
+    http(
+        base,
+        "GET",
+        f"/api/v1/admin/subscriptions/vm-user-preview?user_id={uid}",
+        admin,
+        status=409,
+    )
+    conflict = http(
+        vmurl, "GET", "/api/panel/users/subscription-identity?username=member-a", key
+    )["item"]
+    http(vmurl, "DELETE", "/api/panel/users/" + conflict["id"], key)
+    check("different real email blocks first assignment", True)
     p = preview(uid)
     check(
         "preview has no side effects",
         p["remote"] is None
         and pgcmd(
-            "-d", "vm", "-c", "select count(*) from users where username='member-a'"
+            "-d",
+            "vm",
+            "-c",
+            "select count(*) from users where username='member-a' and deleted_at is null",
         )
         == "0",
     )
@@ -323,6 +389,10 @@ with tempfile.TemporaryDirectory(prefix="vm-sub-") as tmp, ExitStack() as stack:
     else:
         raise AssertionError("wrong identity accepted")
     second = assign(q)
+    check(
+        "legacy email populated on confirmation",
+        preview(other)["remote"]["email"] == q["email"],
+    )
     check(
         "no external binding in vm2api",
         pgcmd("-d", "vm", "-c", "select count(*) from integration_users") == "0",
@@ -446,10 +516,31 @@ with tempfile.TemporaryDirectory(prefix="vm-sub-") as tmp, ExitStack() as stack:
             "POST",
             "/api/panel/users",
             key,
-            {"username": "ui-member", "password": pwd},
+            {
+                "username": "ui-member",
+                "email": "ui-member@fixture.invalid",
+                "password": pwd,
+            },
             201,
         )
-        subprocess.run(["node", here / "browser.mjs", base, str(out)], check=True)
+        panel_port = port()
+        panel_url = f"http://127.0.0.1:{panel_port}"
+        panel = proc(
+            "panel",
+            root / "web/node_modules/.bin/vite",
+            "preview",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            str(panel_port),
+            "--strictPort",
+            cwd=root / "web",
+            env={**os.environ, "VM2API_API_PROXY": vmurl},
+        )
+        wait(panel_url, "/", panel)
+        subprocess.run(
+            ["node", here / "browser.mjs", base, str(out), panel_url], check=True
+        )
         check("browser confirmed local binding", preview(ui_id)["bound"])
     gateway.terminate()
     gateway.wait(timeout=30)

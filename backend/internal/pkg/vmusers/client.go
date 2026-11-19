@@ -34,6 +34,7 @@ func Configured() (*Client, error) {
 }
 
 type Identity struct {
+	Email    string `json:"email"`
 	ID       string `json:"id"`
 	Username string `json:"username"`
 	Enabled  bool   `json:"enabled"`
@@ -89,12 +90,13 @@ func (c *Client) request(ctx context.Context, method string, path string, body a
 	return nil
 }
 
-func (c *Client) Lookup(ctx context.Context, id, name string) (*Identity, error) {
+func (c *Client) Lookup(ctx context.Context, id, name, email string) (*Identity, error) {
 	query := url.Values{}
 	if id != "" {
 		query.Set("id", id)
 	} else {
 		query.Set("username", name)
+		query.Set("email", email)
 	}
 	var out struct {
 		Item *Identity `json:"item"`
@@ -105,13 +107,13 @@ func (c *Client) Lookup(ctx context.Context, id, name string) (*Identity, error)
 	if id != "" && (out.Item == nil || out.Item.ID != id) {
 		return nil, infraerrors.ServiceUnavailable("VM_DATA_UNAVAILABLE", "已绑定的 vm2api 用户不存在")
 	}
-	if out.Item != nil && (out.Item.Role != "user" || (id == "" && !strings.EqualFold(out.Item.Username, name))) {
+	if out.Item != nil && (out.Item.Role != "user" || (id == "" && !(strings.EqualFold(out.Item.Username, name) || (email != "" && strings.EqualFold(out.Item.Email, email))))) {
 		return nil, infraerrors.BadRequest("VM_IDENTITY_INVALID", "只能关联身份匹配的普通用户")
 	}
 	return out.Item, nil
 }
 
-func (c *Client) Enable(ctx context.Context, user *Identity, name string) (Result, error) {
+func (c *Client) Enable(ctx context.Context, user *Identity, name, email string) (Result, error) {
 	var out Result
 	var err error
 	if user == nil {
@@ -122,15 +124,15 @@ func (c *Client) Enable(ctx context.Context, user *Identity, name string) (Resul
 		var reply struct {
 			Data Result `json:"data"`
 		}
-		err = c.request(ctx, "POST", "", map[string]string{"username": name, "password": base64.RawURLEncoding.EncodeToString(secret[:]), "role": "user"}, &reply)
+		err = c.request(ctx, "POST", "", map[string]string{"username": name, "email": email, "password": base64.RawURLEncoding.EncodeToString(secret[:]), "role": "user"}, &reply)
 		out = reply.Data
 	} else {
-		err = c.request(ctx, "POST", "/"+url.PathEscape(user.ID)+"/activate-subscription", map[string]string{"username": user.Username}, &out)
+		err = c.request(ctx, "POST", "/"+url.PathEscape(user.ID)+"/activate-subscription", map[string]string{"username": user.Username, "email": email}, &out)
 		if err == nil && out.Item.ID != user.ID {
 			return Result{}, infraerrors.ServiceUnavailable("VM_DATA_UNAVAILABLE", "vm2api 用户身份已变更")
 		}
 	}
-	if err == nil && (out.Item.ID == "" || !strings.EqualFold(out.Item.Username, name) || !out.Item.Enabled || out.Item.Role != "user" || out.Key == "") {
+	if err == nil && (out.Item.ID == "" || (name != "" && !strings.EqualFold(out.Item.Username, name)) || (email != "" && !strings.EqualFold(out.Item.Email, email)) || !out.Item.Enabled || out.Item.Role != "user" || out.Key == "") {
 		err = infraerrors.ServiceUnavailable("VM_DATA_UNAVAILABLE", "vm2api 用户身份或默认密钥无效")
 	}
 	return out, err

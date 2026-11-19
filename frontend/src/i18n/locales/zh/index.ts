@@ -18,7 +18,7 @@ export default {
     inactive: '已停用',
     bound: '已按固定用户 ID 绑定。',
     checkIdentity: '请核对两端身份。确认后将绑定并激活此 vm2api 用户。',
-    createIdentity: '确认后将创建同名 vm2api 用户。',
+    createIdentity: '确认后将使用此邮箱创建 vm2api 用户。',
     loading: '正在核对用户身份',
     noData: '暂无数据',
     unavailable: '用量暂不可用',

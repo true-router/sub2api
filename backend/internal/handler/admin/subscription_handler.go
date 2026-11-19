@@ -405,13 +405,14 @@ func (h *SubscriptionHandler) AssignVM(c *gin.Context) {
 		UserID    int64   `json:"user_id" binding:"required,gt=0"`
 		Days      int     `json:"validity_days" binding:"required,min=1,max=36500"`
 		Username  string  `json:"username"`
+		Email     string  `json:"email" binding:"required"`
 		Confirmed *string `json:"confirmed_remote_id" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "请核对用户身份和订阅有效期")
 		return
 	}
-	sub, err := h.subscriptionService.AssignVMUser(c.Request.Context(), req.UserID, getAdminIDFromContext(c), req.Days, req.Username, *req.Confirmed)
+	sub, err := h.subscriptionService.AssignVMUser(c.Request.Context(), req.UserID, getAdminIDFromContext(c), req.Days, req.Username, req.Email, *req.Confirmed)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
