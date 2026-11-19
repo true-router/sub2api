@@ -10,6 +10,22 @@ import admin from './admin'
 import misc from './misc'
 
 export default {
+  vmUser: {
+    method: 'Assignment method',
+    dedicated: 'Create dedicated group',
+    existing: 'Select existing group',
+    active: 'Active',
+    inactive: 'Disabled',
+    bound: 'Linked by user ID.',
+    checkIdentity: 'Verify both identities. Confirm to link and activate this vm2api user.',
+    createIdentity: 'Confirm to create a vm2api user with this email address.',
+    loading: 'Checking user identity',
+    noData: 'No data',
+    unavailable: 'Usage unavailable',
+    empty: 'No slots',
+    five: '5h used',
+    seven: '7d used',
+  },
   wallet: {
     convertToBonus: 'Convert to promotional balance',
     conversionAmount: 'Conversion amount',

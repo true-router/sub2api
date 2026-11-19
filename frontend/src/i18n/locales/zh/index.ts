@@ -10,6 +10,22 @@ import admin from './admin'
 import misc from './misc'
 
 export default {
+  vmUser: {
+    method: '分配方式',
+    dedicated: '创建专属分组',
+    existing: '选择已有分组',
+    active: '已启用',
+    inactive: '已停用',
+    bound: '已按固定用户 ID 绑定。',
+    checkIdentity: '请核对两端身份。确认后将绑定并激活此 vm2api 用户。',
+    createIdentity: '确认后将使用此邮箱创建 vm2api 用户。',
+    loading: '正在核对用户身份',
+    noData: '暂无数据',
+    unavailable: '用量暂不可用',
+    empty: '暂无槽位',
+    five: '5 小时已用',
+    seven: '7 天已用',
+  },
   wallet: {
     convertToBonus: '转为赠送积分',
     conversionAmount: '划转金额',

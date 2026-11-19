@@ -90,6 +90,10 @@ func (h *SubscriptionHandler) List(c *gin.Context) {
 		return
 	}
 
+	if err := h.subscriptionService.LoadSlotUsage(c.Request.Context(), subscriptions); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
 	out := make([]dto.AdminUserSubscription, 0, len(subscriptions))
 	for i := range subscriptions {
 		out = append(out, *dto.UserSubscriptionFromServiceAdmin(&subscriptions[i]))
@@ -112,7 +116,12 @@ func (h *SubscriptionHandler) GetByID(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, adminSubscriptionResponse(c, dto.UserSubscriptionFromServiceAdmin(subscription)))
+	items := []service.UserSubscription{*subscription}
+	if err = h.subscriptionService.LoadSlotUsage(c.Request.Context(), items); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, adminSubscriptionResponse(c, dto.UserSubscriptionFromServiceAdmin(&items[0])))
 }
 
 // GetProgress handles getting subscription usage progress
@@ -130,6 +139,17 @@ func (h *SubscriptionHandler) GetProgress(c *gin.Context) {
 		return
 	}
 
+	sub, err := h.subscriptionService.GetByID(c.Request.Context(), subscriptionID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	items := []service.UserSubscription{*sub}
+	if err = h.subscriptionService.LoadSlotUsage(c.Request.Context(), items); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	progress.SlotUsage = items[0].SlotUsage
 	response.Success(c, progress)
 }
 
@@ -321,6 +341,10 @@ func (h *SubscriptionHandler) ListByGroup(c *gin.Context) {
 		return
 	}
 
+	if err := h.subscriptionService.LoadSlotUsage(c.Request.Context(), subscriptions); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
 	out := make([]dto.AdminUserSubscription, 0, len(subscriptions))
 	for i := range subscriptions {
 		out = append(out, *dto.UserSubscriptionFromServiceAdmin(&subscriptions[i]))
@@ -343,6 +367,10 @@ func (h *SubscriptionHandler) ListByUser(c *gin.Context) {
 		return
 	}
 
+	if err := h.subscriptionService.LoadSlotUsage(c.Request.Context(), subscriptions); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
 	out := make([]dto.AdminUserSubscription, 0, len(subscriptions))
 	for i := range subscriptions {
 		out = append(out, *dto.UserSubscriptionFromServiceAdmin(&subscriptions[i]))
@@ -357,4 +385,37 @@ func getAdminIDFromContext(c *gin.Context) int64 {
 		return 0
 	}
 	return subject.UserID
+}
+
+func (h *SubscriptionHandler) PreviewVM(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Query("user_id"), 10, 64)
+	if err != nil || id < 1 {
+		response.BadRequest(c, "请选择用户")
+		return
+	}
+	p, err := h.subscriptionService.PreviewVMUser(c.Request.Context(), id)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, p)
+}
+func (h *SubscriptionHandler) AssignVM(c *gin.Context) {
+	var req struct {
+		UserID    int64   `json:"user_id" binding:"required,gt=0"`
+		Days      int     `json:"validity_days" binding:"required,min=1,max=36500"`
+		Username  string  `json:"username"`
+		Email     string  `json:"email" binding:"required"`
+		Confirmed *string `json:"confirmed_remote_id" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "请核对用户身份和订阅有效期")
+		return
+	}
+	sub, err := h.subscriptionService.AssignVMUser(c.Request.Context(), req.UserID, getAdminIDFromContext(c), req.Days, req.Username, req.Email, *req.Confirmed)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, adminSubscriptionResponse(c, dto.UserSubscriptionFromServiceAdmin(sub)))
 }

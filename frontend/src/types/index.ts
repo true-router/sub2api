@@ -580,6 +580,7 @@ export type GroupI18n = Record<string, GroupLocaleText>
 
 // 用户侧接口返回的 name / description 已由后端按请求语言（Accept-Language）选好
 export interface Group {
+  subscription_usage_source?: 'local' | 'vm2api'
   id: number
   name: string
   description: string | null
@@ -2186,7 +2187,13 @@ export interface ChangePasswordRequest {
 
 // ==================== User Subscription Types ====================
 
+export interface SlotUsage {
+  status: 'available' | 'unavailable'
+  slots: Array<{ slot_id: string; account_type: string; utilization_5h: number | null; utilization_7d: number | null }> | null
+}
+
 export interface UserSubscription {
+  slot_usage?: SlotUsage
   id: number
   user_id: number
   group_id: number
@@ -2206,28 +2213,25 @@ export interface UserSubscription {
   group?: Group
 }
 
+interface SubscriptionWindowProgress {
+  used_usd: number
+  limit_usd: number
+  remaining_usd: number
+  percentage: number
+  window_start: string
+  resets_at: string
+  resets_in_seconds: number
+}
+
 export interface SubscriptionProgress {
-  subscription_id: number
-  daily: {
-    used: number
-    limit: number | null
-    percentage: number
-    reset_in_seconds: number | null
-  } | null
-  weekly: {
-    used: number
-    limit: number | null
-    percentage: number
-    reset_in_seconds: number | null
-  } | null
-  monthly: {
-    used: number
-    limit: number | null
-    percentage: number
-    reset_in_seconds: number | null
-  } | null
-  expires_at: string | null
-  days_remaining: number | null
+  id: number
+  group_name: string
+  slot_usage?: SlotUsage
+  daily?: SubscriptionWindowProgress
+  weekly?: SubscriptionWindowProgress
+  monthly?: SubscriptionWindowProgress
+  expires_at: string
+  expires_in_days: number
 }
 
 export interface AssignSubscriptionRequest {

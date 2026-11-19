@@ -246,7 +246,8 @@
           </template>
 
           <template #cell-usage="{ row }">
-            <div class="min-w-[280px] space-y-2">
+            <SubscriptionSlotUsage v-if="row.slot_usage" :usage="row.slot_usage" />
+            <div v-else class="min-w-[280px] space-y-2">
               <!-- Daily Usage -->
               <div v-if="row.group?.daily_limit_usd" class="usage-row">
                 <div class="flex items-center gap-2">
@@ -575,7 +576,20 @@
             </ul>
           </div>
         </div>
-        <div>
+        <div v-if="!batchAssignEnabled">
+          <label class="input-label">{{ t('vmUser.method') }}</label>
+          <Select id="subscription-assign-mode" :aria-label="t('vmUser.method')" v-model="assignMode" :disabled="submitting" :options="[{value:'dedicated',label:t('vmUser.dedicated')},{value:'existing',label:t('vmUser.existing')}]" />
+        </div>
+        <div v-if="dedicated && selectedUser" class="space-y-2 text-body-regular text-text-secondary" aria-live="polite">
+          <p v-if="previewError" role="alert">{{ previewError }}</p>
+          <template v-else-if="preview">
+            <p>sub2api · {{ preview.email }} · {{ preview.username }} (#{{ preview.user_id }})</p>
+            <p v-if="preview.remote">vm2api · {{ preview.remote.email }} {{ preview.remote.username }} (#{{ preview.remote.id }}) · {{ t(preview.remote.enabled ? 'vmUser.active' : 'vmUser.inactive') }}</p>
+            <p>{{ t(preview.bound ? 'vmUser.bound' : preview.remote ? 'vmUser.checkIdentity' : 'vmUser.createIdentity') }}</p>
+          </template>
+          <p v-else>{{ t('vmUser.loading') }}</p>
+        </div>
+        <div v-if="!dedicated">
           <label class="input-label">{{ t('admin.subscriptions.form.group') }}</label>
           <Select
             v-model="assignForm.group_id"
@@ -627,7 +641,7 @@
           <BoardButton
             type="submit"
             form="assign-subscription-form"
-            :disabled="submitting || (batchAssignEnabled && assignUsers.length === 0)"
+            :disabled="submitting || (dedicated && !preview) || (batchAssignEnabled && assignUsers.length === 0)"
             variant="primary" size="medium"
           >
             <svg
@@ -840,9 +854,11 @@
 </template>
 
 <script setup lang="ts">
+import SubscriptionSlotUsage from '@/components/common/SubscriptionSlotUsage.vue'
 import BoardTable from '@/components/boardui/Table.vue'
 import BoardButton from '@/components/boardui/Button.vue'
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { apiClient } from '@/api/client'
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { adminAPI } from '@/api/admin'
@@ -1119,7 +1135,7 @@ const platformFilterOptions = computed(() => [
 // Group options for assign (only subscription type groups)
 const subscriptionGroupOptions = computed(() =>
   groups.value
-    .filter((g) => g.subscription_type === 'subscription' && g.status === 'active')
+    .filter((g) => g.subscription_type === 'subscription' && g.status === 'active' && g.subscription_usage_source !== 'vm2api')
     .map((g) => ({
       value: g.id,
       label: g.name,
@@ -1326,9 +1342,30 @@ const handleSort = (key: string, order: 'asc' | 'desc') => {
   loadSubscriptions()
 }
 
+const assignMode = ref<'dedicated' | 'existing'>('dedicated')
+const dedicated = computed(() => !batchAssignEnabled.value && assignMode.value === 'dedicated')
+type VMPreview = { email: string; user_id: number; username: string; bound: boolean; remote: { email: string; id: string; username: string; enabled: boolean } | null }
+const preview = ref<VMPreview | null>(null)
+const previewError = ref('')
+const previewVersion = ref(0)
+watch([showAssignModal, dedicated, selectedUser, previewVersion], async ([open, active, user], _, onCleanup) => {
+  preview.value = null
+  previewError.value = ''
+  if (!open || !active || !user) return
+  const controller = new AbortController()
+  onCleanup(() => controller.abort())
+  try {
+    const { data } = await apiClient.get<VMPreview>('/admin/subscriptions/vm-user-preview', { params: { user_id: user.id }, signal: controller.signal })
+    if (!controller.signal.aborted) preview.value = data
+  } catch (error: any) {
+    if (!controller.signal.aborted) previewError.value = error.message || t('vmUser.unavailable')
+  }
+}, { flush: 'sync' })
+
 const closeAssignModal = () => {
   if (submitting.value) return
   showAssignModal.value = false
+  assignMode.value = 'dedicated'
   batchAssignEnabled.value = false
   assignUsers.value = []
   batchAssignResult.value = null
@@ -1348,7 +1385,7 @@ const handleAssignSubscription = async () => {
     appStore.showError(t('admin.subscriptions.pleaseSelectUser'))
     return
   }
-  if (!assignForm.group_id) {
+  if (!dedicated.value && !assignForm.group_id) {
     appStore.showError(t('admin.subscriptions.pleaseSelectGroup'))
     return
   }
@@ -1362,7 +1399,7 @@ const handleAssignSubscription = async () => {
     if (batchAssignEnabled.value) {
       batchAssignResult.value = await adminAPI.subscriptions.bulkAssign({
         user_ids: assignUsers.value.map((user) => user.id),
-        group_id: assignForm.group_id,
+        group_id: assignForm.group_id!,
         validity_days: assignForm.validity_days
       })
       const result = batchAssignResult.value
@@ -1374,9 +1411,12 @@ const handleAssignSubscription = async () => {
       }
       return
     }
-    await adminAPI.subscriptions.assign({
+    if (dedicated.value) {
+      if (!preview.value || preview.value.user_id !== assignForm.user_id) return
+      await apiClient.post('/admin/subscriptions/assign-vm-user', { user_id: preview.value.user_id, validity_days: assignForm.validity_days, username: preview.value.username, email: preview.value.email, confirmed_remote_id: preview.value.remote?.id ?? '' })
+    } else await adminAPI.subscriptions.assign({
       user_id: assignForm.user_id!,
-      group_id: assignForm.group_id,
+      group_id: assignForm.group_id!,
       validity_days: assignForm.validity_days
     })
     appStore.showSuccess(t('admin.subscriptions.subscriptionAssigned'))
@@ -1384,7 +1424,8 @@ const handleAssignSubscription = async () => {
     closeAssignModal()
     loadSubscriptions()
   } catch (error: any) {
-    appStore.showError(error.response?.data?.detail || t('admin.subscriptions.failedToAssign'))
+    if (dedicated.value && error.status === 409) previewVersion.value++
+    appStore.showError(error.message || t('admin.subscriptions.failedToAssign'))
     console.error('Error assigning subscription:', error)
   } finally {
     submitting.value = false

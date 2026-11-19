@@ -60,6 +60,7 @@
           <div class="flex flex-wrap items-baseline gap-3"><h2 class="text-title-2-semibold">{{ t('keyUsage.design.overview') }}</h2><p v-if="resultData.quota?.remaining != null" class="text-body-medium text-text-secondary">{{ t('keyUsage.remainingQuota') }} <span class="text-text-primary">{{ usd(resultData.quota.remaining) }}</span></p></div>
           <Badge v-if="statusInfo" :tone="statusInfo.isActive ? 'success' : 'danger'" dot>{{ statusInfo.label }} · {{ statusInfo.statusText }}</Badge>
         </div>
+        <SubscriptionSlotUsage v-if="resultData.subscription?.slot_usage" :usage="resultData.subscription.slot_usage" />
         <div v-if="ringItems.length" :class="ringGridClass" data-testid="key-usage-quotas">
           <article v-for="(ring, index) in ringItems" :key="ring.title" class="usage-card flex min-w-0 items-center justify-between gap-4 p-5 sm:p-6">
             <div class="flex min-w-0 flex-col gap-3">
@@ -123,6 +124,7 @@
 </template>
 
 <script setup lang="ts">
+import SubscriptionSlotUsage from '@/components/common/SubscriptionSlotUsage.vue'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores'

@@ -209,6 +209,10 @@ Sub2API 是一个 AI API 网关平台，用于分发和管理 AI 产品订阅的
 - **管理后台** - Web 界面进行监控和管理
 - **外部系统集成** - 支持通过 iframe 嵌入外部系统（如工单等），扩展管理后台功能
 
+## 用户故事
+
+- [为现有用户分配 vm2api 专属订阅](docs/stories/VM2API_DEDICATED_SUBSCRIPTION_USER_STORY.md)
+
 ## 生态项目
 
 围绕 Sub2API 的社区扩展与集成项目：

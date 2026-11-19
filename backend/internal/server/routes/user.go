@@ -144,6 +144,7 @@ func RegisterUserRoutes(
 		{
 			subscriptions.GET("", h.Subscription.List)
 			subscriptions.GET("/active", h.Subscription.GetActive)
+			subscriptions.GET("/:id/progress", h.Subscription.GetOneProgress)
 			subscriptions.GET("/progress", h.Subscription.GetProgress)
 			subscriptions.GET("/summary", h.Subscription.GetSummary)
 		}

@@ -40,6 +40,7 @@ var gatewayCompatibilityMetricsLogCounter atomic.Uint64
 
 // GatewayHandler handles API gateway requests
 type GatewayHandler struct {
+	subscriptionService       *service.SubscriptionService
 	gatewayService            *service.GatewayService
 	openAIGatewayService      *service.OpenAIGatewayService
 	geminiCompatService       *service.GeminiMessagesCompatService
@@ -1824,7 +1825,14 @@ func (h *GatewayHandler) usageUnrestricted(c *gin.Context, ctx context.Context, 
 
 		// 订阅信息可能不在 context 中（/v1/usage 路径跳过了中间件的计费检查）
 		subscription, ok := middleware2.GetSubscriptionFromContext(c)
-		if ok {
+		if apiKey.Group.SubscriptionUsageSource == "vm2api" {
+			subs := []service.UserSubscription{{UserID: subject.UserID, GroupID: apiKey.Group.ID, Group: apiKey.Group}}
+			if err := h.subscriptionService.LoadSlotUsage(ctx, subs); err != nil {
+				h.errorResponse(c, http.StatusInternalServerError, "api_error", "Failed to load slot usage")
+				return
+			}
+			resp["subscription"] = gin.H{"slot_usage": subs[0].SlotUsage}
+		} else if ok {
 			remaining := h.calculateSubscriptionRemaining(apiKey.Group, subscription)
 			resp["remaining"] = remaining
 			resp["subscription"] = gin.H{
