@@ -3,25 +3,28 @@ package handler
 import (
 	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/vmusers"
 	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 // SubscriptionSummaryItem represents a subscription item in summary
 type SubscriptionSummaryItem struct {
-	ID              int64   `json:"id"`
-	GroupID         int64   `json:"group_id"`
-	GroupName       string  `json:"group_name"`
-	Status          string  `json:"status"`
-	DailyUsedUSD    float64 `json:"daily_used_usd,omitempty"`
-	DailyLimitUSD   float64 `json:"daily_limit_usd,omitempty"`
-	WeeklyUsedUSD   float64 `json:"weekly_used_usd,omitempty"`
-	WeeklyLimitUSD  float64 `json:"weekly_limit_usd,omitempty"`
-	MonthlyUsedUSD  float64 `json:"monthly_used_usd,omitempty"`
-	MonthlyLimitUSD float64 `json:"monthly_limit_usd,omitempty"`
-	ExpiresAt       *string `json:"expires_at,omitempty"`
+	SlotUsage       *vmusers.Usage `json:"slot_usage,omitempty"`
+	ID              int64          `json:"id"`
+	GroupID         int64          `json:"group_id"`
+	GroupName       string         `json:"group_name"`
+	Status          string         `json:"status"`
+	DailyUsedUSD    float64        `json:"daily_used_usd,omitempty"`
+	DailyLimitUSD   float64        `json:"daily_limit_usd,omitempty"`
+	WeeklyUsedUSD   float64        `json:"weekly_used_usd,omitempty"`
+	WeeklyLimitUSD  float64        `json:"weekly_limit_usd,omitempty"`
+	MonthlyUsedUSD  float64        `json:"monthly_used_usd,omitempty"`
+	MonthlyLimitUSD float64        `json:"monthly_limit_usd,omitempty"`
+	ExpiresAt       *string        `json:"expires_at,omitempty"`
 }
 
 // SubscriptionProgressInfo represents subscription with progress info
@@ -57,6 +60,10 @@ func (h *SubscriptionHandler) List(c *gin.Context) {
 		return
 	}
 
+	if err := h.subscriptionService.LoadSlotUsage(c.Request.Context(), subscriptions); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
 	out := make([]dto.UserSubscription, 0, len(subscriptions))
 	for i := range subscriptions {
 		out = append(out, *dto.UserSubscriptionFromService(&subscriptions[i]).Localized(c.GetHeader("Accept-Language")))
@@ -79,6 +86,10 @@ func (h *SubscriptionHandler) GetActive(c *gin.Context) {
 		return
 	}
 
+	if err := h.subscriptionService.LoadSlotUsage(c.Request.Context(), subscriptions); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
 	out := make([]dto.UserSubscription, 0, len(subscriptions))
 	for i := range subscriptions {
 		out = append(out, *dto.UserSubscriptionFromService(&subscriptions[i]).Localized(c.GetHeader("Accept-Language")))
@@ -102,6 +113,10 @@ func (h *SubscriptionHandler) GetProgress(c *gin.Context) {
 		return
 	}
 
+	if err := h.subscriptionService.LoadSlotUsage(c.Request.Context(), subscriptions); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
 	result := make([]SubscriptionProgressInfo, 0, len(subscriptions))
 	for i := range subscriptions {
 		sub := &subscriptions[i]
@@ -110,6 +125,7 @@ func (h *SubscriptionHandler) GetProgress(c *gin.Context) {
 			// Skip subscriptions with errors
 			continue
 		}
+		progress.SlotUsage = sub.SlotUsage
 		if sub.Group != nil {
 			progress.GroupName = sub.Group.I18n.LocalizeName(c.GetHeader("Accept-Language"), progress.GroupName)
 		}
@@ -138,11 +154,16 @@ func (h *SubscriptionHandler) GetSummary(c *gin.Context) {
 		return
 	}
 
+	if err = h.subscriptionService.LoadSlotUsage(c.Request.Context(), subscriptions); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
 	var totalUsed float64
 	items := make([]SubscriptionSummaryItem, 0, len(subscriptions))
 
 	for _, sub := range subscriptions {
 		item := SubscriptionSummaryItem{
+			SlotUsage:      sub.SlotUsage,
 			ID:             sub.ID,
 			GroupID:        sub.GroupID,
 			Status:         sub.Status,
@@ -188,4 +209,34 @@ func (h *SubscriptionHandler) GetSummary(c *gin.Context) {
 	}
 
 	response.Success(c, summary)
+}
+
+func (h *SubscriptionHandler) GetOneProgress(c *gin.Context) {
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "Unauthorized")
+		return
+	}
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid subscription ID")
+		return
+	}
+	sub, err := h.subscriptionService.GetByID(c.Request.Context(), id)
+	if err != nil || sub.UserID != subject.UserID {
+		response.NotFound(c, "Subscription not found")
+		return
+	}
+	progress, err := h.subscriptionService.GetSubscriptionProgress(c.Request.Context(), id)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	items := []service.UserSubscription{*sub}
+	if err = h.subscriptionService.LoadSlotUsage(c.Request.Context(), items); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	progress.SlotUsage = items[0].SlotUsage
+	response.Success(c, progress)
 }

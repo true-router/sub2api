@@ -125,6 +125,11 @@ func Platform(v string) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldPlatform, v))
 }
 
+// SubscriptionUsageSource applies equality check predicate on the "subscription_usage_source" field. It's identical to SubscriptionUsageSourceEQ.
+func SubscriptionUsageSource(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldSubscriptionUsageSource, v))
+}
+
 // SubscriptionType applies equality check predicate on the "subscription_type" field. It's identical to SubscriptionTypeEQ.
 func SubscriptionType(v string) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldSubscriptionType, v))
@@ -1053,6 +1058,71 @@ func PlatformEqualFold(v string) predicate.Group {
 // PlatformContainsFold applies the ContainsFold predicate on the "platform" field.
 func PlatformContainsFold(v string) predicate.Group {
 	return predicate.Group(sql.FieldContainsFold(FieldPlatform, v))
+}
+
+// SubscriptionUsageSourceEQ applies the EQ predicate on the "subscription_usage_source" field.
+func SubscriptionUsageSourceEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldSubscriptionUsageSource, v))
+}
+
+// SubscriptionUsageSourceNEQ applies the NEQ predicate on the "subscription_usage_source" field.
+func SubscriptionUsageSourceNEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldSubscriptionUsageSource, v))
+}
+
+// SubscriptionUsageSourceIn applies the In predicate on the "subscription_usage_source" field.
+func SubscriptionUsageSourceIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldSubscriptionUsageSource, vs...))
+}
+
+// SubscriptionUsageSourceNotIn applies the NotIn predicate on the "subscription_usage_source" field.
+func SubscriptionUsageSourceNotIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldSubscriptionUsageSource, vs...))
+}
+
+// SubscriptionUsageSourceGT applies the GT predicate on the "subscription_usage_source" field.
+func SubscriptionUsageSourceGT(v string) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldSubscriptionUsageSource, v))
+}
+
+// SubscriptionUsageSourceGTE applies the GTE predicate on the "subscription_usage_source" field.
+func SubscriptionUsageSourceGTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldSubscriptionUsageSource, v))
+}
+
+// SubscriptionUsageSourceLT applies the LT predicate on the "subscription_usage_source" field.
+func SubscriptionUsageSourceLT(v string) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldSubscriptionUsageSource, v))
+}
+
+// SubscriptionUsageSourceLTE applies the LTE predicate on the "subscription_usage_source" field.
+func SubscriptionUsageSourceLTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldSubscriptionUsageSource, v))
+}
+
+// SubscriptionUsageSourceContains applies the Contains predicate on the "subscription_usage_source" field.
+func SubscriptionUsageSourceContains(v string) predicate.Group {
+	return predicate.Group(sql.FieldContains(FieldSubscriptionUsageSource, v))
+}
+
+// SubscriptionUsageSourceHasPrefix applies the HasPrefix predicate on the "subscription_usage_source" field.
+func SubscriptionUsageSourceHasPrefix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasPrefix(FieldSubscriptionUsageSource, v))
+}
+
+// SubscriptionUsageSourceHasSuffix applies the HasSuffix predicate on the "subscription_usage_source" field.
+func SubscriptionUsageSourceHasSuffix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasSuffix(FieldSubscriptionUsageSource, v))
+}
+
+// SubscriptionUsageSourceEqualFold applies the EqualFold predicate on the "subscription_usage_source" field.
+func SubscriptionUsageSourceEqualFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldEqualFold(FieldSubscriptionUsageSource, v))
+}
+
+// SubscriptionUsageSourceContainsFold applies the ContainsFold predicate on the "subscription_usage_source" field.
+func SubscriptionUsageSourceContainsFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldContainsFold(FieldSubscriptionUsageSource, v))
 }
 
 // SubscriptionTypeEQ applies the EQ predicate on the "subscription_type" field.

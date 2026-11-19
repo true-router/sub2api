@@ -58,7 +58,8 @@
             </div>
 
             <!-- Progress bars or Unlimited badge -->
-            <div class="space-y-1.5">
+            <SubscriptionSlotUsage v-if="subscription.slot_usage" :usage="subscription.slot_usage" />
+            <div v-else class="space-y-1.5">
               <!-- Unlimited subscription badge -->
               <div
                 v-if="isUnlimited(subscription)"
@@ -178,6 +179,7 @@
 </template>
 
 <script setup lang="ts">
+import SubscriptionSlotUsage from '@/components/common/SubscriptionSlotUsage.vue'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
@@ -231,6 +233,7 @@ function isUnlimited(sub: UserSubscription): boolean {
 }
 
 function getProgressDotClass(sub: UserSubscription): string {
+  if (sub.slot_usage) return 'bg-foreground-icon-secondary'
   // Unlimited subscriptions get a special color
   if (isUnlimited(sub)) {
     return 'bg-emerald-500'

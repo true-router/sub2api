@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/Wei-Shaw/sub2api/internal/pkg/vmusers"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
@@ -9,9 +10,10 @@ import (
 const subscriptionDayDuration = 24 * time.Hour
 
 type UserSubscription struct {
-	ID      int64
-	UserID  int64
-	GroupID int64
+	SlotUsage *vmusers.Usage `json:"slot_usage,omitempty"`
+	ID        int64
+	UserID    int64
+	GroupID   int64
 
 	StartsAt  time.Time
 	ExpiresAt time.Time

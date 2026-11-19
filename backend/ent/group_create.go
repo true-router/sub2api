@@ -224,6 +224,20 @@ func (_c *GroupCreate) SetNillablePlatform(v *string) *GroupCreate {
 	return _c
 }
 
+// SetSubscriptionUsageSource sets the "subscription_usage_source" field.
+func (_c *GroupCreate) SetSubscriptionUsageSource(v string) *GroupCreate {
+	_c.mutation.SetSubscriptionUsageSource(v)
+	return _c
+}
+
+// SetNillableSubscriptionUsageSource sets the "subscription_usage_source" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableSubscriptionUsageSource(v *string) *GroupCreate {
+	if v != nil {
+		_c.SetSubscriptionUsageSource(*v)
+	}
+	return _c
+}
+
 // SetSubscriptionType sets the "subscription_type" field.
 func (_c *GroupCreate) SetSubscriptionType(v string) *GroupCreate {
 	_c.mutation.SetSubscriptionType(v)
@@ -1103,6 +1117,10 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultPlatform
 		_c.mutation.SetPlatform(v)
 	}
+	if _, ok := _c.mutation.SubscriptionUsageSource(); !ok {
+		v := group.DefaultSubscriptionUsageSource
+		_c.mutation.SetSubscriptionUsageSource(v)
+	}
 	if _, ok := _c.mutation.SubscriptionType(); !ok {
 		v := group.DefaultSubscriptionType
 		_c.mutation.SetSubscriptionType(v)
@@ -1309,6 +1327,9 @@ func (_c *GroupCreate) check() error {
 		if err := group.PlatformValidator(v); err != nil {
 			return &ValidationError{Name: "platform", err: fmt.Errorf(`ent: validator failed for field "Group.platform": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.SubscriptionUsageSource(); !ok {
+		return &ValidationError{Name: "subscription_usage_source", err: errors.New(`ent: missing required field "Group.subscription_usage_source"`)}
 	}
 	if _, ok := _c.mutation.SubscriptionType(); !ok {
 		return &ValidationError{Name: "subscription_type", err: errors.New(`ent: missing required field "Group.subscription_type"`)}
@@ -1538,6 +1559,10 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Platform(); ok {
 		_spec.SetField(group.FieldPlatform, field.TypeString, value)
 		_node.Platform = value
+	}
+	if value, ok := _c.mutation.SubscriptionUsageSource(); ok {
+		_spec.SetField(group.FieldSubscriptionUsageSource, field.TypeString, value)
+		_node.SubscriptionUsageSource = value
 	}
 	if value, ok := _c.mutation.SubscriptionType(); ok {
 		_spec.SetField(group.FieldSubscriptionType, field.TypeString, value)
@@ -3003,6 +3028,9 @@ func (u *GroupUpsertOne) UpdateNewValues() *GroupUpsertOne {
 		}
 		if _, exists := u.create.mutation.DuplicateOperationID(); exists {
 			s.SetIgnore(group.FieldDuplicateOperationID)
+		}
+		if _, exists := u.create.mutation.SubscriptionUsageSource(); exists {
+			s.SetIgnore(group.FieldSubscriptionUsageSource)
 		}
 	}))
 	return u
@@ -4476,6 +4504,9 @@ func (u *GroupUpsertBulk) UpdateNewValues() *GroupUpsertBulk {
 			}
 			if _, exists := b.mutation.DuplicateOperationID(); exists {
 				s.SetIgnore(group.FieldDuplicateOperationID)
+			}
+			if _, exists := b.mutation.SubscriptionUsageSource(); exists {
+				s.SetIgnore(group.FieldSubscriptionUsageSource)
 			}
 		}
 	}))

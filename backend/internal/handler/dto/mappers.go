@@ -183,6 +183,7 @@ func GroupFromServiceAdmin(g *service.Group) *AdminGroup {
 
 func groupFromServiceBase(g *service.Group) Group {
 	return Group{
+		SubscriptionUsageSource:         g.SubscriptionUsageSource,
 		ID:                              g.ID,
 		Name:                            g.Name,
 		Description:                     g.Description,
@@ -898,6 +899,7 @@ func UserSubscriptionFromServiceAdmin(sub *service.UserSubscription) *AdminUserS
 
 func userSubscriptionFromServiceBase(sub *service.UserSubscription) UserSubscription {
 	return UserSubscription{
+		SlotUsage:          sub.SlotUsage,
 		ID:                 sub.ID,
 		UserID:             sub.UserID,
 		GroupID:            sub.GroupID,

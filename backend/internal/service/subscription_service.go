@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/vmusers"
 	"log"
 	"math/rand/v2"
 	"strconv"
@@ -1096,6 +1097,7 @@ func (s *SubscriptionService) RecordUsage(ctx context.Context, subscriptionID in
 
 // SubscriptionProgress 订阅进度
 type SubscriptionProgress struct {
+	SlotUsage     *vmusers.Usage       `json:"slot_usage,omitempty"`
 	ID            int64                `json:"id"`
 	GroupName     string               `json:"group_name"`
 	ExpiresAt     time.Time            `json:"expires_at"`

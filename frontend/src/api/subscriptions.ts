@@ -4,7 +4,7 @@
  */
 
 import { apiClient } from './client'
-import type { UserSubscription, SubscriptionProgress } from '@/types'
+import type { UserSubscription, SubscriptionProgress, SlotUsage } from '@/types'
 
 /**
  * Subscription summary for user dashboard
@@ -13,6 +13,7 @@ export interface SubscriptionSummary {
   active_count: number
   subscriptions: Array<{
     id: number
+    slot_usage?: SlotUsage
     group_name: string
     status: string
     daily_progress: number | null
@@ -42,8 +43,9 @@ export async function getActiveSubscriptions(): Promise<UserSubscription[]> {
 /**
  * Get progress for all user's active subscriptions
  */
-export async function getSubscriptionsProgress(): Promise<SubscriptionProgress[]> {
-  const response = await apiClient.get<SubscriptionProgress[]>('/subscriptions/progress')
+type SubscriptionWithProgress = { subscription: UserSubscription; progress: SubscriptionProgress }
+export async function getSubscriptionsProgress(): Promise<SubscriptionWithProgress[]> {
+  const response = await apiClient.get<SubscriptionWithProgress[]>('/subscriptions/progress')
   return response.data
 }
 
